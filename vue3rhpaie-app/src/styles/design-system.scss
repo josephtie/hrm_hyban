@@ -1,0 +1,541 @@
+// ==========================================
+// SYSTÈME DE DESIGN - RH PAIE APP
+// ==========================================
+
+// Reset CSS global pour un affichage à 100%
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+#app {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+// 🎨 Couleurs Principales
+:root {
+  // Couleurs de marque
+  --primary-color: #409eff;
+  --primary-light: #79bbff;
+  --primary-dark: #337ecc;
+  
+  // Couleurs de succès
+  --success-color: #67c23a;
+  --success-light: #95d475;
+  --success-dark: #529b2e;
+  
+  // Couleurs d'avertissement
+  --warning-color: #e6a23c;
+  --warning-light: #ebb563;
+  --warning-dark: #b88230;
+  
+  // Couleurs de danger
+  --danger-color: #f56c6c;
+  --danger-light: #f78989;
+  --danger-dark: #c45656;
+  
+  // Couleurs d'information
+  --info-color: #909399;
+  --info-light: #a6a9ad;
+  --info-dark: #73767a;
+  
+  // Couleurs de fond
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f7fa;
+  --bg-tertiary: #ebeef5;
+  
+  // Couleurs de texte
+  --text-primary: #303133;
+  --text-regular: #606266;
+  --text-secondary: #909399;
+  --text-placeholder: #c0c4cc;
+  
+  // Couleurs de bordure
+  --border-light: #e4e7ed;
+  --border-base: #dcdfe6;
+  --border-dark: #cdd0d6;
+  
+  // Ombres
+  --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.04);
+  --shadow-base: 0 2px 4px rgba(0, 0, 0, 0.12), 0 0 6px rgba(0, 0, 0, 0.12);
+  --shadow-dark: 0 4px 8px rgba(0, 0, 0, 0.12), 0 0 12px rgba(0, 0, 0, 0.18);
+  
+  // Espacements
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-xxl: 48px;
+  
+  // Bordures
+  --border-radius-sm: 4px;
+  --border-radius-base: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  
+  // Transitions
+  --transition-fast: 0.2s ease;
+  --transition-base: 0.3s ease;
+  --transition-slow: 0.5s ease;
+}
+
+// ==========================================
+// 🎯 CHAMPS REQUIS AMÉLIORÉS
+// ==========================================
+
+.required {
+  position: relative;
+  
+  &::after {
+    content: '*';
+    color: var(--danger-color);
+    margin-left: var(--spacing-xs);
+    font-weight: 600;
+    font-size: 14px;
+  }
+}
+
+// Styles pour les formulaires
+.form-required {
+  .el-form-item__label {
+    position: relative;
+    
+    &::after {
+      content: '*';
+      color: var(--danger-color);
+      margin-left: var(--spacing-xs);
+      font-weight: 600;
+    }
+  }
+  
+  // Animation de validation
+  .el-input__wrapper {
+    transition: all var(--transition-base);
+    
+    &:hover {
+      box-shadow: 0 0 0 1px var(--border-base);
+    }
+    
+    &.is-error {
+      box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2);
+      border-color: var(--danger-color);
+      
+      &::after {
+        content: '';
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background: var(--danger-color);
+        border-radius: 50%;
+        animation: pulse 1s infinite;
+      }
+    }
+    
+    &.is-success {
+      box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+      border-color: var(--success-color);
+    }
+  }
+}
+
+// ==========================================
+// 🎨 MODALS AMÉLIORÉS
+// ==========================================
+
+// Style global pour tous les headers de modaux Element Plus
+.el-dialog__header {
+  background-color: #e34724 !important;
+  color: white !important;
+  padding: 20px !important;
+  border-radius: 8px 8px 0 0 !important;
+  position: relative;
+  overflow: hidden;
+  
+  // Effet de gradient subtil
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #e34724, #f56c6c, #e6a23c);
+    animation: shimmer 3s infinite;
+  }
+}
+
+.el-dialog__header .el-dialog__title {
+  color: white !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  .el-icon {
+    font-size: 20px;
+  }
+}
+
+.el-dialog__headerbtn {
+  top: 20px !important;
+  right: 20px !important;
+}
+
+.el-dialog__headerbtn .el-dialog__close {
+  color: white !important;
+  font-size: 20px !important;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    color: #fff !important;
+    opacity: 0.8 !important;
+    transform: rotate(90deg);
+  }
+}
+
+// Style pour le corps du modal
+.el-dialog__body {
+  padding: 24px !important;
+  background: var(--bg-primary);
+}
+
+// Style pour le footer du modal
+.el-dialog__footer {
+  padding: 16px 24px !important;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-light);
+  border-radius: 0 0 8px 8px;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: white;
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  position: relative;
+  overflow: hidden;
+  
+  // Effet de vague
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-light), var(--warning-color), var(--success-color));
+    animation: shimmer 3s infinite;
+  }
+  
+  .modal-title {
+    color: white;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    
+    .el-icon {
+      font-size: 24px;
+    }
+  }
+  
+  .modal-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 14px;
+    margin-top: var(--spacing-xs);
+  }
+}
+
+.modal-body {
+  padding: var(--spacing-xl);
+  background: var(--bg-primary);
+  
+  // Alertes améliorées
+  .alert {
+    border-radius: var(--border-radius-base);
+    border: none;
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    animation: slideInRight 0.3s ease;
+    
+    &.alert-success {
+      background: linear-gradient(135deg, rgba(103, 194, 58, 0.1), rgba(103, 194, 58, 0.05));
+      color: var(--success-dark);
+      border-left: 4px solid var(--success-color);
+    }
+    
+    &.alert-warning {
+      background: linear-gradient(135deg, rgba(230, 162, 60, 0.1), rgba(230, 162, 60, 0.05));
+      color: var(--warning-dark);
+      border-left: 4px solid var(--warning-color);
+    }
+    
+    &.alert-danger {
+      background: linear-gradient(135deg, rgba(245, 108, 108, 0.1), rgba(245, 108, 108, 0.05));
+      color: var(--danger-dark);
+      border-left: 4px solid var(--danger-color);
+    }
+    
+    &.alert-info {
+      background: linear-gradient(135deg, rgba(64, 158, 255, 0.1), rgba(64, 158, 255, 0.05));
+      color: var(--primary-dark);
+      border-left: 4px solid var(--primary-color);
+    }
+  }
+}
+
+.modal-footer {
+  background: var(--bg-secondary);
+  padding: var(--spacing-lg) var(--spacing-xl);
+  border-top: 1px solid var(--border-light);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--spacing-md);
+}
+
+// ==========================================
+// 🎯 COMPOSANTS PERSONNALISÉS
+// ==========================================
+
+// Cards améliorées
+.enhanced-card {
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-light);
+  border: 1px solid var(--border-light);
+  transition: all var(--transition-base);
+  overflow: hidden;
+  
+  &:hover {
+    box-shadow: var(--shadow-base);
+    transform: translateY(-2px);
+  }
+  
+  .card-header {
+    background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-light);
+    
+    .card-title {
+      color: var(--text-primary);
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-sm);
+    }
+  }
+  
+  .card-body {
+    padding: var(--spacing-lg);
+  }
+}
+
+// Boutons améliorés
+.enhanced-button {
+  border-radius: var(--border-radius-base);
+  font-weight: 500;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-light);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
+  &.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, var(--primary-light), var(--primary-color));
+    }
+  }
+  
+  &.btn-success {
+    background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, var(--success-light), var(--success-color));
+    }
+  }
+  
+  &.btn-danger {
+    background: linear-gradient(135deg, var(--danger-color), var(--danger-dark));
+    border: none;
+    
+    &:hover {
+      background: linear-gradient(135deg, var(--danger-light), var(--danger-color));
+    }
+  }
+}
+
+// ==========================================
+// 🎨 ANIMATIONS
+// ==========================================
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// ==========================================
+// 🎯 UTILITAIRES
+// ==========================================
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-color), var(--warning-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+}
+
+.bg-gradient-success {
+  background: linear-gradient(135deg, var(--success-color), var(--success-dark));
+}
+
+.bg-gradient-warning {
+  background: linear-gradient(135deg, var(--warning-color), var(--warning-dark));
+}
+
+.bg-gradient-danger {
+  background: linear-gradient(135deg, var(--danger-color), var(--danger-dark));
+}
+
+.shadow-hover {
+  transition: box-shadow var(--transition-base);
+  
+  &:hover {
+    box-shadow: var(--shadow-base);
+  }
+}
+
+.scale-hover {
+  transition: transform var(--transition-base);
+  
+  &:hover {
+    transform: scale(1.02);
+  }
+}
+
+// ==========================================
+// 🎨 RESPONSIVE
+// ==========================================
+
+@media (max-width: 768px) {
+  .modal-header {
+    padding: var(--spacing-md) var(--spacing-lg);
+    
+    .modal-title {
+      font-size: 18px;
+    }
+  }
+  
+  .modal-body {
+    padding: var(--spacing-lg);
+  }
+  
+  .modal-footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    flex-direction: column;
+    
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+// ==========================================
+// 🎯 THÈME SOMBRE (OPTIONNEL)
+// ==========================================
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --bg-tertiary: #404040;
+    --text-primary: #ffffff;
+    --text-regular: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --border-light: #404040;
+    --border-base: #555555;
+    --border-dark: #666666;
+  }
+}

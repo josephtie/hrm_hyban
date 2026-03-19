@@ -1,0 +1,331 @@
+package com.nectux.mizan.hyban.personnel.web;
+
+import com.nectux.mizan.hyban.personnel.dto.EmployeeDocumentDTO;
+import com.nectux.mizan.hyban.personnel.entity.DocumentType;
+import com.nectux.mizan.hyban.personnel.entity.EmployeeDocument;
+import com.nectux.mizan.hyban.personnel.entity.Personnel;
+import com.nectux.mizan.hyban.personnel.entity.StorageLocation;
+import com.nectux.mizan.hyban.personnel.repository.DocumentTypeRepository;
+import com.nectux.mizan.hyban.personnel.repository.EmployeeDocumentRepository;
+import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
+import com.nectux.mizan.hyban.personnel.repository.StorageLocationRepository;
+import com.nectux.mizan.hyban.utils.Utils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+
+import jakarta.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.util.*;
+
+import com.nectux.mizan.hyban.common.dto.IdRequest;
+
+@RestController
+@RequestMapping("/api/personnel/documents")
+public class EmployeeDocumentController {
+
+
+    @Autowired
+    private PersonnelRepository personnelRepository;
+    @Autowired
+    private EmployeeDocumentRepository repository;
+
+    @Autowired
+    private DocumentTypeRepository documentTypeRepository;
+
+    @Autowired
+    private StorageLocationRepository storageLocationRepository;
+
+    @GetMapping
+    public List<EmployeeDocument> all() {
+        return repository.findAll();
+    }
+
+    @PostMapping
+    public EmployeeDocument create(@RequestBody EmployeeDocument doc) {
+        return repository.save(doc);
+    }
+
+    @PostMapping("/employeId")
+    public EmployeeDocumentDTO byEmployee(@RequestBody IdRequest req) {
+        Long idPersonnel = req.getId();
+        List<EmployeeDocument> dtos = repository.findByPersonnelId(idPersonnel);
+
+        EmployeeDocumentDTO response = new EmployeeDocumentDTO();
+        response.setRows(dtos);
+        response.setResult(true);
+        return response;
+    }
+
+
+
+        @Value("${app.upload-dir}")
+        private String uploadBasePath;
+
+
+    @PostMapping("/upload")
+    public EmployeeDocumentDTO uploadDocument(
+            @RequestParam("fichierDocument") MultipartFile uploadfile,
+            @RequestParam("idPersonnel") Long employeeId,
+            @RequestParam("idDocument") Long typeId,
+            @RequestParam("dateDepot") String dtedepot,
+            @RequestParam("statutpresent") Boolean statutpresent,
+            @RequestParam("numeroReference") String numeroReference,
+            @RequestParam("idStorage") Long locationId,
+            @RequestParam(value = "description", required = false) String description,
+            HttpServletRequest request) throws Exception {
+
+        EmployeeDocumentDTO employeeDocumentDTO = new EmployeeDocumentDTO();
+
+        DocumentType type = documentTypeRepository.findById(typeId).orElseThrow();
+        StorageLocation location = storageLocationRepository.findById(locationId).orElseThrow();
+        Personnel pers = personnelRepository.findById(employeeId).orElseThrow();
+
+        String safeLibelle = location.getNom().replaceAll("[^a-zA-Z0-9_-]", "_");
+
+        // Détection de l'environnement
+        String rootPath;
+        if (Files.exists(Paths.get("src/main/resources/uploads"))) {
+            rootPath = "src/main/resources/uploads/documents";
+        } else {
+            rootPath = request.getServletContext().getRealPath("/uploads/documents");
+        }
+
+        File folder = Paths.get(rootPath, safeLibelle, String.valueOf(pers.getMatricule())).toAbsolutePath().toFile();
+        if (!folder.exists()) folder.mkdirs();
+
+        String originalFilename = uploadfile.getOriginalFilename();
+        String extension = "";
+        int i = originalFilename.lastIndexOf('.');
+        if (i > 0) {
+            extension = originalFilename.substring(i);
+            originalFilename = originalFilename.substring(0, i);
+        }
+
+        String uniqueName = pers.getMatricule() + "_" + originalFilename + extension;
+        File dest = new File(folder, uniqueName);
+        uploadfile.transferTo(dest);
+
+        // Chemin relatif cohérent (ex: uploads/documents/Libelle/331/fichier.docx)
+        String relativePath = Paths.get("uploads", "documents", safeLibelle, String.valueOf(pers.getMatricule()), uniqueName).toString();
+
+        // Enregistrement en base
+        EmployeeDocument document = new EmployeeDocument();
+        document.setPersonnel(pers);
+        document.setDocumentType(type);
+        document.setDateDepot(Utils.stringToDate(dtedepot, "dd/MM/yyyy"));
+        document.setStorageLocation(location);
+        document.setUrlFichier(relativePath); // Chemin relatif
+        document.setRemarques(description);
+        document.setNumeroReference(numeroReference);
+        document.setPresent(statutpresent);
+
+        document = repository.save(document);
+
+        employeeDocumentDTO.setResult(true);
+        employeeDocumentDTO.setRow(document);
+        return employeeDocumentDTO;
+    }
+
+
+    @PostMapping("/download")
+    public ResponseEntity<Resource> downloadDocument(@RequestBody IdRequest req, HttpServletRequest request) throws IOException {
+        Long employeeId = req.getId();
+        EmployeeDocument doc = repository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Document introuvable avec id = " + employeeId));
+
+        String relativePath = doc.getUrlFichier().replaceFirst("^/+", ""); // nettoyage
+
+        Path absolutePath;
+
+        Path localUploadsPath = Paths.get("src/main/resources/uploads");
+        if (Files.exists(localUploadsPath)) {
+            absolutePath = Paths.get("src/main/resources").resolve(relativePath);
+        } else {
+            String realBasePath = request.getServletContext().getRealPath("/");
+            if (realBasePath != null) {
+                absolutePath = Paths.get(realBasePath).resolve(relativePath);
+            } else {
+                throw new IllegalStateException("Impossible de déterminer le chemin d'accès en production.");
+            }
+        }
+
+        if (!Files.exists(absolutePath)) {
+            throw new FileNotFoundException("Fichier introuvable : " + absolutePath);
+        }
+
+        Resource fileResource = new UrlResource(absolutePath.toUri());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + absolutePath.getFileName().toString() + "\"")
+                .body(fileResource);
+    }
+
+
+    @PostMapping("/delete")
+    public EmployeeDocumentDTO deleteDocument(@RequestBody IdRequest req, HttpServletRequest request) {
+        Long documentId = req.getId();
+        EmployeeDocumentDTO employeeDocumentDTO = new EmployeeDocumentDTO();
+        try {
+            EmployeeDocument doc = repository.findById(documentId)
+                    .orElseThrow(() -> new RuntimeException("Document introuvable avec id = " + documentId));
+
+            // Construction du chemin absolu
+            String relativePath = doc.getUrlFichier().replaceFirst("^/+", "");
+            Path filePath;
+
+            if (Files.exists(Paths.get("src/main/resources/uploads"))) {
+                filePath = Paths.get("src/main/resources").resolve(relativePath);
+            } else {
+                String realBasePath = request.getServletContext().getRealPath("/");
+                filePath = Paths.get(realBasePath).resolve(relativePath);
+            }
+
+            // Suppression du fichier physique
+            if (Files.exists(filePath)) {
+                Files.delete(filePath);
+            }
+
+            // Suppression en base de données
+            repository.delete(doc);
+            employeeDocumentDTO.setRows(repository.findByPersonnelId(doc.getPersonnel().getId()));
+            employeeDocumentDTO.setResult(true);
+            return employeeDocumentDTO;
+            //employeeDocumentDTO.setRow(document);
+        } catch (Exception e) {
+            // Map<String, Object> error = new HashMap<>();
+            employeeDocumentDTO.setResult(false);
+            employeeDocumentDTO.setMessage("Erreur lors de la suppression : " + e.getMessage());
+            return employeeDocumentDTO;
+        }
+    }
+
+
+//        @PostMapping("/upload")
+//        public EmployeeDocumentDTO uploadDocument(
+//                @RequestParam("fichierDocument") MultipartFile uploadfile,
+//                @RequestParam("idPersonnel") Long employeeId,
+//                @RequestParam("idDocument") Long typeId,
+//                @RequestParam("dateDepot") String dtedepot,
+//                @RequestParam("statutpresent") Boolean statutpresent,
+//                @RequestParam("numeroReference") String numeroReference,
+//                @RequestParam("idStorage") Long locationId,
+//                @RequestParam(value = "description", required = false) String description,HttpServletRequest request) throws Exception {
+//
+//            // Récupération des entités
+//            EmployeeDocumentDTO employeeDocumentDTO=new EmployeeDocumentDTO();
+//            DocumentType type = documentTypeRepository.findById(typeId).orElseThrow();
+//            StorageLocation location = storageLocationRepository.findById(locationId).orElseThrow();
+//            Personnel pers = personnelRepository.findById(employeeId).orElseThrow();
+//
+//            // Nettoyage du nom pour le chemin
+//            String safeLibelle = location.getNom().replaceAll("[^a-zA-Z0-9_-]", "_");
+//
+//            // Construction du chemin complet (relatif à la racine de l'application)
+//            // Détection de l'environnement (local vs Linux)
+//            String reportsPath;
+//            if (Files.exists(Paths.get("src/main/resources/uploads"))) {
+//                // Mode développement : accès direct au répertoire des ressources
+//                reportsPath = "src/main/resources/uploads/documents";
+//            } else {
+//                reportsPath = request.getSession().getServletContext().getRealPath( "/uploads/documents");
+//
+//
+//            }
+//
+//            File folder = Paths.get(reportsPath, safeLibelle, String.valueOf(pers.getMatricule())).toAbsolutePath().toFile();
+//            if (!folder.exists()) folder.mkdirs();
+//
+//            // Création du fichier
+//            String extension = uploadfile.getOriginalFilename().substring(uploadfile.getOriginalFilename().lastIndexOf("."));
+//            String uniqueName = pers.getMatricule() + "_"+ uploadfile.getOriginalFilename().toString() + extension;
+//            File dest = new File(folder, uniqueName);
+//            uploadfile.transferTo(dest);
+//
+//            // Chemin relatif pour stockage en base (à partir de `uploads/`)
+//         //   String relativePath = Paths.get(uploadBasePath, safeLibelle, String.valueOf(pers.getMatricule()), uniqueName).toString();
+//            String relativePath = Paths.get("uploads", "documents", safeLibelle, String.valueOf(pers.getMatricule()), uniqueName).toString();
+//            // Enregistrement en base
+//            EmployeeDocument document = new EmployeeDocument();
+//            document.setPersonnel(pers);
+//            document.setDocumentType(type);
+//            document.setDateDepot(Utils.stringToDate(dtedepot,"dd/MM/yyyy"));
+//            document.setStorageLocation(location);
+//            document.setUrlFichier(relativePath); // Chemin relatif
+//            document.setRemarques(description);
+//            document.setNumeroReference(numeroReference);
+//            document.setPresent(statutpresent);
+//
+//            document=repository.save(document);
+//            Map<String, Object> response = new HashMap<>();
+//            response.put("result", true);
+//            response.put("message", "Fichier sauvegardé : " + relativePath);
+//            response.put("filePath", relativePath);
+//            employeeDocumentDTO.setResult(true);
+//            employeeDocumentDTO.setRow(document);
+//            return employeeDocumentDTO;
+//        }
+//
+//
+//
+//    @GetMapping("/download")
+//    public ResponseEntity<Resource> downloadDocument(@RequestParam("idpersonnel") Long employeeId,HttpServletRequest request) throws IOException {
+//        EmployeeDocument doc = repository.findById(employeeId)
+//                .orElseThrow(() -> new RuntimeException("Document introuvable avec id = " + employeeId));
+//
+//        String relativePath = doc.getUrlFichier(); // ex: uploads/documents/Embauche/331/file.docx
+//        Path absolutePath;
+//
+//        // 1. Détection environnement local
+//        Path localUploadsPath = Paths.get("src/main/resources/uploads");
+//        if (Files.exists(localUploadsPath)) {
+//            absolutePath = Paths.get("src/main/resources").resolve(relativePath);
+//        }
+//        // 2. Environnement de production : Tomcat (webapps/hyban/uploads/...)
+//        else {
+//            // Récupère le chemin absolu à partir du contexte web
+//            String realBasePath = request.getServletContext().getRealPath("/");
+//            String relativePath = doc.getUrlFichier().replaceFirst("^/+", ""); // évite les chemins comme "/hyban/..."
+//
+//            if (realBasePath != null) {
+//                absolutePath = Paths.get(realBasePath).resolve(relativePath);
+//            } else {
+//                throw new IllegalStateException("Impossible de déterminer le chemin d'accès en production.");
+//            }
+//        }
+//
+//        if (!Files.exists(absolutePath)) {
+//            throw new FileNotFoundException("Fichier introuvable : " + absolutePath.toString());
+//        }
+//
+//        Resource fileResource = new UrlResource(absolutePath.toUri());
+//
+//        return ResponseEntity.ok()
+//                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + absolutePath.getFileName().toString() + "\"")
+//                .body(fileResource);
+//    }
+
+
+
+}
+
+
+
+
+

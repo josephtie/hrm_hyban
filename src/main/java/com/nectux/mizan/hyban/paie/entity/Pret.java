@@ -1,0 +1,54 @@
+package com.nectux.mizan.hyban.paie.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+
+import com.nectux.mizan.hyban.parametrages.entity.Auditable;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
+@Entity
+@Component("pret")
+@Scope("prototype")
+@Table(name="CGECI_RHPAIE_PRET")
+@SequenceGenerator(name="CGECI_RHPAIE_PRET_SEQUENCE", sequenceName="CGECI_RHPAIE_PRET_SEQ", initialValue=1, allocationSize=1)
+public class Pret extends Auditable {
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="CGECI_RHPAIE_PRET_SEQUENCE")
+	@Column(unique=true, nullable=false)
+	private Long id;
+	
+	@Column(unique=true, nullable=false)
+	private String libelle;
+		
+	public Pret() {
+		super();
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getLibelle() {
+		return libelle;
+	}
+
+	public void setLibelle(String libelle) {
+		this.libelle = libelle;
+	}
+
+	@Override
+	public String toString() {
+		return "Pret [id=" + id + ", libelle=" + libelle + "]";
+	}
+}
