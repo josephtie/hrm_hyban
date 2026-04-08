@@ -11,7 +11,8 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Étape 2: Runtime
-FROM openjdk:17-jdk-slim
+# RUNTIME
+FROM eclipse-temurin:17-jre-alpine
 
 # Installation des dépendances système nécessaires
 RUN apt-get update && apt-get install -y \
