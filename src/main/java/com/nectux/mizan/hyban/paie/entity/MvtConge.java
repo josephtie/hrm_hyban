@@ -23,6 +23,8 @@ import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.utils.DateManager;
 import com.nectux.mizan.hyban.utils.Utils;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("mvtconge")
 @Scope("prototype")
@@ -55,7 +57,7 @@ public class MvtConge extends Auditable {
 	
 
 	
-    private Double montantVerse; // 12 dernier mois
+    private BigDecimal montantVerse; // 12 dernier mois
 	
 	@Transient
 	private String mtnVerse;
@@ -144,11 +146,11 @@ public class MvtConge extends Auditable {
 		this.nombreJourPris = nombreJourPris;
 	}
 
-	public Double getMontantVerse() {
+	public BigDecimal getMontantVerse() {
 		return montantVerse;
 	}
 
-	public void setMontantVerse(Double montantVerse) {
+	public void setMontantVerse(BigDecimal montantVerse) {
 		this.montantVerse = montantVerse;
 	}
 

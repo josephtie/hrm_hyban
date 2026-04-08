@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +16,8 @@ import com.nectux.mizan.hyban.parametrages.repository.SocieteRepository;
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
 import com.nectux.mizan.hyban.personnel.repository.ContratPersonnelRepository;
-import com.nectux.mizan.hyban.utils.LivreDePaieGratification2;
+//
+// import com.nectux.mizan.hyban.utils.LivreDePaieGratification2;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,9 +33,9 @@ import jakarta.persistence.EntityNotFoundException;
 @Transactional
 @Service("gratificationService")
 public class GratificationServiceImpl implements GratificationService {
-	
+
 	private static final Logger logger = LogManager.getLogger(GratificationServiceImpl.class);
-	
+
 	@Autowired private ContratPersonnelRepository contratPersonnelRepository;
 	@Autowired private SocieteRepository societeRepository;
 	@Autowired private BulletinPaieRepository bulletinPaieRepository;
@@ -47,7 +49,7 @@ public class GratificationServiceImpl implements GratificationService {
 	public Gratification save(Gratification gratification) {
 		// TODO Auto-generated method stub
 		gratification = gratificationRepository.save(gratification);
-	
+
 		return gratification;
 	}
 
@@ -58,7 +60,7 @@ public class GratificationServiceImpl implements GratificationService {
 		GratificationDTO exerciceDTO = new GratificationDTO();
 		try{
 			Echelonnement exercice = new Echelonnement();
-		
+
 			if(id != null)
 				exercice = gratificationRepository.findOne(id);
 			exercice.setAnnee(annee);
@@ -80,7 +82,7 @@ public class GratificationServiceImpl implements GratificationService {
 		// TODO Auto-generated method stub
 		Gratification gratification = gratificationRepository.findById(id) .orElseThrow(() -> new EntityNotFoundException("ContratPersonnel not found for id " + id));
 
-	
+
 		gratificationRepository.delete(gratification);
 		return true;
 	}
@@ -96,7 +98,7 @@ public class GratificationServiceImpl implements GratificationService {
 			Double salaireBase, Double sursalaire, Double indemniteLogement, Double avance, Double alios,
 			Double carec) {
 		// TODO Auto-generated method stub
-		
+
 		return null;
 	}
 
@@ -106,7 +108,7 @@ public class GratificationServiceImpl implements GratificationService {
 		GratificationDTO gratificationDTO = new GratificationDTO();
 		gratificationList = new ArrayList<Gratification>();
 		List<ContratPersonnel> contratPersonnelList = contratPersonnelRepository.findByStatutTrue();
-		LivreDePaieGratification2 lpg = null;
+		//LivreDePaieGratification2 lpg = null;
 		Societe mysociete=null;
 		List<Societe> malist=societeRepository.findAll();
 		if(malist.size()>0) mysociete = malist.get(0);
@@ -122,25 +124,25 @@ public class GratificationServiceImpl implements GratificationService {
 			StringBuilder nom = new StringBuilder();
 			Double salbase=0d;
 			if(typegratif=="SALAIRE CATEGORIEL") {
-				lpg = new LivreDePaieGratification2(nom.append(contratPersonnel.getPersonnel().getNom()).append(" ").append(contratPersonnel.getPersonnel().getPrenom()).toString(),
-						contratPersonnel.getPersonnel().getNombrePart(), contratPersonnel.getCategorie().getSalaireDeBase() * gratifca / 100, 25000.0, 0.0, contratPersonnel.getPersonnel().getdArrivee(), contratPersonnel.getPersonnel().getSituationMatri(), contratPersonnel.getPersonnel().getNombrEnfant(), contratPersonnel.getFonction().getLibelle());
+			//	lpg = new LivreDePaieGratification2(nom.append(contratPersonnel.getPersonnel().getNom()).append(" ").append(contratPersonnel.getPersonnel().getPrenom()).toString(),
+				//		contratPersonnel.getPersonnel().getNombrePart(), contratPersonnel.getCategorie().getSalaireDeBase().multiply(BigDecimal.valueOf(gratifca)).divide(BigDecimal.valueOf(100)), 25000.0, 0.0, contratPersonnel.getPersonnel().getdArrivee(), contratPersonnel.getPersonnel().getSituationMatri(), contratPersonnel.getPersonnel().getNombrEnfant(), contratPersonnel.getFonction().getLibelle());
 			}
 			if(typegratif=="SALAIRE NET A PAYER") {
 
 				Double pret=0d;Double avance=0d;Double netapayer=0d;Double grati=0d;
-				netapayer=bulletinPaieRepository.findByBulletinAndPersonnel(contratPersonnel.getPersonnel().getId(),periodePaieRepository.findByCloture(false).getId()).getNetapayer();
-				pret=bulletinPaieRepository.findByBulletinAndPersonnel(contratPersonnel.getPersonnel().getId(),periodePaieRepository.findByCloture(false).getId()).getPretaloes();
-				avance=bulletinPaieRepository.findByBulletinAndPersonnel(contratPersonnel.getPersonnel().getId(),periodePaieRepository.findByCloture(false).getId()).getAvanceetacompte();
+				//netapayer=bulletinPaieRepository.findByBulletinAndPersonnel(contratPersonnel.getPersonnel().getId(),periodePaieRepository.findByCloture(false).getId()).getNetapayer();
+				//pret=bulletinPaieRepository.findByBulletinAndPersonnel(contratPersonnel.getPersonnel().getId(),periodePaieRepository.findByCloture(false).getId()).getPretaloes();
+				//avance=bulletinPaieRepository.findByBulletinAndPersonnel(contratPersonnel.getPersonnel().getId(),periodePaieRepository.findByCloture(false).getId()).getAvanceetacompte();
 				grati=netapayer-pret-avance;
-				lpg = new LivreDePaieGratification2(nom.append(contratPersonnel.getPersonnel().getNom()).append(" ").append(contratPersonnel.getPersonnel().getPrenom()).toString(),
-						contratPersonnel.getPersonnel().getNombrePart(), grati*gratifca/100, 25000.0, 0.0, contratPersonnel.getPersonnel().getdArrivee(), contratPersonnel.getPersonnel().getSituationMatri(), contratPersonnel.getPersonnel().getNombrEnfant(), contratPersonnel.getFonction().getLibelle());
+			//	lpg = new LivreDePaieGratification2(nom.append(contratPersonnel.getPersonnel().getNom()).append(" ").append(contratPersonnel.getPersonnel().getPrenom()).toString(),
+				//		contratPersonnel.getPersonnel().getNombrePart(), grati*gratifca/100, 25000.0, 0.0, contratPersonnel.getPersonnel().getdArrivee(), contratPersonnel.getPersonnel().getSituationMatri(), contratPersonnel.getPersonnel().getNombrEnfant(), contratPersonnel.getFonction().getLibelle());
 
 			}
 
-			gratificationList.add(new Gratification((double) lpg.getB(), lpg.getC(), lpg.getK(), lpg.getE(), lpg.getF(), lpg.getG(), lpg.getI(), 
-					lpg.getN(), lpg.getO(), lpg.getP(), lpg.getR(), lpg.getS(), lpg.getT(), lpg.getU(), lpg.getW(), lpg.getD(), 
-					lpg.getL(), lpg.getH(), lpg.getJ(), lpg.getM(), lpg.getQ(), lpg.getV(), lpg.getX(), lpg.getY(), contratPersonnel, periodePaie));
-			/*lpg = new LivreDePaieGratification2(nom.append(contratPersonnel.getPersonnel().getNom()).append(" ").append(contratPersonnel.getPersonnel().getPrenom()).toString(), 
+		//	gratificationList.add(new Gratification((double) lpg.getB(), lpg.getC(), lpg.getK(), lpg.getE(), lpg.getF(), lpg.getG(), lpg.getI(),
+			//		lpg.getN(), lpg.getO(), lpg.getP(), lpg.getR(), lpg.getS(), lpg.getT(), lpg.getU(), lpg.getW(), lpg.getD(),
+			//		lpg.getL(), lpg.getH(), lpg.getJ(), lpg.getM(), lpg.getQ(), lpg.getV(), lpg.getX(), lpg.getY(), contratPersonnel, periodePaie));
+			/*lpg = new LivreDePaieGratification2(nom.append(contratPersonnel.getPersonnel().getNom()).append(" ").append(contratPersonnel.getPersonnel().getPrenom()).toString(),
 					contratPersonnel.getPersonnel().getNombrePart(), gratificationBase, contratPersonnel.getIndemniteTransport(), indemniteFinCarriere, contratPersonnel.getPersonnel().getdArrivee(), contratPersonnel.getPersonnel().getSituationMatri(), contratPersonnel.getPersonnel().getNombrEnfant(), contratPersonnel.getFonction().getLibelle());*/
 		}
 
@@ -178,8 +180,8 @@ public class GratificationServiceImpl implements GratificationService {
 	public GratificationDTO loadGratification(Pageable pageable, String search) {
 		// TODO Auto-generated method stub
 		GratificationDTO gratificationDTO = new GratificationDTO();
-		Page<Gratification> page = gratificationRepository.findByContratPersonnelPersonnelNomIgnoreCaseContaining(pageable,search);	
-		
+		Page<Gratification> page = gratificationRepository.findByContratPersonnelPersonnelNomIgnoreCaseContaining(pageable,search);
+
 		gratificationDTO.setRows(page.getContent());
 		gratificationDTO.setTotal(page.getTotalElements());
 		logger.info(new StringBuilder().append(">>>>> UTILISATEURS CHARGES AVEC SUCCES").toString());
@@ -191,7 +193,7 @@ public class GratificationServiceImpl implements GratificationService {
 		// TODO Auto-generated method stub
 		GratificationDTO gratificationDTO = new GratificationDTO();
 		List<Gratification> gratifList = new ArrayList<Gratification>();
-		
+
 		for(Gratification gratification : gratificationList){
 			List<Gratification> gratifListExist = new ArrayList<Gratification>();
 			gratifListExist=gratificationRepository.findByPeriodePaieIdAndContratPersonnelId(gratification.getPeriodePaie().getId(), gratification.getContratPersonnel().getId());
@@ -215,8 +217,8 @@ public class GratificationServiceImpl implements GratificationService {
 		// TODO Auto-generated method stub
 		return gratificationRepository.findByPeriodePaieId(id);
 	}
-	
-	
+
+
 	@Override
 	public Gratification findGratification(Long id) {
 		// TODO Auto-generated method stub
@@ -232,9 +234,9 @@ public class GratificationServiceImpl implements GratificationService {
 	/*@Override
 	public GratificationDTO loadGratificationProvisional1(Pageable pageable, String search) {
 		// TODO Auto-generated method stub
-		
+
 	}
 */
 
-	
+
 }

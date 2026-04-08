@@ -24,6 +24,8 @@ import com.nectux.mizan.hyban.parametrages.entity.Rubrique;
 import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
 import com.nectux.mizan.hyban.utils.Utils;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("primePersonnel")
 @Scope("prototype")
@@ -36,7 +38,7 @@ public class PrimePersonnel extends Auditable {
 	@Column(unique=true, nullable=false)
 	private Long id;
 	
-	private Double montant;
+	private BigDecimal montant;
 	
 	
 	private Integer valeur;
@@ -80,11 +82,11 @@ public class PrimePersonnel extends Auditable {
 		this.id = id;
 	}
 
-	public Double getMontant() {
+	public BigDecimal getMontant() {
 		return montant;
 	}
 
-	public void setMontant(Double montant) {
+	public void setMontant(BigDecimal montant) {
 		this.montant = montant;
 	}
 

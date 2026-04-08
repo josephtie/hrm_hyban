@@ -12,6 +12,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("rubrique")
 @Scope("prototype")
@@ -31,11 +33,11 @@ public class Rubrique extends Auditable {
 	private String libelle;
 	
 	@Column( nullable=true)
-	private Double taux;
+	private BigDecimal taux;
 	
 	
 	@Column( nullable=true)
-	private Double mtExedent;
+	private BigDecimal mtExedent;
 	
 	
 	@Transient
@@ -48,7 +50,7 @@ public class Rubrique extends Auditable {
 
     private String modeCalcul;
 
-    private Double  valeurDef;
+    private BigDecimal  valeurDef;
 
     @Column(nullable=true)
     private Boolean cotisable;
@@ -104,11 +106,11 @@ public class Rubrique extends Auditable {
 		this.libelle = libelle;
 	}
 
-	public Double getTaux() {
+	public BigDecimal getTaux() {
 		return taux;
 	}
 
-	public void setTaux(Double taux) {
+	public void setTaux(BigDecimal taux) {
 		this.taux = taux;
 	}
 
@@ -144,11 +146,11 @@ public class Rubrique extends Auditable {
         this.modeCalcul = modeCalcul;
     }
 
-    public Double getValeurDef() {
+    public BigDecimal getValeurDef() {
         return valeurDef;
     }
 
-    public void setValeurDef(Double valeurDef) {
+    public void setValeurDef(BigDecimal valeurDef) {
         this.valeurDef = valeurDef;
     }
 
@@ -168,11 +170,11 @@ public class Rubrique extends Auditable {
         this.description = description;
     }
 
-    public Double getMtExedent() {
+    public BigDecimal getMtExedent() {
 		return mtExedent;
 	}
 
-	public void setMtExedent(Double mtExedent) {
+	public void setMtExedent(BigDecimal mtExedent) {
 		this.mtExedent = mtExedent;
 	}
 
@@ -199,7 +201,7 @@ public class Rubrique extends Auditable {
 	}
 
 	@JsonProperty("mtExedent")
-	public Double getMtExedentForFrontend() {
+	public BigDecimal getMtExedentForFrontend() {
 		return mtExedent;
 	}
 

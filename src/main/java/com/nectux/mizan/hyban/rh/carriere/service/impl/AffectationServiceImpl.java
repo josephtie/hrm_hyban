@@ -183,7 +183,8 @@ public class AffectationServiceImpl implements AffectationService {
 			Boolean present,
 			String dateDebut,
 			String dateFin,
-			String observation) {
+			String observation,
+			String documentPath) {
 
 		AffectationDTO dto = new AffectationDTO();
 		List<Erreur> erreurs = new ArrayList<>();
@@ -257,6 +258,9 @@ public class AffectationServiceImpl implements AffectationService {
 							.orElseThrow(() -> new EntityNotFoundException("Site introuvable"))
 			);
 
+			// ✅ Ajout du chemin du document
+			affectation.setUrlDocument(documentPath);
+
 			affectation.setDateDebut(Utils.stringToDate(dateDebut, "dd/MM/yyyy"));
 
 			if (dateFin != null && !dateFin.isBlank()) {
@@ -287,7 +291,7 @@ public class AffectationServiceImpl implements AffectationService {
 			// =========================
 			affectation = affectationRepository.save(affectation);
 
-			dto.setResult(true);
+			dto.setResult("success");
 			dto.setStatus(true);
 			dto.setRow(affectation);
 			dto.setMessage("Affectation enregistrée avec succès");
@@ -463,14 +467,28 @@ public class AffectationServiceImpl implements AffectationService {
 
 	@Override
 	public AffectationDTO findAffectationsByPersonnel(Long idPersonnel) {
-		// TODO Auto-generated method stub
 		AffectationDTO affectationDTO = new AffectationDTO();
 		List<Affectation> listAffectation = new ArrayList<Affectation>();
 		erreur = new Erreur();
 		listErreur = new ArrayList<Erreur>();
 		try{
+			// ✅ Utiliser la méthode standard avec le bon nom de paramètre
+			System.out.println("🔍 Recherche des affectations pour personnel ID: " + idPersonnel);
 			listAffectation = affectationRepository.findByPersonnelId(idPersonnel);
-			if(listAffectation == null){
+			System.out.println("📋 Nombre d'affectations trouvées: " + (listAffectation != null ? listAffectation.size() : 0));
+			
+			// Ajouter le tri manuel par date de début décroissante
+			if (listAffectation != null && !listAffectation.isEmpty()) {
+				listAffectation.sort((a1, a2) -> {
+					if (a1.getDateDebut() == null && a2.getDateDebut() == null) return 0;
+					if (a1.getDateDebut() == null) return 1;
+					if (a2.getDateDebut() == null) return -1;
+					return a2.getDateDebut().compareTo(a1.getDateDebut()); // Décroissant
+				});
+				System.out.println("✅ Tri effectué, première affectation: " + listAffectation.get(0).getId());
+			}
+			
+			if(listAffectation == null || listAffectation.isEmpty()){
 				affectationDTO.setResult(true);
 				affectationDTO.setStatus(true);
 				affectationDTO.setRow(null);
@@ -481,7 +499,7 @@ public class AffectationServiceImpl implements AffectationService {
 			} else {
 				int i = listAffectation.size();
 				sb = new StringBuilder();
-				sb.append(i).append(" affectation(s) trouvee(s) avec succes");
+				sb.append(i).append(" affectation(s) trouvee(s) avec succes - Historique complet");
 				affectationDTO.setResult(true);
 				affectationDTO.setStatus(true);
 				affectationDTO.setRow(null);
@@ -499,8 +517,8 @@ public class AffectationServiceImpl implements AffectationService {
 			affectationDTO.setStatus(false);
 			affectationDTO.setRow(null);
 			affectationDTO.setRows(null);
-			affectationDTO.setMessage(ex.getMessage());
 			affectationDTO.setTotal(0);
+			affectationDTO.setMessage(ex.getMessage());
 			affectationDTO.setErrors(listErreur);
 		}
 		return affectationDTO;

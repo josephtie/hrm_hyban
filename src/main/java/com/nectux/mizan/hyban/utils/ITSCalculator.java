@@ -1,4 +1,71 @@
 package com.nectux.mizan.hyban.utils;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+public class ITSCalculator {
+
+    private static final BigDecimal[][] TRANCHES = {
+            {bd("0"), bd("75000"), bd("0")},
+            {bd("75000"), bd("240000"), bd("0.16")},
+            {bd("240000"), bd("800000"), bd("0.21")},
+            {bd("800000"), bd("2400000"), bd("0.24")},
+            {bd("2400000"), bd("8000000"), bd("0.28")},
+            {bd("8000000"), bd("999999999999"), bd("0.32")}
+    };
+
+    public static BigDecimal calculerITS(BigDecimal revenuImposable, boolean afficherDetails) {
+
+        BigDecimal impots = BigDecimal.ZERO;
+
+        if (revenuImposable == null) {
+            return BigDecimal.ZERO;
+        }
+
+        for (BigDecimal[] tranche : TRANCHES) {
+
+            BigDecimal bas = tranche[0];
+            BigDecimal haut = tranche[1];
+            BigDecimal taux = tranche[2];
+
+            if (revenuImposable.compareTo(bas) > 0) {
+
+                BigDecimal plafond = revenuImposable.min(haut);
+                BigDecimal taxable = plafond.subtract(bas);
+
+                if (taxable.compareTo(BigDecimal.ZERO) > 0) {
+
+                    BigDecimal impotsTranche = taxable.multiply(taux);
+
+                    impots = impots.add(impotsTranche);
+
+                    if (afficherDetails) {
+                        System.out.println(
+                                "Tranche: " + bas + " - " + haut +
+                                        " FCFA | Taux: " + taux.multiply(bd("100")) +
+                                        "% | Taxable: " + taxable +
+                                        " FCFA | Impôt: " + impotsTranche
+                        );
+                    }
+                }
+
+            } else {
+                break;
+            }
+        }
+
+        if (afficherDetails) {
+            System.out.println(">>> Total ITS dû: " + impots);
+        }
+
+        return impots.setScale(0, RoundingMode.HALF_UP);
+    }
+
+    private static BigDecimal bd(String value) {
+        return new BigDecimal(value);
+    }
+}
+/*
 public class ITSCalculator {
 
     private static final double[][] TRANCHES = {
@@ -44,3 +111,4 @@ public class ITSCalculator {
         double its = calculerITS(revenu, true);
     }
 }
+*/

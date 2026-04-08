@@ -17,7 +17,7 @@ export interface LoginResponse {
 
 // Configuration Keycloak
 const keycloakConfig = {
-  tokenUrl: '/keycloak/realms/hyban/protocol/openid-connect/token', // Utiliser le proxy Vite
+  tokenUrl: '/realms/hyban/protocol/openid-connect/token', // Utiliser le proxy Vite
   clientId: 'hrm_frontend',
   grantType: 'password',
   scope: 'openid profile email'

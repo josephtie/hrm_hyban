@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.utils.Utils;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("rubriqvariable")
 @Scope("prototype")
@@ -34,25 +36,25 @@ public class RubriqVariable extends Auditable {
 	@Column(unique=true, nullable=false)
 	private Long id;
 	
-	private Double cn;
+	private BigDecimal cn;
 	
-	private Double igr;
+	private BigDecimal igr;
 	
-    private Double amao;
+    private BigDecimal amao;
 	
-	private Double synaoni;
+	private BigDecimal synaoni;
 	
-	private Double mugefci;
+	private BigDecimal mugefci;
 	
-	private Double ivoireSante;
+	private BigDecimal ivoireSante;
 	
-	private Double ivoirePrev;
+	private BigDecimal ivoirePrev;
 	
-	private Double diversgainsImp;
+	private BigDecimal diversgainsImp;
 	
-	private Double diversgains;
+	private BigDecimal diversgains;
 	
-	private Double regularisation;
+	private BigDecimal regularisation;
 	
 	
 	@Transient
@@ -153,67 +155,67 @@ public class RubriqVariable extends Auditable {
 		this.dDatedesaisie = dDatedesaisie;
 	}
 
-	public Double getCn() {
+	public BigDecimal getCn() {
 		return cn;
 	}
 
-	public void setCn(Double cn) {
+	public void setCn(BigDecimal cn) {
 		this.cn = cn;
 	}
 
-	public Double getIgr() {
+	public BigDecimal getIgr() {
 		return igr;
 	}
 
-	public void setIgr(Double igr) {
+	public void setIgr(BigDecimal igr) {
 		this.igr = igr;
 	}
 
-	public Double getAmao() {
+	public BigDecimal getAmao() {
 		return amao;
 	}
 
-	public void setAmao(Double amao) {
+	public void setAmao(BigDecimal amao) {
 		this.amao = amao;
 	}
 
-	public Double getSynaoni() {
+	public BigDecimal getSynaoni() {
 		return synaoni;
 	}
 
-	public void setSynaoni(Double synaoni) {
+	public void setSynaoni(BigDecimal synaoni) {
 		this.synaoni = synaoni;
 	}
 
-	public Double getIvoireSante() {
+	public BigDecimal getIvoireSante() {
 		return ivoireSante;
 	}
 
-	public void setIvoireSante(Double ivoireSante) {
+	public void setIvoireSante(BigDecimal ivoireSante) {
 		this.ivoireSante = ivoireSante;
 	}
 
-	public Double getIvoirePrev() {
+	public BigDecimal getIvoirePrev() {
 		return ivoirePrev;
 	}
 
-	public void setIvoirePrev(Double ivoirePrev) {
+	public void setIvoirePrev(BigDecimal ivoirePrev) {
 		this.ivoirePrev = ivoirePrev;
 	}
 
-	public Double getDiversgainsImp() {
+	public BigDecimal getDiversgainsImp() {
 		return diversgainsImp;
 	}
 
-	public void setDiversgainsImp(Double diversgainsImp) {
+	public void setDiversgainsImp(BigDecimal diversgainsImp) {
 		this.diversgainsImp = diversgainsImp;
 	}
 
-	public Double getDiversgains() {
+	public BigDecimal getDiversgains() {
 		return diversgains;
 	}
 
-	public void setDiversgains(Double diversgains) {
+	public void setDiversgains(BigDecimal diversgains) {
 		this.diversgains = diversgains;
 	}
 
@@ -281,11 +283,11 @@ public class RubriqVariable extends Auditable {
 		this.mtdiversgains = mtdiversgains;
 	}
 
-	public Double getMugefci() {
+	public BigDecimal getMugefci() {
 		return mugefci;
 	}
 
-	public void setMugefci(Double mugefci) {
+	public void setMugefci(BigDecimal mugefci) {
 		this.mugefci = mugefci;
 	}
 
@@ -297,11 +299,11 @@ public class RubriqVariable extends Auditable {
 		this.mtmugefci = mtmugefci;
 	}
 
-	public Double getRegularisation() {
+	public BigDecimal getRegularisation() {
 		return regularisation;
 	}
 
-	public void setRegularisation(Double regularisation) {
+	public void setRegularisation(BigDecimal regularisation) {
 		this.regularisation = regularisation;
 	}
 

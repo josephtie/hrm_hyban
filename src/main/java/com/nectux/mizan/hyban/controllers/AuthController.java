@@ -24,12 +24,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String username, @RequestParam String password) {
-        String tokenUrl = "http://192.168.1.2:8080/realms/hyban/protocol/openid-connect/token";
+        String keycloakHost = System.getenv().getOrDefault("KEYCLOAK_ADMIN_HOST", "http://192.168.1.2:8080");
+        String tokenUrl = keycloakHost + "/realms/hyban/protocol/openid-connect/token";
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "password");
-        form.add("client_id", "backend_hrm");
-        form.add("client_secret", "URdzyynRx6zK3Kc30mUFg8B7pUhMyxVC");
+        form.add("client_id", "hrm_frontend");
+        form.add("client_secret", "b6cFLwyL2MakdzHxomjsamxesop9IbIE");
         form.add("username", username);
         form.add("password", password);
 

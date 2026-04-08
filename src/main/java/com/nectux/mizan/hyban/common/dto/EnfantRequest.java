@@ -9,7 +9,8 @@ public class EnfantRequest {
     private String lieuNaissance;
     private String telephone;
     private Character sexe;
-
+    private Boolean aCharge;
+    private String ecole;
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Long getIdPersonnel() { return idPersonnel; }
@@ -31,5 +32,25 @@ public class EnfantRequest {
 
     public void setTelephone(String telephone) {
         this.telephone = telephone;
+    }
+
+
+
+    public String getEcole() {
+        return ecole;
+    }
+
+
+
+    public void setEcole(String ecole) {
+        this.ecole = ecole;
+    }
+
+    public Boolean getaCharge() {
+        return aCharge;
+    }
+
+    public void setaCharge(Boolean aCharge) {
+        this.aCharge = aCharge;
     }
 }

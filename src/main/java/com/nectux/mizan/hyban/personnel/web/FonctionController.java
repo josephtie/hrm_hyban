@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
+import com.nectux.mizan.hyban.common.dto.BanqueRequest;
+import com.nectux.mizan.hyban.parametrages.dto.BanqueDTO;
 import com.nectux.mizan.hyban.parametrages.entity.Societe;
 // import com.nectux.mizan.hyban.parametrages.entity.Utilisateur;
 import com.nectux.mizan.hyban.personnel.service.FonctionService;
@@ -98,5 +100,30 @@ public class FonctionController {
 	public @ResponseBody List<Fonction> getFonctionList() {
 		return fonctionService.findFonctions();
 	}
+
+
+
+    @PostMapping("/trouver")
+    public ResponseEntity<FonctionDTO> findFonct(@RequestBody BanqueRequest request) {
+        try {
+            FonctionDTO result = fonctionService.findFoncts(request.getId());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la recherche de la banque", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/lister")
+    public ResponseEntity<FonctionDTO> getFonct() {
+        try {
+            FonctionDTO result =fonctionService.findFonct();
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la liste des banques", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

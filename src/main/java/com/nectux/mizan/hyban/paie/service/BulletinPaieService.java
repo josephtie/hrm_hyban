@@ -1,12 +1,11 @@
 package com.nectux.mizan.hyban.paie.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-import com.nectux.mizan.hyban.paie.dto.LivreDePaieDTOV2;
+import com.nectux.mizan.hyban.paie.dto.*;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
-import com.nectux.mizan.hyban.paie.dto.BulletinPaieDTO;
-import com.nectux.mizan.hyban.paie.dto.LivreDePaieDTO;
 import com.nectux.mizan.hyban.paie.entity.BulletinPaie;
 import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
@@ -17,8 +16,11 @@ import org.springframework.data.domain.Pageable;
 public interface BulletinPaieService {
 	
 	public BulletinPaie save(BulletinPaie bulletinPaie);
-	
-	public LivreDePaieDTO   genererMois1(Pageable pageable,Long idPeriode);
+
+    //@SuppressWarnings({ "unused", "null" })
+    LivreDePaieDTO  genererMois1(Pageable pageable, Long idPeriode);
+
+    //	public LivreDePaieDTO   genererMois1(Pageable pageable,Long idPeriode);
 	public LivreDePaieDTO   genererOptimiseMois1(Pageable pageable,Long idPeriode);
 	public BulletinPaieDTO generateLivreDePaie(Pageable pageable);
 	
@@ -26,7 +28,7 @@ public interface BulletinPaieService {
 //	public List<BulletinPaie>   genererMois1Personnel(Long idPeriode,Long idPersonnel);
 	public List<BulletinPaie>   rechercherBulletinMois(PeriodePaie periodePaie);
 	public List<BulletinPaie>   rechercherBulletinMoisCalculer(PeriodePaie periodePaie,boolean etat);
-    public LivreDePaieDTOV2 genererOptimiseMoisVersion2(Pageable pageable, Long idPeriode);
+   // public LivreDePaieDTOV2 genererOptimiseMoisVersion2(Pageable pageable, Long idPeriode);
 	public List<BulletinPaie>   rechercherBulletinAnneeCalculer(Long idanne,boolean etat);
 	public List<BulletinPaie>   rechercherBulletinAnnuel(Long anneeId,Long Idpers);
 	public List<BulletinPaie>   rechercherBulletinAnnuelglobal(Long anneeId);
@@ -39,59 +41,64 @@ public interface BulletinPaieService {
 	public BulletinPaieDTO loadBulletinPaiechearch(Pageable pageable,String valeurarechercher);
 	//public BulletinPaieDTO loadBulletinPaie(Pageable pageable,PeriodePaie maperiode, String search);
 	public BulletinPaieDTO loadBulletinPaie(Pageable pageable,PeriodePaie maperiode, String search);
+    public BulletinSpecialeDTO BulletinMoisSpecialeCalculer(Pageable pageable, PeriodePaie periodePaie);
+    public BulletinSpecialeDTO generateEmployeLivreDePaie(Pageable pageable);
+    public LivreDePaieSpecialeDTO genererOptimiseEmployeeMois1(Pageable pageable, Long idPeriode);
 
+    public BulletinSpecialeDTO loadBulletinSpeciale(Pageable pageable,PeriodePaie maperiode, String search);
+    public BulletinSpecialeDTO loadBulletinSpeciale(Pageable pageable,PeriodePaie maperiode);
 	//BulletinPaieDTO findAllfilter(Map<String,String> filters, Pageable pageable);
 
-	public Double salaireMoyenMensuel(ContratPersonnel contratPersonnel);
+	public BigDecimal salaireMoyenMensuel(ContratPersonnel contratPersonnel);
 
-	public Double indemniteMoyenMensuel(ContratPersonnel contratPersonnel);
+	public BigDecimal indemniteMoyenMensuel(ContratPersonnel contratPersonnel);
 	
 	public List<BulletinPaie>   findBulletinByPeriodePaieContract(Long idPeriode);
 	
 	//public List<BulletinPaie> findAllBulletinByPeriodePaieForLivrePaieforBanque(Long idPeriodePaie) ;
 	
-	public Double[]  MasseSalarialdeLexo(PeriodePaie maperiode);
-	public Double  MasseSalarialMois(PeriodePaie maperiode);
+	public BigDecimal[]  MasseSalarialdeLexo(PeriodePaie maperiode);
+	public BigDecimal  MasseSalarialMois(PeriodePaie maperiode);
 	public List<BulletinPaie> findAllBulletinByvirementforBanque(Long idPeriodePaie, Long idBanque);
 	
-	public Double MensuelCn(PeriodePaie maperiode);
+	public BigDecimal MensuelCn(PeriodePaie maperiode);
 	
-	public Double MensuelIgr(PeriodePaie maperiode);
+	public BigDecimal MensuelIgr(PeriodePaie maperiode);
 	
-	public Double MensuelBrut(PeriodePaie maperiode);
-	public Double[]  MensuelBaseCnpsSup(PeriodePaie maperiode);
+	public BigDecimal MensuelBrut(PeriodePaie maperiode);
+	public BigDecimal[]  MensuelBaseCnpsSup(PeriodePaie maperiode);
 	
-	public Double[]  MensuelBaseCnpsSup70000(PeriodePaie maperiode);
-	
-	
-	public Double MensuelBrutImposable(PeriodePaie maperiode);
+	public BigDecimal[]  MensuelBaseCnpsSup70000(PeriodePaie maperiode);
 	
 	
-	public Double MensuelIs(PeriodePaie maperiode);
+	public BigDecimal MensuelBrutImposable(PeriodePaie maperiode);
 	
 	
-	public Double MensuelJourtravail(PeriodePaie maperiode);
+	public BigDecimal MensuelIs(PeriodePaie maperiode);
 	
-	public Double MensuelIgrPatron(PeriodePaie maperiode);
+	
+	public BigDecimal MensuelJourtravail(PeriodePaie maperiode);
+	
+	public BigDecimal MensuelIgrPatron(PeriodePaie maperiode);
 	
 	public Integer Nbrebulletin(Long idcontratPersonnel);
 	
 	
-	public Double MensuelCnAnne(Long anneeId);
+	public BigDecimal MensuelCnAnne(Long anneeId);
 	
-	public Double MensuelIgrAnne(Long anneeId);
+	public BigDecimal MensuelIgrAnne(Long anneeId);
 	
-	public Double MensuelBrutAnne(Long anneeId);
-	
-	
-	public Double MensuelIsAnne(Long anneeId);
-	
-	public Double MensuelIgrPatronAnne(Long anneeId);
+	public BigDecimal MensuelBrutAnne(Long anneeId);
 	
 	
-	public Double MensuelBrutImpAnne(Long anneeId);
+	public BigDecimal MensuelIsAnne(Long anneeId);
+	
+	public BigDecimal MensuelIgrPatronAnne(Long anneeId);
+	
+	
+	public BigDecimal MensuelBrutImpAnne(Long anneeId);
 
-	public Double[] MensuelBaseCnpsInf(PeriodePaie periodePaie);
+	public BigDecimal[] MensuelBaseCnpsInf(PeriodePaie periodePaie);
 
 	public List<PrintLs> calculerMasseSalarialeParTypeContrat(PeriodePaie periode);
 	public List<PrintLs> calculerMasseSalarialeParSite(PeriodePaie periode);

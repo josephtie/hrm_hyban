@@ -20,7 +20,7 @@ import com.nectux.mizan.hyban.paie.dto.LivreDePaieSimulationDTO;
 import com.nectux.mizan.hyban.paie.dto.PretDTO;
 import com.nectux.mizan.hyban.paie.dto.PretPersonnelDTO;
 import com.nectux.mizan.hyban.personnel.entity.Categorie;
-import com.nectux.mizan.hyban.paie.entity.LivreDePaieSimulation;
+//import com.nectux.mizan.hyban.paie.entity.LivreDePaieSimulation;
 import com.nectux.mizan.hyban.paie.entity.Pret;
 import com.nectux.mizan.hyban.paie.entity.PrimePersonnel;
 import com.nectux.mizan.hyban.paie.service.PretPersonnelService;
@@ -202,66 +202,67 @@ public class PretPersonnelRestController {
         }
     }
 
-    @GetMapping("/simulation-calcul")
-    public ResponseEntity<LivreDePaieSimulationDTO> simulerCalcul(
-            @RequestParam Long categorie,
-            @RequestParam Double montantTransp,
-            @RequestParam Integer situationmatrimoniale,
-            @RequestParam Integer nombreenfant,
-            @RequestParam Double salaireNet) {
+//    @GetMapping("/simulation-calcul")
+//    public ResponseEntity<LivreDePaieSimulationDTO> simulerCalcul(
+//            @RequestParam Long categorie,
+//            @RequestParam Double montantTransp,
+//            @RequestParam Integer situationmatrimoniale,
+//            @RequestParam Integer nombreenfant,
+//            @RequestParam Double salaireNet) {
         
-        try {
-            LivreDePaieSimulation livredePaie = null;
-            LivreDePaieSimulationDTO livreDePaieSimulationDTO = new LivreDePaieSimulationDTO();
-            Categorie categorie1 = categorieService.findCategorie(categorie);
-            List<LivreDePaieSimulation> livreDePaieSimulations = new ArrayList<>();
-
-            int op = 0;
-            Float nbpart = calculNbrepart(nombreenfant, situationmatrimoniale);
-            
-            List<PrimePersonnel> listIndemniteBrut = new ArrayList<>();
-            List<PrimePersonnel> listIndemniteNonBrut = new ArrayList<>();
-            List<PrimePersonnel> listRetenueMutuelle = new ArrayList<>();
-            List<PrimePersonnel> listGainsNet = new ArrayList<>();
-
-            livredePaie = new LivreDePaieSimulation(
-                "MatTEST", "nomTest" + " " + "PrenomTest", nbpart, op, 
-                categorie1.getSalaireDeBase(), 5000d, 0d, montantTransp, 0d, 0d, 
-                true, null, null, listIndemniteBrut, listIndemniteNonBrut, 
-                listRetenueMutuelle, listGainsNet
-            );
-
-            try {
-                for (int i = 0; i < 20; i++) {
-                    Double nouvSursal = 0d;
-                    Double nouvDiff = 0d;
-                    Double nouvMontantBrutImp = 0d;
-                    
-                    nouvMontantBrutImp = Math.rint(salaireNet * livredePaie.getBrutImposable() / livredePaie.getNetPayer());
-                    nouvDiff = nouvMontantBrutImp - livredePaie.getBrutImposable();
-                    nouvSursal = nouvDiff + livredePaie.getSursalaire();
-                    
-                    livredePaie = new LivreDePaieSimulation(
-                        "MatTEST", "nomTest" + " " + "PrenomTest", nbpart, op, 
-                        categorie1.getSalaireDeBase(), nouvSursal, 0d, montantTransp, 0d, 0d, 
-                        true, null, null, listIndemniteBrut, listIndemniteNonBrut, 
-                        listRetenueMutuelle, listGainsNet
-                    );
-                }
-            } catch (Exception e) {
-                logger.error("Erreur lors du calcul de simulation", e);
-            }
-
-            livreDePaieSimulations.add(livredePaie);
-            livreDePaieSimulationDTO.setResult(true);
-            livreDePaieSimulationDTO.setRows(livreDePaieSimulations);
-            
-            return ResponseEntity.ok(livreDePaieSimulationDTO);
-        } catch (Exception e) {
-            logger.error("Erreur lors de la simulation de calcul", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+//        try {
+//            LivreDePaieSimulation livredePaie = null;
+ //           LivreDePaieSimulationDTO livreDePaieSimulationDTO = new LivreDePaieSimulationDTO();
+//            Categorie categorie1 = categorieService.findCategorie(categorie);
+//            List<LivreDePaieSimulation> livreDePaieSimulations = new ArrayList<>();
+//
+//            int op = 0;
+//            Float nbpart = calculNbrepart(nombreenfant, situationmatrimoniale);
+//
+//            List<PrimePersonnel> listIndemniteBrut = new ArrayList<>();
+//            List<PrimePersonnel> listIndemniteNonBrut = new ArrayList<>();
+//            List<PrimePersonnel> listRetenueMutuelle = new ArrayList<>();
+//            List<PrimePersonnel> listGainsNet = new ArrayList<>();
+//
+//            livredePaie = new LivreDePaieSimulation(
+//                "MatTEST", "nomTest" + " " + "PrenomTest", nbpart, op,
+//                categorie1.getSalaireDeBase(), 5000d, 0d, montantTransp, 0d, 0d,
+//                true, null, null, listIndemniteBrut, listIndemniteNonBrut,
+//                listRetenueMutuelle, listGainsNet
+//            );
+//
+//            try {
+//                for (int i = 0; i < 20; i++) {
+//                    Double nouvSursal = 0d;
+//                    Double nouvDiff = 0d;
+//                    Double nouvMontantBrutImp = 0d;
+//
+//                    nouvMontantBrutImp = Math.rint(salaireNet * livredePaie.getBrutImposable() / livredePaie.getNetPayer());
+//                    nouvDiff = nouvMontantBrutImp - livredePaie.getBrutImposable();
+//                    nouvSursal = nouvDiff + livredePaie.getSursalaire();
+//
+//                    livredePaie = new LivreDePaieSimulation(
+//                        "MatTEST", "nomTest" + " " + "PrenomTest", nbpart, op,
+//                        categorie1.getSalaireDeBase(), nouvSursal, 0d, montantTransp, 0d, 0d,
+//                        true, null, null, listIndemniteBrut, listIndemniteNonBrut,
+//                        listRetenueMutuelle, listGainsNet
+//                    );
+//                }
+//            } catch (Exception e) {
+//                logger.error("Erreur lors du calcul de simulation", e);
+//            }
+//
+//            livreDePaieSimulations.add(livredePaie);
+//            livreDePaieSimulationDTO.setResult(true);
+//            livreDePaieSimulationDTO.setRows(livreDePaieSimulations);
+//
+//            return ResponseEntity.ok(livreDePaieSimulationDTO);
+//        } catch (Exception e) {
+//            logger.error("Erreur lors de la simulation de calcul", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//        return  livreDePaieSimulationDTO;
+//    }
 
     // Méthode utilitaire pour calculer le nombre de parts
     private Float calculNbrepart(Integer nbEnfant, Integer persSituationMatrimoniale) {

@@ -9,17 +9,17 @@ import com.nectux.mizan.hyban.personnel.specifque.enums.SpecialCategory;
 import com.nectux.mizan.hyban.utils.CustomDateDeserializer;
 import org.springframework.format.annotation.DateTimeFormat;
 
-
 import jakarta.persistence.*;
 import java.util.Date;
 
 @Entity
 @Table(name = "employees")
-
+@SequenceGenerator(name="CGECI_RHPAIE_EMPLOYEE_SEQUENCE", sequenceName="CGECI_RHPAIE_EMPLOYEE_SEQ", initialValue=1, allocationSize=1)
 public class Employee extends Auditable {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="CGECI_RHPAIE_EMPLOYEE_SEQUENCE")
+    @Column(unique=true, nullable=false)
     private Long id;
 
     @Column(nullable = false, unique = true)
@@ -37,7 +37,7 @@ public class Employee extends Auditable {
     @JsonSerialize(using = CustomDateDeserializer.class)
     @Temporal(jakarta.persistence.TemporalType.TIMESTAMP)
     @DateTimeFormat(pattern="dd/MM/yyyy")
-    private java.util.Date dateofbrid;
+    private Date dateofbrid;
 
     @Transient
     private String dofbrid;
@@ -65,6 +65,13 @@ public class Employee extends Auditable {
     // getters & setters
     @Transient
     private String situationMatri;
+
+
+    @Transient
+    private String netapayer;
+
+    @Transient
+    private String fonction;
 
     public Long getId() {
         return id;
@@ -235,6 +242,22 @@ public class Employee extends Auditable {
 
     public void setSituationMatri(String situationMatri) {
         this.situationMatri = situationMatri;
+    }
+
+    public String getNetapayer() {
+        return netapayer;
+    }
+
+    public void setNetapayer(String netapayer) {
+        this.netapayer = netapayer;
+    }
+
+    public String getFonction() {
+        return fonction;
+    }
+
+    public void setFonction(String fonction) {
+        this.fonction = fonction;
     }
 
     @Override

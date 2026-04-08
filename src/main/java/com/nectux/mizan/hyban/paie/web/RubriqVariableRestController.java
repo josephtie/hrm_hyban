@@ -83,28 +83,28 @@ public class RubriqVariableRestController {
         }
     }
 
-    @PostMapping("/enregistrer")
-    public ResponseEntity<RubriqVariableDTO> saveRubriqVariable(@RequestBody RubriqVariableRequest request) {
-        try {
-            RubriqVariableDTO result = rubriqvariableService.saver(
-                request.getCn(),
-                request.getIgr(),
-                request.getAmao(),
-                request.getSynaoni(),
-                request.getMugefci(),
-                request.getIvoireSante(),
-                request.getIvoirePrev(),
-                request.getDiversgainsImp(),
-                request.getDiversgains(),
-                request.getRegularisation(),
-                request.getIdpers()
-            );
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            logger.error("Erreur lors de l'enregistrement de la rubrique variable", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
-    }
+//    @PostMapping("/enregistrer")
+//    public ResponseEntity<RubriqVariableDTO> saveRubriqVariable(@RequestBody RubriqVariableRequest request) {
+//        try {
+//            RubriqVariableDTO result = rubriqvariableService.saver(
+//                request.getCn(),
+//                request.getIgr(),
+//                request.getAmao(),
+//                request.getSynaoni(),
+//                request.getMugefci(),
+//                request.getIvoireSante(),
+//                request.getIvoirePrev(),
+//                request.getDiversgainsImp(),
+//                request.getDiversgains(),
+//                request.getRegularisation(),
+//                request.getIdpers()
+//            );
+//            return ResponseEntity.ok(result);
+//        } catch (Exception e) {
+//            logger.error("Erreur lors de l'enregistrement de la rubrique variable", e);
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//        }
+//    }
 
     @GetMapping("/chercher/{idPersonnel}")
     public ResponseEntity<RubriqVariable> chercherRubriqVariable(@PathVariable Long idPersonnel) {

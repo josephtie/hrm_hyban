@@ -18,7 +18,14 @@ public interface AffectationRepository extends CrudRepository<Affectation, Long>
 	
 	public List<Affectation> findByPosteId(Long idPoste);
 	
-	public List<Affectation> findByPersonnelId(Long idPoste);
+	//public List<Affectation> findByPersonnelId(Long idPoste);
+	
+	@Query("SELECT a FROM Affectation a WHERE a.personnel.id = :idPersonnel ORDER BY a.dateDebut DESC")
+	List<Affectation> findHistoriqueAffectationsByPersonnel(@Param("idPersonnel") Long idPersonnel);
+
+// Alternative avec nom de champ explicite pour debug
+@Query("SELECT a FROM Affectation a WHERE a.personnel.id = :idPersonnel ORDER BY a.dateDebut DESC")
+	List<Affectation> findHistoriqueAffectationsByPersonnelDebug(@Param("idPersonnel") Long idPersonnel);
 	
 	public Affectation findByPersonnelIdAndPosteIdAndDateDebutAndDateFin(Long idPersonnel, Long idPoste, Date dateDebut, Date dateFin);
 	
@@ -36,7 +43,7 @@ public interface AffectationRepository extends CrudRepository<Affectation, Long>
 			"ORDER BY a.site.libelle")
 	List<SiteEffectifProjection> getEffectifParSite();
 
-
+   List<Affectation> findByPersonnelId(Long idPersonnel);
 //	@Query("""
 //    SELECT a FROM Affectation a
 //    WHERE a.personnel.id = :idPersonnel

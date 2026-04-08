@@ -3,8 +3,6 @@ package com.nectux.mizan.hyban.personnel.specifque.entity;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nectux.mizan.hyban.parametrages.entity.Auditable;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
-import com.nectux.mizan.hyban.parametrages.entity.Rubrique;
-import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
 import com.nectux.mizan.hyban.utils.CustomDateDeserializer;
 import com.nectux.mizan.hyban.utils.Utils;
 import org.springframework.context.annotation.Scope;
@@ -12,6 +10,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 
 @Entity
 @Component("PrimeSpecifique")
@@ -25,7 +25,7 @@ public class PrimeSpecifique extends Auditable {
 	@Column(unique=true, nullable=false)
 	private Long id;
 
-	private Double montant;
+	private BigDecimal montant;
 
 
 
@@ -68,17 +68,16 @@ public class PrimeSpecifique extends Auditable {
 		this.id = id;
 	}
 
-	public Double getMontant() {
-		return montant;
-	}
 
-	public void setMontant(Double montant) {
-		this.montant = montant;
-	}
+    public BigDecimal getMontant() {
+        return montant;
+    }
 
+    public void setMontant(BigDecimal montant) {
+        this.montant = montant;
+    }
 
-	
-	public PeriodePaie getPeriode() {
+    public PeriodePaie getPeriode() {
 		return periodePaie;
 	}
 

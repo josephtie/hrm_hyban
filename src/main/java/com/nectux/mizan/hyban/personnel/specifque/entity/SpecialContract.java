@@ -4,12 +4,13 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nectux.mizan.hyban.parametrages.entity.Auditable;
 import com.nectux.mizan.hyban.personnel.entity.Fonction;
 import com.nectux.mizan.hyban.personnel.specifque.enums.SpecialContractType;
+import com.nectux.mizan.hyban.rh.carriere.entity.Site;
 import com.nectux.mizan.hyban.utils.CustomDateDeserializer;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.Date;
 
 @Entity
@@ -33,12 +34,17 @@ public class SpecialContract extends Auditable {
     @JoinColumn(name = "fonction_id")
     private Fonction fonction;
 
+
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "site_id")
+    private Site site;
+
     private String paiementNumber;
 
     @JsonSerialize(using = CustomDateDeserializer.class)
     @Temporal(jakarta.persistence.TemporalType.TIMESTAMP)
     @DateTimeFormat(pattern="dd/MM/yyyy")
-    private java.util.Date dateDebut;
+    private Date dateDebut;
 
     @Transient
     private String dDeb;
@@ -46,12 +52,12 @@ public class SpecialContract extends Auditable {
     @JsonSerialize(using = CustomDateDeserializer.class)
     @Temporal(jakarta.persistence.TemporalType.TIMESTAMP)
     @DateTimeFormat(pattern="dd/MM/yyyy")
-    private java.util.Date dateFin;
+    private Date dateFin;
 
     @Transient
     private String dFin;
 
-    @Column(precision = 15, scale = 2)
+  //  @Column(precision = 15, scale = 2)
     private BigDecimal remunerationForfaitaire;
 
     private Boolean actif = true;
@@ -155,6 +161,14 @@ public class SpecialContract extends Auditable {
         this.fonction = fonction;
     }
 
+    public Site getSite() {
+        return site;
+    }
+
+    public void setSite(Site site) {
+        this.site = site;
+    }
+
     @Override
     public String toString() {
         return "SpecialContract{" +
@@ -162,6 +176,8 @@ public class SpecialContract extends Auditable {
                 ", employee=" + employee +
                 ", typeContrat=" + typeContrat +
                 ", modepaiement='" + modepaiement + '\'' +
+                ", fonction=" + fonction +
+                ", site=" + site +
                 ", paiementNumber='" + paiementNumber + '\'' +
                 ", dateDebut=" + dateDebut +
                 ", dDeb='" + dDeb + '\'' +

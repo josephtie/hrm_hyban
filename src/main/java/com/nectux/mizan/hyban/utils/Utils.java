@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.utils;
 
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -186,13 +187,28 @@ public class Utils {
         //  }
         return output;
     }
-	public static String formattingAmount(Double money){
-    	if(money == null) money = 0.0;
-        Locale locale = new Locale("fr", "FR");
-        NumberFormat numberFormat = NumberFormat.getInstance(locale);
-        String sMoney = numberFormat.format(money);
-        return sMoney;
+//	public static String formattingAmount(BigDecimal money){
+//    	if(money == null) money = BigDecimal.valueOf(0);
+//        Locale locale = new Locale("fr", "FR");
+//        NumberFormat numberFormat = NumberFormat.getInstance(locale);
+//        String sMoney = numberFormat.format(money);
+//        return sMoney;
+//    }
+
+    private static final Locale LOCALE_FR = Locale.FRANCE;
+    private static final NumberFormat FORMATTER;
+
+    static {
+        FORMATTER = NumberFormat.getNumberInstance(LOCALE_FR);
+        FORMATTER.setMinimumFractionDigits(0);
+        FORMATTER.setMaximumFractionDigits(0);
     }
+
+    public static String formattingAmount(BigDecimal amount) {
+        BigDecimal safeAmount = amount == null ? BigDecimal.ZERO : amount;
+        return FORMATTER.format(safeAmount);
+    }
+
     public static DecimalFormat formattingAmountv2(){
         DecimalFormat formatter = new DecimalFormat("#,###");
         formatter.setGroupingSize(3);

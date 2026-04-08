@@ -67,6 +67,8 @@ public class UserController {
         return ResponseEntity.ok().build();
         //return ResponseEntity.status(501).body("Service désactivé en profil local");
     }
+
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/allUsers")
     public ResponseEntity<List<UserWithRolesDto>> listUsers(
 
@@ -76,7 +78,7 @@ public class UserController {
                 keycloakUserService.getAllUsersWithRolesAndLastLogin()
         );
     }
-
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search/allUsers")
     public ResponseEntity<List<UserWithRolesDto>> listUsers(
             @RequestParam int limit,

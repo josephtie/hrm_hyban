@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityNotFoundException;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,8 +44,8 @@ public class RubriqueServiceImpl implements RubriqueService {
 			}
 			rubrique.setLibelle(libelle);
 			rubrique.setEtatImposition(etatImposition);
-			rubrique.setTaux(taux);
-			rubrique.setMtExedent(mtExedent);
+			rubrique.setTaux(BigDecimal.valueOf(taux));
+			rubrique.setMtExedent(BigDecimal.valueOf(mtExedent));
 			  if(active==null  )
 			  rubrique.setActive(false);
 			  else

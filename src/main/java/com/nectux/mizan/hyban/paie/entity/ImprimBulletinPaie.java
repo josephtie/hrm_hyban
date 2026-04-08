@@ -1,6 +1,7 @@
 package com.nectux.mizan.hyban.paie.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
@@ -16,29 +17,29 @@ public class ImprimBulletinPaie implements Serializable {
 	
 	private String code;
 	
-	private Double gain;
+	private BigDecimal gain;
 	@Transient
 	private String mtgain;
 	
-	private Double retenue;
+	private BigDecimal retenue;
 	@Transient
 	private String mtretenue;
 	
-	private Double base;
+	private BigDecimal base;
 	@Transient
 	private String mtbase;
 	
-	private Double taux;
+	private BigDecimal taux;
 	
-	private Double gainPatron;
+	private BigDecimal gainPatron;
 	@Transient
 	private String mtgainPatron;
 	
-	private Double retenuePatron;
+	private BigDecimal retenuePatron;
 	@Transient
 	private String mtretenuePatron;
 	
-	private Double tauxPatron;
+	private BigDecimal tauxPatron;
 	
 	public ImprimBulletinPaie() {
 	}
@@ -51,59 +52,59 @@ public class ImprimBulletinPaie implements Serializable {
 		this.libelle = libelle;
 	}
 
-	public Double getGain() {
+	public BigDecimal getGain() {
 		return gain;
 	}
 
-	public void setGain(Double gain) {
+	public void setGain(BigDecimal gain) {
 		this.gain = gain;
 	}
 
-	public Double getRetenue() {
+	public BigDecimal getRetenue() {
 		return retenue;
 	}
 
-	public void setRetenue(Double retenue) {
+	public void setRetenue(BigDecimal retenue) {
 		this.retenue = retenue;
 	}
 
-	public Double getBase() {
+	public BigDecimal getBase() {
 		return base;
 	}
 
-	public void setBase(Double base) {
+	public void setBase(BigDecimal base) {
 		this.base = base;
 	}
 
-	public Double getTaux() {
+	public BigDecimal getTaux() {
 		return taux;
 	}
 
-	public void setTaux(Double taux) {
+	public void setTaux(BigDecimal taux) {
 		this.taux = taux;
 	}
 
-	public Double getGainPatron() {
+	public BigDecimal getGainPatron() {
 		return gainPatron;
 	}
 
-	public void setGainPatron(Double gainPatron) {
+	public void setGainPatron(BigDecimal gainPatron) {
 		this.gainPatron = gainPatron;
 	}
 
-	public Double getRetenuePatron() {
+	public BigDecimal getRetenuePatron() {
 		return retenuePatron;
 	}
 
-	public void setRetenuePatron(Double retenuePatron) {
+	public void setRetenuePatron(BigDecimal retenuePatron) {
 		this.retenuePatron = retenuePatron;
 	}
 
-	public Double getTauxPatron() {
+	public BigDecimal getTauxPatron() {
 		return tauxPatron;
 	}
 
-	public void setTauxPatron(Double tauxPatron) {
+	public void setTauxPatron(BigDecimal tauxPatron) {
 		this.tauxPatron = tauxPatron;
 	}
 
@@ -162,7 +163,7 @@ public class ImprimBulletinPaie implements Serializable {
 	}
 
 
-	public ImprimBulletinPaie(String libelle, Double base, Double gain, Double taux) {
+	public ImprimBulletinPaie(String libelle, BigDecimal base, BigDecimal gain, BigDecimal taux) {
 		this.libelle = libelle;
 		this.base = base;
 		this.gain = gain;

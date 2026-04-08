@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://192.168.1.5:7200/api/users'
+const API_BASE_URL = 'http://192.168.1.8:7200/api/users'
 
 export interface UtilisateurDto {
   id: number

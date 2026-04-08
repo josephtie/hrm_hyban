@@ -1,5 +1,9 @@
 package com.nectux.mizan.hyban.utils;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -14,79 +18,79 @@ public class ProvisionConge {
 	private int D;
 	
 	private Double E;
-	
+
 	private Double F;
-	
+
 	private int G;
-	
+
 	private Double H;
-	
+
 	private Double I;
-	
+
 	private Double J;
-	
+
 	private Double K;
-	
+
 	private Double L;
-	
+
 	private Double M;
-	
+
 	private Double N;
-	
+
 	private Double O;
-	
+
 	private Double P;
-	
+
 	private Double Q;
-	
+
 	private Double R;
-	
+
 	private Double ITS;
-	
+
 	private Double CN;
-	
+
 	private Double IGR;
-	
+
 	private Double CNPS;
-	
+
 	private Double totalRetenueFiscale;
-	
+
 	private Double allocationCongeNet;
-	
-	public ProvisionConge(String nomComplet, Float nombrePart, Date retourDernierConge, Date departEnConge, Double salaireMoyenMensuel, Double indemniteRepresentationMoyenMensuelle,ContratPersonnel contratPersonnel) {
+
+	public ProvisionConge(String nomComplet, Float nombrePart, Date retourDernierConge, Date departEnConge, BigDecimal salaireMoyenMensuel, BigDecimal indemniteRepresentationMoyenMensuelle, ContratPersonnel contratPersonnel) {
 		super();
 		this.B = nomComplet;
 		this.C = nombrePart;
-		this.D = calculerTempsPresence(retourDernierConge, departEnConge);	
-		this.E = salaireMoyenMensuel;
-		this.F = indemniteRepresentationMoyenMensuelle;
-		this.G = (int) Math.rint(D * 2.2 * 1.25);		
+		this.D = calculerTempsPresence(retourDernierConge, departEnConge);
+		this.E =Double.valueOf(String.valueOf(salaireMoyenMensuel)) ;
+		this.F = Double.valueOf(String.valueOf(indemniteRepresentationMoyenMensuelle));
+		this.G = (int) Math.rint(D * 2.2 * 1.25);
 		/*new loi*/
 		//Jour ouvrable supplement//
-		 Double[]ancienete= calculAnciennete(contratPersonnel.getCategorie().getSalaireDeBase(),contratPersonnel.getDateDebut());
-		 	double newancienete;
-	    	if(contratPersonnel.getAncienneteInitial()!=0) {
-	    		 newancienete=ancienete[1] +contratPersonnel.getAncienneteInitial();
-	    	}else{
-	    		newancienete=ancienete[1];
-	    	}
-	    	double anc=(int)newancienete + ancienete[2];
-	    	
-	     int jourSuppAnc=0; int jourSuppDam = 0;int jourSuppMed = 0;
-	     
+        // 🔹 Ancienneté
+        long anneesAnciennete = ChronoUnit.YEARS.between(
+                contratPersonnel.getPersonnel().getDateArrivee().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                LocalDate.now()
+        );
+        int anciennete = (int) (anneesAnciennete + contratPersonnel.getAncienneteInitial());
+        int anc = anciennete < 2 ? 0 : Math.min(anciennete, 25);
+
+
+        int jourSuppAnc=0; int jourSuppDam = 0;int jourSuppMed = 0;
+
 		 if(anc>5 && anc<=10)  jourSuppAnc=1;
 		 if(anc>10 && anc<=15) jourSuppAnc=2;
 		 if(anc>15 && anc<=20) jourSuppAnc=3;
 		 if(anc>20 && anc<=25) jourSuppAnc=5;
 		 if(anc>25 && anc<=30) jourSuppAnc=7;
 		 if(anc>30) jourSuppAnc=8;
-		 
+
 		 Double age=DifferenceDate.valAge(new Date(), contratPersonnel.getPersonnel().getDateNaissance());
 		 if(contratPersonnel.getPersonnel().getSexe()=="Feminin" && age<=21 && contratPersonnel.getPersonnel().getNombrEnfant()>0){
 			 jourSuppDam=2*contratPersonnel.getPersonnel().getNombrEnfant();
 		 }
 		 if(contratPersonnel.getPersonnel().getSexe()=="Feminin" && age>21 && contratPersonnel.getPersonnel().getNombrEnfant()>0){
-			 
+
 			 if(contratPersonnel.getPersonnel().getNombrEnfant()>=4)jourSuppDam=2*1;
 			 if(contratPersonnel.getPersonnel().getNombrEnfant()>=5)jourSuppDam=2*2;
 			 if(contratPersonnel.getPersonnel().getNombrEnfant()>=6)jourSuppDam=2*3;
@@ -94,11 +98,11 @@ public class ProvisionConge {
 			 if(contratPersonnel.getPersonnel().getNombrEnfant()>=8)jourSuppDam=2*5;
 			 if(contratPersonnel.getPersonnel().getNombrEnfant()>=9)jourSuppDam=2*6;
 		 }
-		 
+
 		 if(contratPersonnel.getPersonnel().getSituationMedaille()==1 ){
 			 jourSuppMed=1;
-		 } 
-		 
+		 }
+
 		 this.G =G+jourSuppAnc+jourSuppDam+jourSuppMed;
 		/*new loi*/
 		this.H = Math.rint((E + F) * G / 30);
@@ -112,7 +116,7 @@ public class ProvisionConge {
 		this.P = Math.rint(calculerRetraite());
 		this.Q = Math.rint(N + O + P);
 		this.R = Math.rint(M + Q);
-		
+
 		this.ITS = Math.rint(I * 1.2 / 100);
 		this.CN = Math.rint(calculCN());
 		this.IGR = Math.rint(calculIGR());
@@ -312,7 +316,7 @@ public class ProvisionConge {
 			return I * 5.75 / 100;
 		return 0.0;
 	}
-	
+
 	public Double calculerAccidentTravail(){
 		if(I > 70000)
 			return 70000 * 2.0 / 100;
@@ -320,56 +324,56 @@ public class ProvisionConge {
 			return I * 2.0 / 100;
 		return 0.0;
 	}
-	
+
 	public Double calculerRetraite(){
 		if(I < 1647315)
 			return I * 7.7 / 100;
 		return 1647315 * 6.6 / 100;
 	}
-	
+
 	public static int calculerTempsPresence(Date retourDernierConge, Date departEnConge){
-		int annees = 0; 
-		int mois = 0; 
-		int jours = 0; 
-	
-		Calendar calendrierNaissance = Calendar.getInstance(); 
-		calendrierNaissance.setTimeInMillis(retourDernierConge.getTime()); 
-		
-		Calendar calendrierMaintenant = Calendar.getInstance(); 
-		calendrierMaintenant.setTimeInMillis(departEnConge.getTime()); 
-		// Calcul du nombre annees. 
-		annees = calendrierMaintenant.get(Calendar.YEAR) - calendrierNaissance.get(Calendar.YEAR); 
-		int moisMaintenant = calendrierMaintenant.get(Calendar.MONTH) + 1; 
-		int moisNaissance = calendrierNaissance.get(Calendar.MONTH) + 1; 
-	
-		mois = moisMaintenant - moisNaissance; 
-	// Si la difference est negative, reduire annee de 1 et calculer le nombre de mois. 
-	if (mois < 0) { 
-		    annees--; 
-		    mois = 12 - moisNaissance + moisMaintenant; 
-		    if (calendrierMaintenant.get(Calendar.DATE) < calendrierNaissance.get(Calendar.DATE)) { 
-		        mois--; 
-		    } 
-		} else if (mois == 0 && calendrierMaintenant.get(Calendar.DATE) < calendrierNaissance.get(Calendar.DATE)) { 
-		    annees--; 
-		    mois = 11; 
-		} 
-		
-		if (calendrierMaintenant.get(Calendar.DATE) > calendrierNaissance.get(Calendar.DATE)) { 
-		    jours = calendrierMaintenant.get(Calendar.DATE) - calendrierNaissance.get(Calendar.DATE); 
-		} else if (calendrierMaintenant.get(Calendar.DATE) < calendrierNaissance.get(Calendar.DATE)) { 
-		    int aujourdhui = calendrierMaintenant.get(Calendar.DAY_OF_MONTH); 
-		    calendrierMaintenant.add(Calendar.MONTH, -1); 
-		    jours = calendrierMaintenant.getActualMaximum(Calendar.DAY_OF_MONTH) - calendrierNaissance.get(Calendar.DAY_OF_MONTH) + aujourdhui; 
-		} else { 
-		    jours = 0; 
-		    if (mois == 12) { 
-		        annees++; 
-		        mois = 0; 
-		    } 
-		} 
+		int annees = 0;
+		int mois = 0;
+		int jours = 0;
+
+		Calendar calendrierNaissance = Calendar.getInstance();
+		calendrierNaissance.setTimeInMillis(retourDernierConge.getTime());
+
+		Calendar calendrierMaintenant = Calendar.getInstance();
+		calendrierMaintenant.setTimeInMillis(departEnConge.getTime());
+		// Calcul du nombre annees.
+		annees = calendrierMaintenant.get(Calendar.YEAR) - calendrierNaissance.get(Calendar.YEAR);
+		int moisMaintenant = calendrierMaintenant.get(Calendar.MONTH) + 1;
+		int moisNaissance = calendrierNaissance.get(Calendar.MONTH) + 1;
+
+		mois = moisMaintenant - moisNaissance;
+	// Si la difference est negative, reduire annee de 1 et calculer le nombre de mois.
+	if (mois < 0) {
+		    annees--;
+		    mois = 12 - moisNaissance + moisMaintenant;
+		    if (calendrierMaintenant.get(Calendar.DATE) < calendrierNaissance.get(Calendar.DATE)) {
+		        mois--;
+		    }
+		} else if (mois == 0 && calendrierMaintenant.get(Calendar.DATE) < calendrierNaissance.get(Calendar.DATE)) {
+		    annees--;
+		    mois = 11;
+		}
+
+		if (calendrierMaintenant.get(Calendar.DATE) > calendrierNaissance.get(Calendar.DATE)) {
+		    jours = calendrierMaintenant.get(Calendar.DATE) - calendrierNaissance.get(Calendar.DATE);
+		} else if (calendrierMaintenant.get(Calendar.DATE) < calendrierNaissance.get(Calendar.DATE)) {
+		    int aujourdhui = calendrierMaintenant.get(Calendar.DAY_OF_MONTH);
+		    calendrierMaintenant.add(Calendar.MONTH, -1);
+		    jours = calendrierMaintenant.getActualMaximum(Calendar.DAY_OF_MONTH) - calendrierNaissance.get(Calendar.DAY_OF_MONTH) + aujourdhui;
+		} else {
+		    jours = 0;
+		    if (mois == 12) {
+		        annees++;
+		        mois = 0;
+		    }
+		}
 		mois = 12 * annees + mois;
-		
+
 		int conge[] = new int[2];
 		conge[0] = mois;
 		conge[1] = jours;
@@ -378,7 +382,7 @@ public class ProvisionConge {
 		else
 			return mois;
 	}
-	
+
 	public Double calculIGR(){
 		C = Math.abs(C);
 		Double G = ((I * 80 / 100 - ITS - CN) / C) * 85 / 100;
@@ -402,7 +406,7 @@ public class ProvisionConge {
 	public Double calculCNPS(){
 		if(I < 1647315.0)
 			return I * 6.3 / 100;
-		else 
+		else
 			return 1647315 * 6.3 / 100;
 	}
 	public Double calculCN(){
@@ -412,7 +416,7 @@ public class ProvisionConge {
 			return (I - 162500.0) * 4 / 100 + 1200;
 		else if(I > 62500.0)
 			return I * 1.2 / 100 - 750;
-		else 
+		else
 			return 0.0;
 	}
 
@@ -427,26 +431,26 @@ public class ProvisionConge {
 				+ ", allocationCongeNet=" + allocationCongeNet + "]";
 	}
 
-	
+
 public  Double[] calculAnciennete(Double salaireCategoriel, Date dateEntree){
-		
+
 		Double[] tab = new Double[5];
-		
+
 		Double anciennete = (double) 0;
-		
-		
+
+
 		double age = DifferenceDate.valAge(new Date(), dateEntree);
-		
-		int partieEntiere = (int) age; 
-		int partieApresVirg = (int)((age - partieEntiere) * 12); 
-		
-		
+
+		int partieEntiere = (int) age;
+		int partieApresVirg = (int)((age - partieEntiere) * 12);
+
+
 		if(age>=2)
 			anciennete = (double) (salaireCategoriel*partieEntiere/100);
-		
+
 		tab[0] = anciennete;
-		
-		
+
+
 		tab[1] = (double) partieEntiere;
 		tab[2] = (double)(partieApresVirg);
 		

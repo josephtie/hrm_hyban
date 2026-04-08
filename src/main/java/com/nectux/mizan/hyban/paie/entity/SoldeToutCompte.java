@@ -138,16 +138,16 @@ public class SoldeToutCompte {
         return r;
     }
 
-    private double calculIndemniteLicenciement(ContratPersonnel c) {
-        long anciennete = ChronoUnit.YEARS.between(c.getDateDebut().toInstant().atZone(ZoneId.systemDefault())
-                .toLocalDate(), c.getDateFin().toInstant().atZone(ZoneId.systemDefault())
-                .toLocalDate());
-        double salaireMoyen = c.getNetAPayer(); // Pour simplifier
-        if (anciennete <= 5) {
-            return salaireMoyen * 0.25 * anciennete;
-        } else {
-            return (salaireMoyen * 0.25 * 5) + (salaireMoyen * 0.33 * (anciennete - 5));
-        }
-    }
+//    private double calculIndemniteLicenciement(ContratPersonnel c) {
+//        long anciennete = ChronoUnit.YEARS.between(c.getDateDebut().toInstant().atZone(ZoneId.systemDefault())
+//                .toLocalDate(), c.getDateFin().toInstant().atZone(ZoneId.systemDefault())
+//                .toLocalDate());
+//        double salaireMoyen = c.getNetAPayer(); // Pour simplifier
+//        if (anciennete <= 5) {
+//            return salaireMoyen * 0.25 * anciennete;
+//        } else {
+//            return (salaireMoyen * 0.25 * 5) + (salaireMoyen * 0.33 * (anciennete - 5));
+//        }
+//    }
 }
 

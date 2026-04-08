@@ -47,7 +47,7 @@ public class EnfantController {
 	public ResponseEntity<EnfantDTO> saveEnfant(@RequestBody EnfantRequest req) throws Exception {
 		logger.info(">>> ENREGISTRER ENFANT");
 		Date dateNaissance = DateManager.stringToDate(req.getDateNaissanceString(), "dd/MM/yyyy");
-		EnfantDTO res = enfantService.save(req.getId(), req.getIdPersonnel(), req.getMatricule(), req.getNom(), dateNaissance, req.getLieuNaissance(), req.getSexe());
+		EnfantDTO res = enfantService.save(req.getId(), req.getIdPersonnel(), req.getMatricule(), req.getNom(), dateNaissance, req.getLieuNaissance(), req.getSexe(),req.getaCharge(),req.getEcole());
 		return ResponseEntity.status(HttpStatus.OK).body(res);
 	}
 

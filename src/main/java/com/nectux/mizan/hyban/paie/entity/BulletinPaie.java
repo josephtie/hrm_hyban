@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.entity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -45,13 +46,13 @@ public class BulletinPaie extends Auditable {
 	@Transient
 	private String montantAnciennete;
 	
-    private Double salairbase;
+    private BigDecimal salairbase;
 	
 	@Transient
 	private String montantSalairbase;
 	
 	
-	 private Double primeanciennete;
+	 private BigDecimal primeanciennete;
 	 
 	 private Integer moisOfpresence;
 	 
@@ -60,50 +61,50 @@ public class BulletinPaie extends Auditable {
     @Transient
 	private String montantPrimeanciennete;
 	
-    private Double indemnitelogement;
+    private BigDecimal indemnitelogement;
 	
     @Transient
 	private String montantIndemnitelogement;
     
-    private Double brutImposable;
+    private BigDecimal brutImposable;
 		
 	@Transient
 	private String brutImpo;
 	
-	private Double autreIndemImposable;
+	private BigDecimal autreIndemImposable;
 	
 	 @Transient
 		private String montantautreIndemImposable;
 
-	 private Double brutNonImposable;
+	 private BigDecimal brutNonImposable;
 		
 	@Transient
 	private String mtbrutNonImpo;
 
-	private Double autrePrelevement;
+	private BigDecimal autrePrelevement;
 
 	@Transient
 	private String mtautrePrelevement;
 
-	private Double regularisation;
+	private BigDecimal regularisation;
 
 	@Transient
 	private String mtregularisation;
 
-	private Double autreImposable;
+	private BigDecimal autreImposable;
 	
 	@Transient
 	private String mtautreImposable;
 	
 	
-	private Double autreNonImposable;
+	private BigDecimal autreNonImposable;
 	
 	@Transient
 	private String mtautreNonImposable;
 	
 	
 	
-	private Double sursalaire;
+	private BigDecimal sursalaire;
 	
 	@Transient
 	private String montantSursalaire;
@@ -114,62 +115,62 @@ public class BulletinPaie extends Auditable {
 	
 	private Boolean congeAc;
 	
-	private Double its;
+	private BigDecimal its;
 	
-	private Double cumuljourTravail;
+	private BigDecimal cumuljourTravail;
 	
-	private Double jourTravail;
+	private BigDecimal jourTravail;
 	
-	private Double temptravail;
+	private BigDecimal temptravail;
 	
-	private Double cumulIts;
+	private BigDecimal cumulIts;
 	@Transient
 	private String montantcumulIts;
 	
-	private Double cumulCn;
+	private BigDecimal cumulCn;
 	@Transient
 	private String montantcumulCn;
 	
-	private Double cumulIgr;
+	private BigDecimal cumulIgr;
 	@Transient
 	
 	private String montantcumulIgr;
 	
-	private Double cumulCnpsSal;
+	private BigDecimal cumulCnpsSal;
 	@Transient
 	private String montantcumulCnpsSal;
 
 
-	private Double isPatronal;
+	private BigDecimal isPatronal;
     @Transient
     private String montantisPatronal;
 
 	@Transient
 	private String montantIts;
 	
-	private Double cn;
+	private BigDecimal cn;
 	
 	@Transient
 	private String montantCn;
 	
-	private Double igr;
+	private BigDecimal igr;
 	
 	@Transient
 	private String montantIgr;
 	
 	
-    private Double totalretenuefiscal;
+    private BigDecimal totalretenuefiscal;
 	
 	@Transient
 	private String montanttotalretenuefiscal;
 	
 	
-	private Double avanceetacompte;
+	private BigDecimal avanceetacompte;
 		
 	@Transient
 	private String montantavanceetacompte;
 	
-	private Double carec;
+	private BigDecimal carec;
 	
 	@Transient
 	private String montantcarec;
@@ -182,122 +183,128 @@ public class BulletinPaie extends Auditable {
 	private String nbcongedu;
 	
 	
-   private Double totalbrut;
+   private BigDecimal totalbrut;
 	
 	@Transient
 	private String montanttotalbrut;
 	
-    private Double totalmassesalarial;
+    private BigDecimal totalmassesalarial;
 	
 	@Transient
 	private String montanttotalmassesalarial;
 	
-	private Double	cumulRetenueNet;
+	private BigDecimal	cumulRetenueNet;
 	@Transient
 	private String montantcumulRetenueNet;
 	
-	private Double cumulSalaireNet;
+	private BigDecimal cumulSalaireNet;
 	@Transient
 	private String montantcumulSalaireNet;
 	
-    private Double totalpatronal;
+    private BigDecimal totalpatronal;
 	
 	@Transient
 	private String montanttotalpatronal;
 	
 	
-	private Double totalretenue;
+	private BigDecimal totalretenue;
 	
 	@Transient
 	private String montanttotalretenue;
 	
-    private Double pretaloes;
+    private BigDecimal pretaloes;
 	
 	@Transient
 	private String montantpretaloes;
 	
-	private Double cnps;
+	private BigDecimal cnps;
 	
 	@Transient
 	private String montantCnps;
 	
 	
-private Double basecnps;
+private BigDecimal basecnps;
 	
 	@Transient
 	private String montantbaseCnps;
 
-	private Double retenueSociiale;
+	private BigDecimal retenueSociiale;
 	@Transient
 	private String mtretenueSociiale;
 	
-	private Double indemniteRepresentation;
+	private BigDecimal indemniteRepresentation;
 	
 	@Transient
 	private String indemniteRepresent;
 	
 	
-	private Double indemniteRespons;
+	private BigDecimal indemniteRespons;
 	
 	@Transient
 	private String mtindemniteRespons;
 
-	private Double CMUPatronal;
+	private BigDecimal CMUPatronal;
 
 	@Transient
 	private String mtCMUPatronal;
 
 
-	private Double CMUSalarial;
+	private BigDecimal CMUSalarial;
 
 	@Transient
 	private String mtCMUSalarial;
 	
-	private Double indemniteTransport;
+	private BigDecimal indemniteTransport;
 	
 	@Transient
 	private String indemniteTransp;
 	
 	
-    private Double indemniteTransportImp;
+    private BigDecimal indemniteTransportImp;
 	
 	@Transient
 	private String mtindemniteTranspImp;
 	
-    private Double netapayer;
+    private BigDecimal netapayer;
 	
 	@Transient
 	private String montantNetapayer;
+
+
+    private BigDecimal netRegulPayer;
+
+    @Transient
+    private String montantNetRegulpayer;
 	
-	private Double impotSalaire;
+	private BigDecimal impotSalaire;
 	
 	@Transient
 	private String montantIs;
 	
-	private Double ta;
+	private BigDecimal ta;
 	
 	@Transient
 	private String montantTa;
 	
-	private Double fpc;
-	private Double fpcregul;
+	private BigDecimal fpc;
+	private BigDecimal fpcregul;
 	@Transient
 	private String montantFpc;
 
 	@Transient
 	private String montantFpcregul;
 	
-	private Double prestationFamiliale;
+	private BigDecimal prestationFamiliale;
 	
 	@Transient
 	private String prestationFamil;
 	
-	private Double accidentTravail;
+	private BigDecimal accidentTravail;
 	
 	@Transient
 	private String accidentTrav;
 	
-	private Double retraite;
+	private BigDecimal retraite;
 
 
 
@@ -341,11 +348,11 @@ private Double basecnps;
 		this.nombrePart = nombrePart;
 	}
 
-	public Double getIsPatronal() {
+	public BigDecimal getIsPatronal() {
 		return isPatronal;
 	}
 
-	public void setIsPatronal(Double isPatronal) {
+	public void setIsPatronal(BigDecimal isPatronal) {
 		this.isPatronal = isPatronal;
 	}
 
@@ -375,11 +382,11 @@ private Double basecnps;
 		this.montantAnciennete = montantAnciennete;
 	}
 
-	public Double getBrutImposable() {
+	public BigDecimal getBrutImposable() {
 		return brutImposable;
 	}
 
-	public void setBrutImposable(Double brutImposable) {
+	public void setBrutImposable(BigDecimal brutImposable) {
 		this.brutImposable = brutImposable;
 	}
 
@@ -392,11 +399,11 @@ private Double basecnps;
 		this.brutImpo = brutImpo;
 	}
 
-	public Double getSursalaire() {
+	public BigDecimal getSursalaire() {
 		return sursalaire;
 	}
 
-	public void setSursalaire(Double sursalaire) {
+	public void setSursalaire(BigDecimal sursalaire) {
 		this.sursalaire = sursalaire;
 	}
 
@@ -409,11 +416,11 @@ private Double basecnps;
 		this.montantSursalaire = montantSursalaire;
 	}
 
-	public Double getIts() {
+	public BigDecimal getIts() {
 		return its;
 	}
 
-	public void setIts(Double its) {
+	public void setIts(BigDecimal its) {
 		this.its = its;
 	}
 
@@ -426,11 +433,11 @@ private Double basecnps;
 		this.montantIts = montantIts;
 	}
 
-	public Double getCn() {
+	public BigDecimal getCn() {
 		return cn;
 	}
 
-	public void setCn(Double cn) {
+	public void setCn(BigDecimal cn) {
 		this.cn = cn;
 	}
 
@@ -443,11 +450,11 @@ private Double basecnps;
 		this.montantCn = montantCn;
 	}
 
-	public Double getIgr() {
+	public BigDecimal getIgr() {
 		return igr;
 	}
 
-	public void setIgr(Double igr) {
+	public void setIgr(BigDecimal igr) {
 		this.igr = igr;
 	}
 
@@ -460,11 +467,11 @@ private Double basecnps;
 		this.montantIgr = montantIgr;
 	}
 
-	public Double getCnps() {
+	public BigDecimal getCnps() {
 		return cnps;
 	}
 
-	public void setCnps(Double cnps) {
+	public void setCnps(BigDecimal cnps) {
 		this.cnps = cnps;
 	}
 
@@ -477,11 +484,11 @@ private Double basecnps;
 		this.montantCnps = montantCnps;
 	}
 
-	public Double getIndemniteRepresentation() {
+	public BigDecimal getIndemniteRepresentation() {
 		return indemniteRepresentation;
 	}
 
-	public void setIndemniteRepresentation(Double indemniteRepresentation) {
+	public void setIndemniteRepresentation(BigDecimal indemniteRepresentation) {
 		this.indemniteRepresentation = indemniteRepresentation;
 	}
 
@@ -494,11 +501,11 @@ private Double basecnps;
 		this.indemniteRepresent = indemniteRepresent;
 	}
 
-	public Double getIndemniteTransport() {
+	public BigDecimal getIndemniteTransport() {
 		return indemniteTransport;
 	}
 
-	public void setIndemniteTransport(Double indemniteTransport) {
+	public void setIndemniteTransport(BigDecimal indemniteTransport) {
 		this.indemniteTransport = indemniteTransport;
 	}
 
@@ -511,11 +518,11 @@ private Double basecnps;
 		this.indemniteTransp = indemniteTransp;
 	}
 
-	public Double getImpotSalaire() {
+	public BigDecimal getImpotSalaire() {
 		return impotSalaire;
 	}
 
-	public void setImpotSalaire(Double impotSalaire) {
+	public void setImpotSalaire(BigDecimal impotSalaire) {
 		this.impotSalaire = impotSalaire;
 	}
 
@@ -537,11 +544,11 @@ private Double basecnps;
 		this.montantIs = montantIs;
 	}
 
-	public Double getTa() {
+	public BigDecimal getTa() {
 		return ta;
 	}
 
-	public void setTa(Double ta) {
+	public void setTa(BigDecimal ta) {
 		this.ta = ta;
 	}
 
@@ -554,11 +561,11 @@ private Double basecnps;
 		this.montantTa = montantTa;
 	}
 
-	public Double getFpc() {
+	public BigDecimal getFpc() {
 		return fpc;
 	}
 
-	public void setFpc(Double fpc) {
+	public void setFpc(BigDecimal fpc) {
 		this.fpc = fpc;
 	}
 
@@ -571,11 +578,11 @@ private Double basecnps;
 		this.montantFpc = montantFpc;
 	}
 
-	public Double getPrestationFamiliale() {
+	public BigDecimal getPrestationFamiliale() {
 		return prestationFamiliale;
 	}
 
-	public void setPrestationFamiliale(Double prestationFamiliale) {
+	public void setPrestationFamiliale(BigDecimal prestationFamiliale) {
 		this.prestationFamiliale = prestationFamiliale;
 	}
 
@@ -588,11 +595,11 @@ private Double basecnps;
 		this.prestationFamil = prestationFamil;
 	}
 
-	public Double getAccidentTravail() {
+	public BigDecimal getAccidentTravail() {
 		return accidentTravail;
 	}
 
-	public void setAccidentTravail(Double accidentTravail) {
+	public void setAccidentTravail(BigDecimal accidentTravail) {
 		this.accidentTravail = accidentTravail;
 	}
 
@@ -605,11 +612,11 @@ private Double basecnps;
 		this.accidentTrav = accidentTrav;
 	}
 
-	public Double getRetraite() {
+	public BigDecimal getRetraite() {
 		return retraite;
 	}
 
-	public void setRetraite(Double retraite) {
+	public void setRetraite(BigDecimal retraite) {
 		this.retraite = retraite;
 	}
 
@@ -654,11 +661,11 @@ private Double basecnps;
 		this.cloture = cloture;
 	}
 
-	public Double getSalairbase() {
+	public BigDecimal getSalairbase() {
 		return salairbase;
 	}
 
-	public void setSalairbase(Double salairbase) {
+	public void setSalairbase(BigDecimal salairbase) {
 		this.salairbase = salairbase;
 	}
 
@@ -672,11 +679,11 @@ private Double basecnps;
 		
 	}
 
-	public Double getPrimeanciennete() {
+	public BigDecimal getPrimeanciennete() {
 		return primeanciennete;
 	}
 
-	public void setPrimeanciennete(Double primeanciennete) {
+	public void setPrimeanciennete(BigDecimal primeanciennete) {
 		this.primeanciennete = primeanciennete;
 	}
 
@@ -690,11 +697,11 @@ private Double basecnps;
 		this.montantPrimeanciennete = montantPrimeanciennete;
 	}
 
-	public Double getIndemnitelogement() {
+	public BigDecimal getIndemnitelogement() {
 		return indemnitelogement;
 	}
 
-	public void setIndemnitelogement(Double indemnitelogement) {
+	public void setIndemnitelogement(BigDecimal indemnitelogement) {
 		this.indemnitelogement = indemnitelogement;
 	}
 
@@ -706,11 +713,11 @@ private Double basecnps;
 		this.montantIndemnitelogement = montantIndemnitelogement;
 	}
 
-	public Double getTotalretenuefiscal() {
+	public BigDecimal getTotalretenuefiscal() {
 		return totalretenuefiscal;
 	}
 
-	public void setTotalretenuefiscal(Double totalretenuefiscal) {
+	public void setTotalretenuefiscal(BigDecimal totalretenuefiscal) {
 		this.totalretenuefiscal = totalretenuefiscal;
 	}
 
@@ -722,11 +729,11 @@ private Double basecnps;
 		this.montanttotalretenuefiscal = montanttotalretenuefiscal;
 	}
 
-	public Double getAvanceetacompte() {
+	public BigDecimal getAvanceetacompte() {
 		return avanceetacompte;
 	}
 
-	public void setAvanceetacompte(Double avanceetacompte) {
+	public void setAvanceetacompte(BigDecimal avanceetacompte) {
 		this.avanceetacompte = avanceetacompte;
 	}
 
@@ -738,11 +745,11 @@ private Double basecnps;
 		this.montantavanceetacompte = montantavanceetacompte;
 	}
 
-	public Double getCarec() {
+	public BigDecimal getCarec() {
 		return carec;
 	}
 
-	public void setCarec(Double carec) {
+	public void setCarec(BigDecimal carec) {
 		this.carec = carec;
 	}
 
@@ -754,11 +761,11 @@ private Double basecnps;
 		this.montantcarec = montantcarec;
 	}
 
-	public Double getTotalmassesalarial() {
+	public BigDecimal getTotalmassesalarial() {
 		return totalmassesalarial;
 	}
 
-	public void setTotalmassesalarial(Double totalmassesalarial) {
+	public void setTotalmassesalarial(BigDecimal totalmassesalarial) {
 		this.totalmassesalarial = totalmassesalarial;
 	}
 
@@ -770,11 +777,11 @@ private Double basecnps;
 		this.montanttotalmassesalarial = montanttotalmassesalarial;
 	}
 
-	public Double getTotalpatronal() {
+	public BigDecimal getTotalpatronal() {
 		return totalpatronal;
 	}
 
-	public void setTotalpatronal(Double totalpatronal) {
+	public void setTotalpatronal(BigDecimal totalpatronal) {
 		this.totalpatronal = totalpatronal;
 	}
 
@@ -786,11 +793,11 @@ private Double basecnps;
 		this.montanttotalpatronal = montanttotalpatronal;
 	}
 
-	public Double getTotalretenue() {
+	public BigDecimal getTotalretenue() {
 		return totalretenue;
 	}
 
-	public void setTotalretenue(Double totalretenue) {
+	public void setTotalretenue(BigDecimal totalretenue) {
 		this.totalretenue = totalretenue;
 	}
 
@@ -802,11 +809,11 @@ private Double basecnps;
 		this.montanttotalretenue = montanttotalretenue;
 	}
 
-	public Double getPretaloes() {
+	public BigDecimal getPretaloes() {
 		return pretaloes;
 	}
 
-	public void setPretaloes(Double pretaloes) {
+	public void setPretaloes(BigDecimal pretaloes) {
 		this.pretaloes = pretaloes;
 	}
 
@@ -818,11 +825,11 @@ private Double basecnps;
 		this.montantpretaloes = montantpretaloes;
 	}
 
-	public Double getNetapayer() {
+	public BigDecimal getNetapayer() {
 		return netapayer;
 	}
 
-	public void setNetapayer(Double netapayer) {
+	public void setNetapayer(BigDecimal netapayer) {
 		this.netapayer = netapayer;
 	}
 
@@ -870,19 +877,19 @@ private Double basecnps;
 		this.mtretenueSociiale = Utils.formattingAmount(retenueSociiale);
 	}
 
-	public Double getRetenueSociiale() {
+	public BigDecimal getRetenueSociiale() {
 		return retenueSociiale;
 	}
 
-	public void setRetenueSociiale(Double retenueSociiale) {
+	public void setRetenueSociiale(BigDecimal retenueSociiale) {
 		this.retenueSociiale = retenueSociiale;
 	}
 
-	public Double getIndemniteRespons() {
+	public BigDecimal getIndemniteRespons() {
 		return indemniteRespons;
 	}
 
-	public void setIndemniteRespons(Double indemniteRespons) {
+	public void setIndemniteRespons(BigDecimal indemniteRespons) {
 		this.indemniteRespons = indemniteRespons;
 	}
 
@@ -894,11 +901,11 @@ private Double basecnps;
 		this.mtindemniteRespons = mtindemniteRespons;
 	}
 
-	public Double getIndemniteTransportImp() {
+	public BigDecimal getIndemniteTransportImp() {
 		return indemniteTransportImp;
 	}
 
-	public void setIndemniteTransportImp(Double indemniteTransportImp) {
+	public void setIndemniteTransportImp(BigDecimal indemniteTransportImp) {
 		this.indemniteTransportImp = indemniteTransportImp;
 	}
 
@@ -912,11 +919,11 @@ private Double basecnps;
 		this.mtindemniteTranspImp = mtindemniteTranspImp;
 	}
 
-	public Double getBrutNonImposable() {
+	public BigDecimal getBrutNonImposable() {
 		return brutNonImposable;
 	}
 
-	public void setBrutNonImposable(Double brutNonImposable) {
+	public void setBrutNonImposable(BigDecimal brutNonImposable) {
 		this.brutNonImposable = brutNonImposable;
 	}
 
@@ -928,11 +935,11 @@ private Double basecnps;
 		this.mtbrutNonImpo = mtbrutNonImpo;
 	}
 
-	public Double getFpcregul() {
+	public BigDecimal getFpcregul() {
 		return fpcregul;
 	}
 
-	public void setFpcregul(Double fpcregul) {
+	public void setFpcregul(BigDecimal fpcregul) {
 		this.fpcregul = fpcregul;
 	}
 
@@ -944,7 +951,23 @@ private Double basecnps;
 		this.montantFpcregul = montantFpcregul;
 	}
 
-	@Override
+    public BigDecimal getNetRegulPayer() {
+        return netRegulPayer;
+    }
+
+    public void setNetRegulPayer(BigDecimal netRegulPayer) {
+        this.netRegulPayer = netRegulPayer;
+    }
+
+    public String getMontantNetRegulpayer() {
+        return montantNetRegulpayer;
+    }
+
+    public void setMontantNetRegulpayer(String montantNetRegulpayer) {
+        this.montantNetRegulpayer = montantNetRegulpayer;
+    }
+
+    @Override
 	public String toString() {
 		return "BulletinPaie{" +
 				"id=" + id +
@@ -1052,11 +1075,11 @@ private Double basecnps;
 				'}';
 	}
 
-	public Double getTotalbrut() {
+	public BigDecimal getTotalbrut() {
 		return totalbrut;
 	}
 
-	public void setTotalbrut(Double totalbrut) {
+	public void setTotalbrut(BigDecimal totalbrut) {
 		this.totalbrut = totalbrut;
 	}
 
@@ -1068,35 +1091,35 @@ private Double basecnps;
 		this.montanttotalbrut = montanttotalbrut;
 	}
 
-	public Double getCumulIts() {
+	public BigDecimal getCumulIts() {
 		return cumulIts;
 	}
 
-	public void setCumulIts(Double cumulIts) {
+	public void setCumulIts(BigDecimal cumulIts) {
 		this.cumulIts = cumulIts;
 	}
 
-	public Double getCumulCn() {
+	public BigDecimal getCumulCn() {
 		return cumulCn;
 	}
 
-	public void setCumulCn(Double cumulCn) {
+	public void setCumulCn(BigDecimal cumulCn) {
 		this.cumulCn = cumulCn;
 	}
 
-	public Double getCumulIgr() {
+	public BigDecimal getCumulIgr() {
 		return cumulIgr;
 	}
 
-	public void setCumulIgr(Double cumulIgr) {
+	public void setCumulIgr(BigDecimal cumulIgr) {
 		this.cumulIgr = cumulIgr;
 	}
 
-	public Double getCumulCnpsSal() {
+	public BigDecimal getCumulCnpsSal() {
 		return cumulCnpsSal;
 	}
 
-	public void setCumulCnpsSal(Double cumulCnpsSal) {
+	public void setCumulCnpsSal(BigDecimal cumulCnpsSal) {
 		this.cumulCnpsSal = cumulCnpsSal;
 	}
 
@@ -1135,27 +1158,27 @@ private Double basecnps;
 		this.montantcumulCnpsSal = montantcumulCnpsSal;
 	}
 
-	public Double getJourTravail() {
+	public BigDecimal getJourTravail() {
 		return jourTravail;
 	}
 
-	public void setJourTravail(Double jourTravail) {
+	public void setJourTravail(BigDecimal jourTravail) {
 		this.jourTravail = jourTravail;
 	}
 
-	public Double getTemptravail() {
+	public BigDecimal getTemptravail() {
 		return temptravail;
 	}
 
-	public void setTemptravail(Double temptravail) {
+	public void setTemptravail(BigDecimal temptravail) {
 		this.temptravail = temptravail;
 	}
 
-	public Double getCumuljourTravail() {
+	public BigDecimal getCumuljourTravail() {
 		return cumuljourTravail;
 	}
 
-	public void setCumuljourTravail(Double cumuljourTravail) {
+	public void setCumuljourTravail(BigDecimal cumuljourTravail) {
 		this.cumuljourTravail = cumuljourTravail;
 	}
 
@@ -1201,11 +1224,11 @@ private Double basecnps;
 		this.congeAc = congeAc;
 	}
 
-	public Double getBasecnps() {
+	public BigDecimal getBasecnps() {
 		return basecnps;
 	}
 
-	public void setBasecnps(Double basecnps) {
+	public void setBasecnps(BigDecimal basecnps) {
 		this.basecnps = basecnps;
 	}
 
@@ -1217,11 +1240,11 @@ private Double basecnps;
 		this.montantbaseCnps = montantbaseCnps;
 	}
 
-	public Double getAutreImposable() {
+	public BigDecimal getAutreImposable() {
 		return autreImposable;
 	}
 
-	public void setAutreImposable(Double autreImposable) {
+	public void setAutreImposable(BigDecimal autreImposable) {
 		this.autreImposable = autreImposable;
 	}
 
@@ -1233,11 +1256,11 @@ private Double basecnps;
 		this.mtautreImposable =Utils.formattingAmount(autreImposable);
 	}
 
-	public Double getAutreNonImposable() {
+	public BigDecimal getAutreNonImposable() {
 		return autreNonImposable;
 	}
 
-	public void setAutreNonImposable(Double autreNonImposable) {
+	public void setAutreNonImposable(BigDecimal autreNonImposable) {
 		this.autreNonImposable = autreNonImposable;
 	}
 
@@ -1249,11 +1272,11 @@ private Double basecnps;
 		this.mtautreNonImposable = mtautreNonImposable;
 	}
 
-	public Double getCumulRetenueNet() {
+	public BigDecimal getCumulRetenueNet() {
 		return cumulRetenueNet;
 	}
 
-	public void setCumulRetenueNet(Double cumulRetenueNet) {
+	public void setCumulRetenueNet(BigDecimal cumulRetenueNet) {
 		this.cumulRetenueNet = cumulRetenueNet;
 	}
 
@@ -1265,11 +1288,11 @@ private Double basecnps;
 		this.montantcumulRetenueNet = montantcumulRetenueNet;
 	}
 
-	public Double getCumulSalaireNet() {
+	public BigDecimal getCumulSalaireNet() {
 		return cumulSalaireNet;
 	}
 
-	public void setCumulSalaireNet(Double cumulSalaireNet) {
+	public void setCumulSalaireNet(BigDecimal cumulSalaireNet) {
 		this.cumulSalaireNet = cumulSalaireNet;
 	}
 
@@ -1281,11 +1304,11 @@ private Double basecnps;
 		this.montantcumulSalaireNet = montantcumulSalaireNet;
 	}
 
-	public Double getAutreIndemImposable() {
+	public BigDecimal getAutreIndemImposable() {
 		return autreIndemImposable;
 	}
 
-	public void setAutreIndemImposable(Double autreIndemImposable) {
+	public void setAutreIndemImposable(BigDecimal autreIndemImposable) {
 		this.autreIndemImposable = autreIndemImposable;
 	}
 
@@ -1297,11 +1320,11 @@ private Double basecnps;
 		this.montantautreIndemImposable = montantautreIndemImposable;
 	}
 
-	public Double getAutrePrelevement() {
+	public BigDecimal getAutrePrelevement() {
 		return autrePrelevement;
 	}
 
-	public void setAutrePrelevement(Double autrePrelevement) {
+	public void setAutrePrelevement(BigDecimal autrePrelevement) {
 		this.autrePrelevement = autrePrelevement;
 	}
 
@@ -1313,11 +1336,11 @@ private Double basecnps;
 		this.mtautrePrelevement = mtautrePrelevement;
 	}
 
-	public Double getRegularisation() {
+	public BigDecimal getRegularisation() {
 		return regularisation;
 	}
 
-	public void setRegularisation(Double regularisation) {
+	public void setRegularisation(BigDecimal regularisation) {
 		this.regularisation = regularisation;
 	}
 
@@ -1330,11 +1353,11 @@ private Double basecnps;
 	}
 
 
-	public Double getCMUPatronal() {
+	public BigDecimal getCMUPatronal() {
 		return CMUPatronal;
 	}
 
-	public void setCMUPatronal(Double CMUPatronal) {
+	public void setCMUPatronal(BigDecimal CMUPatronal) {
 		this.CMUPatronal = CMUPatronal;
 	}
 
@@ -1346,11 +1369,11 @@ private Double basecnps;
 		this.mtCMUPatronal = mtCMUPatronal;
 	}
 
-	public Double getCMUSalarial() {
+	public BigDecimal getCMUSalarial() {
 		return CMUSalarial;
 	}
 
-	public void setCMUSalarial(Double CMUSalarial) {
+	public void setCMUSalarial(BigDecimal CMUSalarial) {
 		this.CMUSalarial = CMUSalarial;
 	}
 

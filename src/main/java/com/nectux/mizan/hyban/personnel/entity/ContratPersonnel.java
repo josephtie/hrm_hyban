@@ -12,6 +12,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.util.Optional;
+
 @Entity
 @Component("contratPersonnel")
 @Scope("prototype")
@@ -70,35 +73,35 @@ public class ContratPersonnel extends Auditable {
 	@Transient
 	private String dMod;
 	
-	private Double netAPayer;
+	private BigDecimal netAPayer;
 	
 	@Transient
 	private String netPayer;
 	
-	private Double indemniteLogement;
+	private BigDecimal indemniteLogement;
 	
 	@Transient
 	private String indemniteLogmt;
 	
-    private Double indemniteRepresent;    
+    private BigDecimal indemniteRepresent;    
 	
 	@Transient
 	private String indemniteReprt;
 	
-	   /*	private Double indemniteResp;
+	   /*	private BigDecimal indemniteResp;
 		
 	@Transient
 	private String indemRespons;*/
 	
 	
 	private String ObservCtrat;
-    private Double indemniteTransport;
+    private BigDecimal indemniteTransport;
 	
 	@Transient
 	private String indemniteTranspt;
 	
 	
-	private Double sursalaire;
+	private BigDecimal sursalaire;
 	
 	@Transient
 	private String sursal;
@@ -128,9 +131,7 @@ public class ContratPersonnel extends Auditable {
 		this.statut = statut;
 	}
 
-	public void setNetAPayer(Double netAPayer) {
-		this.netAPayer = netAPayer;
-	}
+
 
 	public Categorie getCategorie() {
 		return categorie;
@@ -214,11 +215,11 @@ public class ContratPersonnel extends Auditable {
 		this.dMod = dMod;
 	}
 
-	public double getNetAPayer() {
+	public BigDecimal getNetAPayer() {
 		return netAPayer;
 	}
 
-	public void setNetAPayer(double netAPayer) {
+	public void setNetAPayer(BigDecimal netAPayer) {
 		this.netAPayer = netAPayer;
 	}
 
@@ -231,11 +232,11 @@ public class ContratPersonnel extends Auditable {
 		this.netPayer = netPayer;
 	}
 
-	public Double getSursalaire() {
+	public BigDecimal getSursalaire() {
 		return sursalaire;
 	}
 
-	public void setSursalaire(Double sursalaire) {
+	public void setSursalaire(BigDecimal sursalaire) {
 		this.sursalaire = sursalaire;
 	}
 
@@ -247,11 +248,11 @@ public class ContratPersonnel extends Auditable {
 		this.sursal = sursal;
 	}
 
-	public Double getIndemniteLogement() {
+	public BigDecimal getIndemniteLogement() {
 		return indemniteLogement;
 	}
 
-	public void setIndemniteLogement(Double indemniteLogement) {
+	public void setIndemniteLogement(BigDecimal indemniteLogement) {
 		this.indemniteLogement = indemniteLogement;
 	}
 
@@ -265,18 +266,18 @@ public class ContratPersonnel extends Auditable {
 	}
 
 	public int getAncienneteInitial() {
-		return ancienneteInitial;
+        return Optional.ofNullable(ancienneteInitial).orElse(0);
 	}
 
 	public void setAncienneteInitial(int ancienneteInitial) {
 		this.ancienneteInitial = ancienneteInitial;
 	}
 
-public Double getIndemniteRepresent() {
+public BigDecimal getIndemniteRepresent() {
 		return indemniteRepresent;
 	}
 
-	public void setIndemniteRepresent(Double indemniteRepresent) {
+	public void setIndemniteRepresent(BigDecimal indemniteRepresent) {
 		this.indemniteRepresent = indemniteRepresent;
 	}
 
@@ -288,11 +289,11 @@ public Double getIndemniteRepresent() {
 		this.indemniteReprt = indemniteReprt;
 	}
 
-	public Double getIndemniteTransport() {
+	public BigDecimal getIndemniteTransport() {
 		return indemniteTransport;
 	}
 
-	public void setIndemniteTransport(Double indemniteTransport) {
+	public void setIndemniteTransport(BigDecimal indemniteTransport) {
 		this.indemniteTransport = indemniteTransport;
 	}
 
@@ -312,39 +313,39 @@ public Double getIndemniteRepresent() {
 		this.soldeCalcule = soldeCalcule;
 	}
 
-	@Override
-	public String toString() {
-		return "ContratPersonnel{" +
-				"id=" + id +
-				", statut=" + statut +
-				", depart=" + depart +
-				", soldeCalcule=" + soldeCalcule +
-				", categorie=" + categorie +
-				", personnel=" + personnel +
-				", fonction=" + fonction +
-				", typeContrat=" + typeContrat +
-				", dateDebut=" + dateDebut +
-				", dDebut='" + dDebut + '\'' +
-				", dateFin=" + dateFin +
-				", dFin='" + dFin + '\'' +
-				", dateMod=" + dateMod +
-				", dMod='" + dMod + '\'' +
-				", netAPayer=" + netAPayer +
-				", netPayer='" + netPayer + '\'' +
-				", indemniteLogement=" + indemniteLogement +
-				", indemniteLogmt='" + indemniteLogmt + '\'' +
-				", indemniteRepresent=" + indemniteRepresent +
-				", indemniteReprt='" + indemniteReprt + '\'' +
-				", ObservCtrat='" + ObservCtrat + '\'' +
-				", indemniteTransport=" + indemniteTransport +
-				", indemniteTranspt='" + indemniteTranspt + '\'' +
-				", sursalaire=" + sursalaire +
-				", sursal='" + sursal + '\'' +
-				", ancienneteInitial=" + ancienneteInitial +
-				'}';
-	}
+    @Override
+    public String toString() {
+        return "ContratPersonnel{" +
+                "id=" + id +
+                ", statut=" + statut +
+                ", depart=" + depart +
+                ", soldeCalcule=" + soldeCalcule +
+                ", categorie=" + categorie +
+                ", personnel=" + personnel +
+                ", fonction=" + fonction +
+                ", typeContrat=" + typeContrat +
+                ", dateDebut=" + dateDebut +
+                ", dDebut='" + dDebut + '\'' +
+                ", dateFin=" + dateFin +
+                ", dFin='" + dFin + '\'' +
+                ", dateMod=" + dateMod +
+                ", dMod='" + dMod + '\'' +
+                ", netAPayer=" + netAPayer +
+                ", netPayer='" + netPayer + '\'' +
+                ", indemniteLogement=" + indemniteLogement +
+                ", indemniteLogmt='" + indemniteLogmt + '\'' +
+                ", indemniteRepresent=" + indemniteRepresent +
+                ", indemniteReprt='" + indemniteReprt + '\'' +
+                ", ObservCtrat='" + ObservCtrat + '\'' +
+                ", indemniteTransport=" + indemniteTransport +
+                ", indemniteTranspt='" + indemniteTranspt + '\'' +
+                ", sursalaire=" + sursalaire +
+                ", sursal='" + sursal + '\'' +
+                ", ancienneteInitial=" + ancienneteInitial +
+                '}';
+    }
 
-	public Boolean getDepart() {
+    public Boolean getDepart() {
 		return depart;
 	}
 
@@ -362,11 +363,11 @@ public Double getIndemniteRepresent() {
 
 	
 
-	/*public Double getIndemniteResp() {
+	/*public BigDecimal getIndemniteResp() {
 		return indemniteResp;
 	}
 
-	public void setIndemniteResp(Double indemniteResp) {
+	public void setIndemniteResp(BigDecimal indemniteResp) {
 		this.indemniteResp = indemniteResp;
 	}
 

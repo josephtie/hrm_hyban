@@ -21,15 +21,14 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api': {
-        target: 'http://192.168.1.5:7200/api',
+        target: 'http://192.168.1.2:7200/api',
         changeOrigin: true,
         secure: false
       },
-      '/keycloak': {
-        target: 'http://192.168.1.5:8080',
+      '/realms': {
+        target: 'http://192.168.1.2:8080',
         changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/keycloak/, '')
+        secure: false
       }
     }
   }

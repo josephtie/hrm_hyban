@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.personnel.web;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.io.File;
@@ -72,7 +73,7 @@ public class PersonnelRestController {
             Integer limit = request.getLimit() == null ? 10 : request.getLimit();
             String search = request.getSearch();
 
-            PageRequest pageRequest = PageRequest.of(offset , limit, Direction.DESC, "id");
+            PageRequest pageRequest = PageRequest.of(offset , limit, Direction.ASC, "nom", "prenom");
             PersonnelDTO personnelDTO;
             
             // Créer une map de filtres avec tous les paramètres
@@ -143,9 +144,9 @@ public class PersonnelRestController {
                 filters.put("fonction", request.getFonctionFilter());
             }
             
-            // Récupérer tous les personnels avec les filtres (sans pagination)
-            Pageable unpaged = Pageable.unpaged();
-            PersonnelDTO personnelDTO = personnelService.findAllfilter(filters, unpaged);
+            // Récupérer tous les personnels avec les filtres (avec tri par nom, prénom)
+            PageRequest pageRequest = PageRequest.of(0, Integer.MAX_VALUE, Direction.ASC, "nom", "prenom");
+            PersonnelDTO personnelDTO = personnelService.findAllfilter(filters, pageRequest);
             
             // Créer le fichier Excel
             byte[] excelFile = createExcelFile(personnelDTO.getRows());
@@ -262,15 +263,15 @@ public class PersonnelRestController {
                 req.getSituationMatrimoniale() == null ? 0 : req.getSituationMatrimoniale(), 
                 req.getNombreEnfant() == null ? 0 : req.getNombreEnfant(),
                 req.getDateArrivee(), req.getNumeroCNPS(), req.getAdresse(), req.getDateDebut(), 
-                req.getDateFin(), req.getSalaireNet(), req.getIndemnitelogement(),
+                req.getDateFin(), BigDecimal.valueOf(req.getSalaireNet()), BigDecimal.valueOf(req.getIndemnitelogement()),
                 req.getModePaiement(), req.getIdBanque(), req.getNumeroCompte(), 
                 req.getNumeroGuichet(), req.getRib(), 
                 req.getAncienneteInitial() == null ? 0 : req.getAncienneteInitial(), 
                 req.getCarec(), req.getTypeEmp(), req.getTelephone(), 
                 req.getSituationMedaille() == null ? 0 : req.getSituationMedaille(), 
                 req.getSituationEmploie() == null ? 0 : req.getSituationEmploie(), 
-                req.getDateRetourcg(), req.getIndemniteRespons(), req.getIndemniteRepresent(), 
-                req.getIndemniteTransport(), req.getSursalaire()
+                req.getDateRetourcg(), BigDecimal.valueOf(req.getIndemniteRespons()), BigDecimal.valueOf(req.getIndemniteRepresent()),
+                    BigDecimal.valueOf(req.getIndemniteTransport()), BigDecimal.valueOf(req.getSursalaire())
             );
             
             PersonnelVueResponse<ContratPersonnelDTO> response = new PersonnelVueResponse<>();

@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.utils.Utils;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("echelonnement")
 @Scope("prototype")
@@ -34,7 +36,7 @@ public class Echelonnement extends Auditable {
 	@Column(unique=true, nullable=false)
 	private Long id;
 	
-	private Double montant;
+	private BigDecimal montant;
 	
 	private Boolean paye;
 	
@@ -76,11 +78,11 @@ public class Echelonnement extends Auditable {
 		this.id = id;
 	}
 
-	public Double getMontant() {
+	public BigDecimal getMontant() {
 		return montant;
 	}
 
-	public void setMontant(Double montant) {
+	public void setMontant(BigDecimal montant) {
 		this.montant = montant;
 	}
 

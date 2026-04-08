@@ -52,10 +52,10 @@ public class WebSecurityConfig {
             "http://localhost:*",
             "http://127.0.0.1:*",
             "http://192.168.1.2:*",
-            "http://192.168.1.22:*",
-            "http://192.168.1.5:*"
+            "http://frontend:*",
+            "http://nginx:*"
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

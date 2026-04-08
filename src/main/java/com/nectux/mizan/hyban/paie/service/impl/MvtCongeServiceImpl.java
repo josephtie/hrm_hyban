@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -68,7 +69,7 @@ public class MvtCongeServiceImpl implements MvtCongeService {
 			mvtConge.setDateDepart(DateManager.stringToDate(dateDepart, "dd/MM/yyyy"));
 			mvtConge.setDateRetour(DateManager.stringToDate(dateRetour, "dd/MM/yyyy"));
 			mvtConge.setNombreJourPris(DateManager.dateDifference(mvtConge.getDateDepart(), mvtConge.getDateRetour()));			
-			mvtConge.setMontantVerse(montantVerse);		
+			mvtConge.setMontantVerse(BigDecimal.valueOf(montantVerse));
 			mvtConge.setPersonnel(personnel);
 			
 			if(mvtConge.getDateDepart() == null || mvtConge.getDateDepart().equals("")){
@@ -125,7 +126,7 @@ public class MvtCongeServiceImpl implements MvtCongeService {
 				mvtCongeDTO.setErrors(listErreur);
 				
 				personnel.setNombreJourdu(personnel.getNombreJourdu() - mvtConge.getNombreJourPris());
-				personnel.setMtcongedu(personnel.getMtcongedu() - mvtConge.getMontantVerse());
+				personnel.setMtcongedu(personnel.getMtcongedu().subtract((mvtConge.getMontantVerse())));
 				personnelRepository.save(personnel);
 				
 				AbsencesPersonnel absPerson = new AbsencesPersonnel();
@@ -197,7 +198,7 @@ public class MvtCongeServiceImpl implements MvtCongeService {
 			
 			if(listErreur.isEmpty()) {
 				stockConge.getPersonnel().setNombreJourdu(stockConge.getPersonnel().getNombreJourdu() + stockConge.getNombreJourPris());
-				stockConge.getPersonnel().setMtcongedu(stockConge.getPersonnel().getMtcongedu() + stockConge.getMontantVerse());
+				stockConge.getPersonnel().setMtcongedu(stockConge.getPersonnel().getMtcongedu().add(stockConge.getMontantVerse()));
 				personnelRepository.save(stockConge.getPersonnel());
 				mvtCongeRepository.delete(stockConge);
 				sb = new StringBuilder();

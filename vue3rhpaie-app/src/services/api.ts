@@ -5,7 +5,7 @@ import router from '@/router'
 import type { ApiResponse, ApiError } from '@/types/auth'
 
 // Configuration de base
-const API_BASE_URL = 'http://192.168.1.5:7200/api' // Connexion directe au backend prod
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7200/api'
 const REQUEST_TIMEOUT = 30000
 
 // Création de l'instance Axios
@@ -28,6 +28,16 @@ api.interceptors.request.use(
       console.log('🔑 Token envoyé:', token.substring(0, 50) + '...')
     } else {
       console.log('❌ Aucun token trouvé')
+    }
+    
+    // Préserver le Content-Type pour FormData
+    if (config.data instanceof FormData) {
+      // Ne pas définir Content-Type pour FormData, laisse Axios le faire automatiquement avec le boundary
+      delete config.headers['Content-Type']
+      console.log('📤 FormData détecté, Content-Type laissé à Axios')
+    } else if (!config.headers['Content-Type']) {
+      // Pour les autres requêtes, utiliser application/json par défaut
+      config.headers['Content-Type'] = 'application/json'
     }
     
     // Log pour le débogage

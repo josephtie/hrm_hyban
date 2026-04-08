@@ -7,7 +7,7 @@ import com.nectux.mizan.hyban.rh.personnel.dto.EnfantDTO;
 
 public interface EnfantService {
 	
-	public EnfantDTO save(Long id, Long idPersonnel, String matricule, String nom, Date dateNaissance, String lieuNaissance, char sexe);
+	public EnfantDTO save(Long id, Long idPersonnel, String matricule, String nom, Date dateNaissance, String lieuNaissance, char sexe,Boolean acharge,String ecole);
 	
 	public EnfantDTO delete(Long id);
 	

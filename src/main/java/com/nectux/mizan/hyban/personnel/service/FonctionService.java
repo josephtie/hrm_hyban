@@ -19,7 +19,9 @@ public interface FonctionService {
 	public Boolean delete(Long id);
 	
 	public Fonction findFonction(Long id);
-	
+	public FonctionDTO findFoncts(Long id);
+	public FonctionDTO findFonct();
+
 	public Fonction findByLibelle(String libelle);
 	
 	public java.util.List<Fonction> findFonctions();

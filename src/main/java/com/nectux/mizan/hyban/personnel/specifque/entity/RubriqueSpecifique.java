@@ -1,12 +1,6 @@
 package com.nectux.mizan.hyban.personnel.specifque.entity;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.nectux.mizan.hyban.parametrages.entity.Auditable;
-import com.nectux.mizan.hyban.utils.CustomDateDeserializer;
-import com.nectux.mizan.hyban.utils.Utils;
-import org.springframework.context.annotation.Scope;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.stereotype.Component;
 
 import jakarta.persistence.*;
 

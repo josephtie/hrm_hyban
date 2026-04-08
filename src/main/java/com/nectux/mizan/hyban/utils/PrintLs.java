@@ -3,6 +3,7 @@ package com.nectux.mizan.hyban.utils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class PrintLs implements Serializable {
@@ -50,15 +51,15 @@ public class PrintLs implements Serializable {
 	private Float f4;
 	
 	private Float f5;
-	private Double value1;
+	private BigDecimal value1;
 
-	private Double value2;
+	private BigDecimal value2;
 
-	private Double value3;
+	private BigDecimal value3;
 
-	private Double value4;
+	private BigDecimal value4;
 
-	private Double value5;
+	private BigDecimal value5;
 
 	private String s1;
 	
@@ -361,43 +362,43 @@ public class PrintLs implements Serializable {
 	}
 
 
-	public Double getValue1() {
+	public BigDecimal getValue1() {
 		return value1;
 	}
 
-	public void setValue1(Double value1) {
+	public void setValue1(BigDecimal value1) {
 		this.value1 = value1;
 	}
 
-	public Double getValue2() {
+	public BigDecimal getValue2() {
 		return value2;
 	}
 
-	public void setValue2(Double value2) {
+	public void setValue2(BigDecimal value2) {
 		this.value2 = value2;
 	}
 
-	public Double getValue3() {
+	public BigDecimal getValue3() {
 		return value3;
 	}
 
-	public void setValue3(Double value3) {
+	public void setValue3(BigDecimal value3) {
 		this.value3 = value3;
 	}
 
-	public Double getValue4() {
+	public BigDecimal getValue4() {
 		return value4;
 	}
 
-	public void setValue4(Double value4) {
+	public void setValue4(BigDecimal value4) {
 		this.value4 = value4;
 	}
 
-	public Double getValue5() {
+	public BigDecimal getValue5() {
 		return value5;
 	}
 
-	public void setValue5(Double value5) {
+	public void setValue5(BigDecimal value5) {
 		this.value5 = value5;
 	}
 }

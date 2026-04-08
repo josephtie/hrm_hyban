@@ -3,6 +3,7 @@
  */
 package com.nectux.mizan.hyban.paie.dto;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import jakarta.persistence.Transient;
@@ -520,7 +521,7 @@ public class DisaDTO {
 
 
 	public String getMtnbJourMoisTravail() {
-		return mtnbJourMoisTravail=Utils.formattingAmount(nbJourMoisTravail);
+		return mtnbJourMoisTravail=Utils.formattingAmount(BigDecimal.valueOf(nbJourMoisTravail));
 	}
 
 
@@ -530,7 +531,7 @@ public class DisaDTO {
 
 
 	public String getMtsalaireBrutAnnuelNonPlafon() {
-		return mtsalaireBrutAnnuelNonPlafon=Utils.formattingAmount(salaireBrutAnnuelNonPlafon);
+		return mtsalaireBrutAnnuelNonPlafon=Utils.formattingAmount(BigDecimal.valueOf(salaireBrutAnnuelNonPlafon));
 	}
 
 
@@ -540,7 +541,7 @@ public class DisaDTO {
 
 
 	public String getMtnbMoisTravailAvecConge() {
-		return mtnbMoisTravailAvecConge=Utils.formattingAmount(nbMoisTravailAvecConge);
+		return mtnbMoisTravailAvecConge=Utils.formattingAmount(BigDecimal.valueOf(nbMoisTravailAvecConge));
 	}
 
 
@@ -550,7 +551,7 @@ public class DisaDTO {
 
 
 	public String getMtsalaireAnnuelSoumisAuPfAt() {
-		return mtsalaireAnnuelSoumisAuPfAt=Utils.formattingAmount(salaireAnnuelSoumisAuPfAt);
+		return mtsalaireAnnuelSoumisAuPfAt=Utils.formattingAmount(BigDecimal.valueOf(salaireAnnuelSoumisAuPfAt));
 	}
 
 
@@ -560,7 +561,7 @@ public class DisaDTO {
 
 
 	public String getMtsalaireAnnuelSoumisCnps() {
-		return mtsalaireAnnuelSoumisCnps=Utils.formattingAmount(salaireAnnuelSoumisCnps);
+		return mtsalaireAnnuelSoumisCnps=Utils.formattingAmount(BigDecimal.valueOf(salaireAnnuelSoumisCnps));
 	}
 
 
@@ -570,7 +571,7 @@ public class DisaDTO {
 
 
 	public String getMtcotisationEntreprisePfAtCnps() {
-		return mtcotisationEntreprisePfAtCnps=Utils.formattingAmount(cotisationEntreprisePfAtCnps);
+		return mtcotisationEntreprisePfAtCnps=Utils.formattingAmount(BigDecimal.valueOf(cotisationEntreprisePfAtCnps));
 	}
 
 

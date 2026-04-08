@@ -24,7 +24,7 @@ public interface ContratPersonnelRepository extends CrudRepository<ContratPerson
 	public List<ContratPersonnel> findAll();
 	
 	public ContratPersonnel findByPersonnelId(Long idPers);
-	
+    List<ContratPersonnel> findLastByStatutTrue();
 	//public List<ContratPersonnel> findByPersonnelId(Long idPers);
 	
 	public ContratPersonnel findByPersonnelMatricule(String mat);

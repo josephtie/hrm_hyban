@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.entity;
 
+import com.nectux.mizan.hyban.personnel.specifque.entity.Employee;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -42,7 +43,7 @@ public class TempEffectif extends Auditable {
 	
 
 	@ManyToOne
-	@JoinColumn(nullable=false)
+	@JoinColumn(nullable=true)
 	private Personnel personnel;
 	
 	@ManyToOne
@@ -56,8 +57,11 @@ public class TempEffectif extends Auditable {
 	
 	@Transient
 	private String dDatedesaisie;
-	
-	
+
+
+    @ManyToOne
+    @JoinColumn(nullable=true)
+    private Employee employee;
 	
 	
 	public TempEffectif() {
@@ -131,13 +135,27 @@ public class TempEffectif extends Auditable {
 		this.dDatedesaisie = dDatedesaisie;
 	}
 
-	@Override
-	public String toString() {
-		return "TempEffectif [id=" + id + ", jourspresence=" + jourspresence
-				+ ", heurspresence=" + heurspresence + ", personnel=" + personnel + ", periodePaie=" + periodePaie
-				+ ", datedesaisie=" + datedesaisie + ", dDatedesaisie="
-				+ dDatedesaisie + "]";
-	}
+    public Employee getEmployee() {
+        return employee;
+    }
+
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
+    }
+
+    @Override
+    public String toString() {
+        return "TempEffectif{" +
+                "id=" + id +
+                ", jourspresence=" + jourspresence +
+                ", heurspresence=" + heurspresence +
+                ", personnel=" + personnel +
+                ", periodePaie=" + periodePaie +
+                ", datedesaisie=" + datedesaisie +
+                ", dDatedesaisie='" + dDatedesaisie + '\'' +
+                ", employee=" + employee +
+                '}';
+    }
 
 /*	public String getDDatedesaisie() {
 		dDatedesaisie = Utils.dateToString(dateRemboursement, "dd/MM/yyyy");

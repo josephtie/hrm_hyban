@@ -1,6 +1,7 @@
 package com.nectux.mizan.hyban.personnel.web;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.*;
 
@@ -278,8 +279,8 @@ public class PersonnelController {
 	public @ResponseBody ContratPersonnelDTO saveMersonnel(@RequestBody com.nectux.mizan.hyban.common.dto.PersonnelRequest req) {
 		return personnelService.save(req.getId(), req.getNom(), req.getPrenom(), req.getNationalite(), req.getService(), req.getCategorie(), req.getFonction(), req.getTypeContrat(), req.getMatricule(),
 				 req.getSexe(), req.getDateNaissance(), req.getLieuNaissance(), req.getEmail(), req.getResidence(), req.getSituationMatrimoniale() == null ? 0 : req.getSituationMatrimoniale(), req.getNombreEnfant() == null ? 0 : req.getNombreEnfant(),
-				 req.getDateArrivee(), req.getNumeroCNPS(), req.getAdresse(), req.getDateDebut(), req.getDateFin(), req.getSalaireNet(), req.getIndemnitelogement(),
-				 req.getModePaiement(), req.getIdBanque(), req.getNumeroCompte(), req.getNumeroGuichet(), req.getRib(), req.getAncienneteInitial() == null ? 0 : req.getAncienneteInitial(), req.getCarec(), req.getTypeEmp(), req.getTelephone(), req.getSituationMedaille() == null ? 0 : req.getSituationMedaille(), req.getSituationEmploie() == null ? 0 : req.getSituationEmploie(), req.getDateRetourcg(), req.getIndemniteRespons(), req.getIndemniteRepresent(), req.getIndemniteTransport(), req.getSursalaire());
+				 req.getDateArrivee(), req.getNumeroCNPS(), req.getAdresse(), req.getDateDebut(), req.getDateFin(), BigDecimal.valueOf(req.getSalaireNet()), BigDecimal.valueOf(req.getIndemnitelogement()),
+				 req.getModePaiement(), req.getIdBanque(), req.getNumeroCompte(), req.getNumeroGuichet(), req.getRib(), req.getAncienneteInitial() == null ? 0 : req.getAncienneteInitial(), req.getCarec(), req.getTypeEmp(), req.getTelephone(), req.getSituationMedaille() == null ? 0 : req.getSituationMedaille(), req.getSituationEmploie() == null ? 0 : req.getSituationEmploie(), req.getDateRetourcg(), BigDecimal.valueOf(req.getIndemniteRespons()), BigDecimal.valueOf(req.getIndemniteRepresent()), BigDecimal.valueOf(req.getIndemniteTransport()), BigDecimal.valueOf(req.getSursalaire()));
 	}
 
 	@ResponseStatus(HttpStatus.OK)
@@ -512,7 +513,7 @@ public class PersonnelController {
 		for (PrintLs masse : masseSalarialeSite) {
 			PrintLs item = merged.computeIfAbsent(masse.getS1(), k -> new PrintLs());
 			item.setS1(masse.getS1()); // le site
-			item.setValue1(Math.ceil(masse.getValue1())); // la masse salariale
+			item.setValue1(masse.getValue1()); // la masse salariale
 		}
 
 		return toJson(new ArrayList<>(merged.values()));

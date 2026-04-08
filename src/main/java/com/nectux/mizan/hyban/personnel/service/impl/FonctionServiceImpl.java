@@ -102,7 +102,30 @@ public class FonctionServiceImpl implements FonctionService {
 		return fonctionRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));
 	}
 
-	@Override
+    @Override
+    public FonctionDTO findFoncts(Long id) {
+        FonctionDTO fonctionDTO = new FonctionDTO();
+       Fonction fonction=fonctionRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));;
+        fonctionDTO.setRow(fonction);
+        fonctionDTO.setResult(true);
+        fonctionDTO.setStatus(true);
+       // fonctionDTO.setRow(null);
+        return fonctionDTO;
+    }
+
+    @Override
+    public FonctionDTO findFonct() {
+        FonctionDTO fonctionDTO = new FonctionDTO();
+        fonctionDTO.setRows(fonctionRepository.findAll());
+        fonctionDTO.setResult(true);
+        fonctionDTO.setStatus(true);
+        fonctionDTO.setRow(null);
+
+        fonctionDTO.setTotal(fonctionRepository.findAll().size());
+        return fonctionDTO;
+    }
+
+    @Override
 	public Fonction findByLibelle(String libelle) {
 		// TODO Auto-generated method stub
 		return fonctionRepository.findByLibelle(libelle);

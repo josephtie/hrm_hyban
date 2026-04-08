@@ -3,9 +3,10 @@ package com.nectux.mizan.hyban.paie.service.impl;
 import com.nectux.mizan.hyban.paie.dto.CongeDTO;
 import com.nectux.mizan.hyban.paie.entity.BulletinPaie;
 import com.nectux.mizan.hyban.paie.entity.Conge;
+//import com.nectux.mizan.hyban.paie.entity.Gratification;
 import com.nectux.mizan.hyban.paie.entity.Gratification;
 import com.nectux.mizan.hyban.paie.repository.CongeRepository;
-import com.nectux.mizan.hyban.paie.repository.GratificationRepository;
+//import com.nectux.mizan.hyban.paie.repository.GratificationRepository;
 import com.nectux.mizan.hyban.paie.service.BulletinPaieService;
 import com.nectux.mizan.hyban.paie.service.CongeService;
 import com.nectux.mizan.hyban.parametrages.entity.Exercice;
@@ -23,6 +24,10 @@ import com.nectux.mizan.hyban.utils.DateManager;
 import com.nectux.mizan.hyban.utils.DifferenceDate;
 import com.nectux.mizan.hyban.utils.ProvisionConge;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -49,7 +54,7 @@ public class CongeServiceImpl implements CongeService {
 	@Autowired private PeriodePaieRepository periodePaieRepository;
 	@Autowired private PlanningCongeRepository planningCongeRepository;
 	@Autowired private ContratPersonnelRepository contratPersonnelRepository;
-	@Autowired private GratificationRepository gratificationRepository;
+//	@Autowired private GratificationRepository gratificationRepository;
 	
 	List<Conge> congeList;
 	
@@ -69,9 +74,9 @@ public class CongeServiceImpl implements CongeService {
 		
 		Conge conge = new Conge();
 		PlanningConge planningConge;
-		Double salaireMoyenMensuelle = 0.0;
-		Double	salaireMoyenMensuelleNew = 0.0;
-		Double indemniteRepresentationMoyenMensuelle = 0.0;
+		BigDecimal salaireMoyenMensuelle = BigDecimal.ZERO;
+        BigDecimal	salaireMoyenMensuelleNew = BigDecimal.ZERO;
+        BigDecimal indemniteRepresentationMoyenMensuelle = BigDecimal.ZERO;
 		Date dateRetourDernierConge = new Date();
 		Date dateDepartConge = new Date();
 		List<Conge> oldCongeList = new ArrayList<Conge>();
@@ -104,14 +109,14 @@ public class CongeServiceImpl implements CongeService {
 		
 		BulletinPaie bulls=new BulletinPaie();
 		bulls=bulletinPaieService.findBulletinByPeriodePaieAndPersonnel(maperiode, contratPersonnel.getPersonnel());
-		conge = congeRepository.save(new Conge(dateDepartConge, DateManager.addingDate(dateDepartConge,bulls.getTempsOfpresence()),(double)provisionConge.getC(),
+		conge = congeRepository.save(new Conge(dateDepartConge, DateManager.addingDate(dateDepartConge,bulls.getTempsOfpresence()),BigDecimal.valueOf(provisionConge.getC()),
 				provisionConge.getD(), salaireMoyenMensuelle, indemniteRepresentationMoyenMensuelle, 
-				bulls.getTempsOfpresence(), provisionConge.getH(), provisionConge.getI(), 
-				provisionConge.getJ(), provisionConge.getK(), provisionConge.getL(), 
-				provisionConge.getM(), provisionConge.getN(), provisionConge.getO(), 
-				provisionConge.getP(), provisionConge.getQ(), provisionConge.getR(),
-				provisionConge.getITS(), provisionConge.getCN(), provisionConge.getIGR(),provisionConge.getCNPS(),
-				provisionConge.getTotalRetenueFiscale(), provisionConge.getAllocationCongeNet(),
+				bulls.getTempsOfpresence(), BigDecimal.valueOf(provisionConge.getH()), BigDecimal.valueOf(provisionConge.getI()),
+				BigDecimal.valueOf(provisionConge.getJ()),BigDecimal.valueOf(provisionConge.getK()),  BigDecimal.valueOf( provisionConge.getL()),
+				BigDecimal.valueOf(provisionConge.getM()), BigDecimal.valueOf(provisionConge.getN()), BigDecimal.valueOf(provisionConge.getO()),
+				BigDecimal.valueOf(provisionConge.getP()), BigDecimal.valueOf(provisionConge.getQ()), BigDecimal.valueOf(provisionConge.getR()),
+				BigDecimal.valueOf(provisionConge.getITS()), BigDecimal.valueOf(provisionConge.getCN()), BigDecimal.valueOf(provisionConge.getIGR()),BigDecimal.valueOf(provisionConge.getCNPS()),
+				BigDecimal.valueOf(provisionConge.getTotalRetenueFiscale()), BigDecimal.valueOf(provisionConge.getAllocationCongeNet()),
 				contratPersonnel, periodePaieRepository.findByClotureFalse()));
 		
 		conge.setTempsOfpresence(bulls.getTempsOfpresence());
@@ -129,7 +134,7 @@ public class CongeServiceImpl implements CongeService {
 		personnel=contratPersonnel.getPersonnel();
 		///personnel.setDateRetourcge(DateManager.addingDate(dateDepartConge,bulls.getTempsOfpresence()+1));
 		personnel.setNombreJourdu(bulls.getTempsOfpresence()+personnel.getNombreJourdu());
-		personnel.setMtcongedu(conge.getAllocationCongeNet()+personnel.getMtcongedu());
+		personnel.setMtcongedu(conge.getAllocationCongeNet().add(personnel.getMtcongedu()));
 		personnelRepository.save(personnel);
 		
 		PlanningConge pc = planningCongeRepository.findByContratPersonnelAndStatut(contratPersonnel,true);
@@ -194,14 +199,15 @@ public class CongeServiceImpl implements CongeService {
 		
 		int tps=ProvisionConge.calculerTempsPresence(dateRetourDernierConge,dateDepartConge);
 		int rf=(int) (tps*2.2*1.25);
-		 Double[]ancienete= calculAnciennete(Contratp.getCategorie().getSalaireDeBase(),Contratp.getPersonnel().getDateArrivee());
-		 	double newancienete;
-	    	if(Contratp.getAncienneteInitial()!=0) {
-	    		 newancienete=ancienete[1] +Contratp.getAncienneteInitial();
-	    	}else{
-	    		newancienete=ancienete[1];
-	    	}
-	    	double anc=(int)newancienete ;
+        // 🔹 Ancienneté
+        long anneesAnciennete = ChronoUnit.YEARS.between(
+                Contratp.getPersonnel().getDateArrivee().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                LocalDate.now()
+        );
+        int anciennete = (int) (anneesAnciennete + Contratp.getAncienneteInitial());
+
+        int anc = anciennete < 2 ? 0 : Math.min(anciennete, 25);
+
 	    	
 	     int jourSuppAnc=0; int jourSuppDam = 0;int jourSuppMed = 0;
 	     
@@ -244,7 +250,7 @@ public class CongeServiceImpl implements CongeService {
 		
 		Conge conge;
 		PlanningConge planningConge;
-		Double salaireMoyenMensuelle = 0.0;
+		BigDecimal salaireMoyenMensuelle = BigDecimal.ZERO;
 		Double salaireMoyenMensuelleNew= 0.0;
 		Double gratificationAdd= 0.0;
 		Double indemniteRepresentationMoyenMensuelle = 0.0;
@@ -279,30 +285,30 @@ public class CongeServiceImpl implements CongeService {
 				// calcul du salaire moyen mensuelle des 12 dernier mois
 				salaireMoyenMensuelle = bulletinPaieService.salaireMoyenMensuel(contratPersonnel);
 				// ajout d'eventuel gratification au cours de ladite periode
-				List<Gratification>  MylistGratif=gratificationRepository.findByContratPersonnelAndPeriodePaieDatedebBetween(contratPersonnel,dateRetourDernierConge,dateDepartConge);
-				if(MylistGratif.size()>0){
-				for(Gratification gartifPaie : MylistGratif){
-					gratificationAdd = gartifPaie.getNetPayer()  + gratificationAdd;
-				}
-				Gratification gartifPaieh=	MylistGratif.get(MylistGratif.size() - 1);
-				}
-				salaireMoyenMensuelleNew=salaireMoyenMensuelle+gratificationAdd;
-				// calcul de l'indemnite de representation moyen mensuelle
-				indemniteRepresentationMoyenMensuelle = bulletinPaieService.indemniteMoyenMensuel(contratPersonnel);
-				
-				ProvisionConge provisionConge = new ProvisionConge(contratPersonnel.getPersonnel().getNomComplet(), 
-																	contratPersonnel.getPersonnel().getNombrePart(), dateRetourDernierConge, dateDepartConge, 
-																	salaireMoyenMensuelleNew, indemniteRepresentationMoyenMensuelle,contratPersonnel);
-				
-				congeList.add(new Conge(dateDepartConge, DateManager.addingDate(dateDepartConge, provisionConge.getG()),(double)provisionConge.getC(), 
-																				provisionConge.getD(), salaireMoyenMensuelleNew, indemniteRepresentationMoyenMensuelle, 
-																				provisionConge.getG(), provisionConge.getH(), provisionConge.getI(), 
-																				provisionConge.getJ(), provisionConge.getK(), provisionConge.getL(), 
-																				provisionConge.getM(), provisionConge.getN(), provisionConge.getO(), 
-																				provisionConge.getP(), provisionConge.getQ(), provisionConge.getR(), 
-																				provisionConge.getITS(), provisionConge.getCN(), provisionConge.getIGR(), provisionConge.getCNPS(), 
-																				provisionConge.getTotalRetenueFiscale(),  provisionConge.getAllocationCongeNet(),
-																				contratPersonnel, periodePaieRepository.findByClotureFalse()));
+//				List<Gratification>  MylistGratif=gratificationRepository.findByContratPersonnelAndPeriodePaieDatedebBetween(contratPersonnel,dateRetourDernierConge,dateDepartConge);
+//				if(MylistGratif.size()>0){
+//				for(Gratification gartifPaie : MylistGratif){
+//					gratificationAdd = gartifPaie.getNetPayer()  + gratificationAdd;
+//				}
+//				Gratification gartifPaieh=	MylistGratif.get(MylistGratif.size() - 1);
+//				}
+//				salaireMoyenMensuelleNew=salaireMoyenMensuelle+gratificationAdd;
+//				// calcul de l'indemnite de representation moyen mensuelle
+//				indemniteRepresentationMoyenMensuelle = bulletinPaieService.indemniteMoyenMensuel(contratPersonnel);
+//
+//				ProvisionConge provisionConge = new ProvisionConge(contratPersonnel.getPersonnel().getNomComplet(),
+//																	contratPersonnel.getPersonnel().getNombrePart(), dateRetourDernierConge, dateDepartConge,
+//																	salaireMoyenMensuelleNew, indemniteRepresentationMoyenMensuelle,contratPersonnel);
+//
+//				congeList.add(new Conge(dateDepartConge, DateManager.addingDate(dateDepartConge, provisionConge.getG()),(double)provisionConge.getC(),
+//																				provisionConge.getD(), salaireMoyenMensuelleNew, indemniteRepresentationMoyenMensuelle,
+//																				provisionConge.getG(), provisionConge.getH(), provisionConge.getI(),
+//																				provisionConge.getJ(), provisionConge.getK(), provisionConge.getL(),
+//																				provisionConge.getM(), provisionConge.getN(), provisionConge.getO(),
+//																				provisionConge.getP(), provisionConge.getQ(), provisionConge.getR(),
+//																				provisionConge.getITS(), provisionConge.getCN(), provisionConge.getIGR(), provisionConge.getCNPS(),
+//																				provisionConge.getTotalRetenueFiscale(),  provisionConge.getAllocationCongeNet(),
+//																				contratPersonnel, periodePaieRepository.findByClotureFalse()));
 			}
 		}
 		congeDTO.setRows(congeList);

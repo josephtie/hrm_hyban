@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.entity;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -43,14 +44,14 @@ public class Conge extends Auditable {
 	@Transient
 	private String dRetour;
 	
-	private Double nombrePart;
+	private BigDecimal nombrePart;
 	
 	@Transient
 	private String nbrePart;
 	
 	private int tempsPresenceEffectif;
 	
-	private Double salaireMoyenMensuel; // 12 dernier mois
+	private BigDecimal salaireMoyenMensuel; // 12 dernier mois
 	
 	 private Integer moisOfpresence;
 	 
@@ -59,7 +60,7 @@ public class Conge extends Auditable {
 	@Transient
 	private String montantSalaireMoyenMensuel;
 	
-	private Double indemniteRepresentationMoyenMensuelle;
+	private BigDecimal indemniteRepresentationMoyenMensuelle;
 	
 	@Transient
 	private String indemniteRepresentMoyenMensuel;
@@ -68,7 +69,7 @@ public class Conge extends Auditable {
 	
 	private int nombreJourCongePris;
 	
-	private Double provisionConge;
+	private BigDecimal provisionConge;
 	
 	@Transient
 	private String montantProvisionConge;
@@ -76,67 +77,67 @@ public class Conge extends Auditable {
 	@Transient
 	private String jouradditionel;
 	
-	private Double baseImposableAllocationConge;
+	private BigDecimal baseImposableAllocationConge;
 	
 	@Transient
 	private String montantBaseImposableAllocationConge;
 	
-	private Double impotSalaire;
+	private BigDecimal impotSalaire;
 	
 	@Transient
 	private String montantIs;
 	
-	private Double ta;
+	private BigDecimal ta;
 	
 	@Transient
 	private String montantTa;
 	
-	private Double fpc;
+	private BigDecimal fpc;
 	
 	@Transient
 	private String montantFpc;
 	
-	private Double totalProvisionImpot;
+	private BigDecimal totalProvisionImpot;
 	
 	@Transient
 	private String montantTotalProvisionImpot;
 	
-	private Double prestationFamiliale;
+	private BigDecimal prestationFamiliale;
 	
 	@Transient
 	private String prestationFamil;
 	
-	private Double accidentTravail;
+	private BigDecimal accidentTravail;
 	
 	@Transient
 	private String accidentTrav;
 	
-	private Double retraite;
+	private BigDecimal retraite;
 	
 	@Transient
 	private String montantRetraite;
 	
-	private Double totalProvisionChargeSocial;
+	private BigDecimal totalProvisionChargeSocial;
 	
 	@Transient
 	private String montantTotalProvisionChargeSocial;
 	
-	private Double totalChargePatronale;
+	private BigDecimal totalChargePatronale;
 	
 	@Transient
 	private String montantTotalChargePatronale;
 	
-	private Double its;
+	private BigDecimal its;
 	
 	@Transient
 	private String montantITS;
 	
-	private Double cn;
+	private BigDecimal cn;
 	
 	@Transient
 	private String montantCN;
 	
-	private Double igr;
+	private BigDecimal igr;
 	
 	@Transient
 	private String montantIGR;
@@ -147,22 +148,22 @@ public class Conge extends Auditable {
 	@Transient
 	private String nbcongedu;
 	
-	private Double cnps;
+	private BigDecimal cnps;
 	
 	@Transient
 	private String montantCNPS;
 	
-	private Double totalRetenue;
+	private BigDecimal totalRetenue;
 	
 	@Transient
 	private String montantTotalRetenue;
 	
-	private Double allocationCongeNet;
+	private BigDecimal allocationCongeNet;
 	
 	@Transient
 	private String montantAllocationCongeNet;
 	
-	private Double allocationCongeNetPris;
+	private BigDecimal allocationCongeNetPris;
 	
 	@Transient
 	private String montantAllocationCongeNetPris;
@@ -208,17 +209,17 @@ public class Conge extends Auditable {
 		super();
 	}
 
-	public Conge(Date dateDepart, Date dateRetour, Double nombrePart, int tempsPresenceEffectif,
-			Double salaireMoyenMensuel, Double indemniteRepresentationMoyenMensuelle, int nombreJourCongeDu,
-			Double provisionConge, Double baseImposableAllocationConge, Double impotSalaire, Double ta, Double fpc,
-			Double totalProvisionImpot, Double prestationFamiliale, Double accidentTravail, Double retraite,
-			Double totalProvisionChargeSocial, Double totalChargePatronale, 
-			Double its, Double cn, Double igr, Double cnps,Double totalRetenue, Double allocationCongeNet, 
-			ContratPersonnel contratPersonnel, PeriodePaie periodePaie) {
+	public Conge(Date dateDepart, Date dateRetour, BigDecimal nombrePart, int tempsPresenceEffectif,
+                 BigDecimal salaireMoyenMensuel, BigDecimal indemniteRepresentationMoyenMensuelle, int nombreJourCongeDu,
+                 BigDecimal provisionConge, BigDecimal baseImposableAllocationConge, BigDecimal impotSalaire, BigDecimal ta, BigDecimal fpc,
+                 BigDecimal totalProvisionImpot, BigDecimal prestationFamiliale, BigDecimal accidentTravail, BigDecimal retraite,
+                 BigDecimal totalProvisionChargeSocial, BigDecimal totalChargePatronale,
+                 BigDecimal its, BigDecimal cn, BigDecimal igr, BigDecimal cnps, BigDecimal totalRetenue, BigDecimal allocationCongeNet,
+                 ContratPersonnel contratPersonnel, PeriodePaie periodePaie) {
 		super();
 		
-		this.nombreJourCongePris = 0;
-		this.allocationCongeNetPris = 0.0;
+		this.nombreJourCongePris =0 ;
+		this.allocationCongeNetPris = BigDecimal.valueOf(0);
 		
 		this.dateDepart = dateDepart;
 		this.dateRetour = dateRetour;
@@ -291,11 +292,11 @@ public class Conge extends Auditable {
 		this.dRetour = dRetour;
 	}
 
-	public Double getNombrePart() {
+	public BigDecimal getNombrePart() {
 		return nombrePart;
 	}
 
-	public void setNombrePart(Double nombrePart) {
+	public void setNombrePart(BigDecimal nombrePart) {
 		this.nombrePart = nombrePart;
 	}
 
@@ -308,11 +309,11 @@ public class Conge extends Auditable {
 		this.nbrePart = nbrePart;
 	}
 
-	public Double getSalaireMoyenMensuel() {
+	public BigDecimal getSalaireMoyenMensuel() {
 		return salaireMoyenMensuel;
 	}
 
-	public void setSalaireMoyenMensuel(Double salaireMoyenMensuel) {
+	public void setSalaireMoyenMensuel(BigDecimal salaireMoyenMensuel) {
 		this.salaireMoyenMensuel = salaireMoyenMensuel;
 	}
 
@@ -325,11 +326,11 @@ public class Conge extends Auditable {
 		this.montantSalaireMoyenMensuel = montantSalaireMoyenMensuel;
 	}
 
-	public Double getIndemniteRepresentationMoyenMensuelle() {
+	public BigDecimal getIndemniteRepresentationMoyenMensuelle() {
 		return indemniteRepresentationMoyenMensuelle;
 	}
 
-	public void setIndemniteRepresentationMoyenMensuelle(Double indemniteRepresentationMoyenMensuelle) {
+	public void setIndemniteRepresentationMoyenMensuelle(BigDecimal indemniteRepresentationMoyenMensuelle) {
 		this.indemniteRepresentationMoyenMensuelle = indemniteRepresentationMoyenMensuelle;
 	}
 
@@ -358,11 +359,11 @@ public class Conge extends Auditable {
 		this.nombreJourCongePris = nombreJourCongePris;
 	}
 
-	public Double getImpotSalaire() {
+	public BigDecimal getImpotSalaire() {
 		return impotSalaire;
 	}
 
-	public void setImpotSalaire(Double impotSalaire) {
+	public void setImpotSalaire(BigDecimal impotSalaire) {
 		this.impotSalaire = impotSalaire;
 	}
 
@@ -399,11 +400,11 @@ public class Conge extends Auditable {
 		this.montantIs = montantIs;
 	}
 
-	public Double getTa() {
+	public BigDecimal getTa() {
 		return ta;
 	}
 
-	public void setTa(Double ta) {
+	public void setTa(BigDecimal ta) {
 		this.ta = ta;
 	}
 
@@ -416,11 +417,11 @@ public class Conge extends Auditable {
 		this.montantTa = montantTa;
 	}
 
-	public Double getFpc() {
+	public BigDecimal getFpc() {
 		return fpc;
 	}
 
-	public void setFpc(Double fpc) {
+	public void setFpc(BigDecimal fpc) {
 		this.fpc = fpc;
 	}
 
@@ -433,11 +434,11 @@ public class Conge extends Auditable {
 		this.montantFpc = montantFpc;
 	}
 
-	public Double getPrestationFamiliale() {
+	public BigDecimal getPrestationFamiliale() {
 		return prestationFamiliale;
 	}
 
-	public void setPrestationFamiliale(Double prestationFamiliale) {
+	public void setPrestationFamiliale(BigDecimal prestationFamiliale) {
 		this.prestationFamiliale = prestationFamiliale;
 	}
 
@@ -450,11 +451,11 @@ public class Conge extends Auditable {
 		this.prestationFamil = prestationFamil;
 	}
 
-	public Double getAccidentTravail() {
+	public BigDecimal getAccidentTravail() {
 		return accidentTravail;
 	}
 
-	public void setAccidentTravail(Double accidentTravail) {
+	public void setAccidentTravail(BigDecimal accidentTravail) {
 		this.accidentTravail = accidentTravail;
 	}
 
@@ -467,11 +468,11 @@ public class Conge extends Auditable {
 		this.accidentTrav = accidentTrav;
 	}
 
-	public Double getRetraite() {
+	public BigDecimal getRetraite() {
 		return retraite;
 	}
 
-	public void setRetraite(Double retraite) {
+	public void setRetraite(BigDecimal retraite) {
 		this.retraite = retraite;
 	}
 
@@ -508,11 +509,11 @@ public class Conge extends Auditable {
 		this.tempsPresenceEffectif = tempsPresenceEffectif;
 	}
 
-	public Double getProvisionConge() {
+	public BigDecimal getProvisionConge() {
 		return provisionConge;
 	}
 
-	public void setProvisionConge(Double provisionConge) {
+	public void setProvisionConge(BigDecimal provisionConge) {
 		this.provisionConge = provisionConge;
 	}
 
@@ -524,11 +525,11 @@ public class Conge extends Auditable {
 		this.montantProvisionConge = montantProvisionConge;
 	}
 
-	public Double getBaseImposableAllocationConge() {
+	public BigDecimal getBaseImposableAllocationConge() {
 		return baseImposableAllocationConge;
 	}
 
-	public void setBaseImposableAllocationConge(Double baseImposableAllocationConge) {
+	public void setBaseImposableAllocationConge(BigDecimal baseImposableAllocationConge) {
 		this.baseImposableAllocationConge = baseImposableAllocationConge;
 	}
 
@@ -540,11 +541,11 @@ public class Conge extends Auditable {
 		this.montantBaseImposableAllocationConge = montantBaseImposableAllocationConge;
 	}
 
-	public Double getTotalProvisionImpot() {
+	public BigDecimal getTotalProvisionImpot() {
 		return totalProvisionImpot;
 	}
 
-	public void setTotalProvisionImpot(Double totalProvisionImpot) {
+	public void setTotalProvisionImpot(BigDecimal totalProvisionImpot) {
 		this.totalProvisionImpot = totalProvisionImpot;
 	}
 
@@ -556,11 +557,11 @@ public class Conge extends Auditable {
 		this.montantTotalProvisionImpot = montantTotalProvisionImpot;
 	}
 
-	public Double getTotalProvisionChargeSocial() {
+	public BigDecimal getTotalProvisionChargeSocial() {
 		return totalProvisionChargeSocial;
 	}
 
-	public void setTotalProvisionChargeSocial(Double totalProvisionChargeSocial) {
+	public void setTotalProvisionChargeSocial(BigDecimal totalProvisionChargeSocial) {
 		this.totalProvisionChargeSocial = totalProvisionChargeSocial;
 	}
 
@@ -572,11 +573,11 @@ public class Conge extends Auditable {
 		this.montantTotalProvisionChargeSocial = montantTotalProvisionChargeSocial;
 	}
 
-	public Double getTotalChargePatronale() {
+	public BigDecimal getTotalChargePatronale() {
 		return totalChargePatronale;
 	}
 
-	public void setTotalChargePatronale(Double totalChargePatronale) {
+	public void setTotalChargePatronale(BigDecimal totalChargePatronale) {
 		this.totalChargePatronale = totalChargePatronale;
 	}
 
@@ -588,11 +589,11 @@ public class Conge extends Auditable {
 		this.montantTotalChargePatronale = montantTotalChargePatronale;
 	}
 
-	public Double getIts() {
+	public BigDecimal getIts() {
 		return its;
 	}
 
-	public void setIts(Double its) {
+	public void setIts(BigDecimal its) {
 		this.its = its;
 	}
 
@@ -604,11 +605,11 @@ public class Conge extends Auditable {
 		this.montantITS = montantITS;
 	}
 
-	public Double getCn() {
+	public BigDecimal getCn() {
 		return cn;
 	}
 
-	public void setCn(Double cn) {
+	public void setCn(BigDecimal cn) {
 		this.cn = cn;
 	}
 
@@ -620,11 +621,11 @@ public class Conge extends Auditable {
 		this.montantCN = montantCN;
 	}
 
-	public Double getIgr() {
+	public BigDecimal getIgr() {
 		return igr;
 	}
 
-	public void setIgr(Double igr) {
+	public void setIgr(BigDecimal igr) {
 		this.igr = igr;
 	}
 
@@ -636,11 +637,11 @@ public class Conge extends Auditable {
 		this.montantIGR = montantIGR;
 	}
 
-	public Double getTotalRetenue() {
+	public BigDecimal getTotalRetenue() {
 		return totalRetenue;
 	}
 
-	public void setTotalRetenue(Double totalRetenue) {
+	public void setTotalRetenue(BigDecimal totalRetenue) {
 		this.totalRetenue = totalRetenue;
 	}
 
@@ -652,11 +653,11 @@ public class Conge extends Auditable {
 		this.montantTotalRetenue = montantTotalRetenue;
 	}
 
-	public Double getAllocationCongeNet() {
+	public BigDecimal getAllocationCongeNet() {
 		return allocationCongeNet;
 	}
 
-	public void setAllocationCongeNet(Double allocationCongeNet) {
+	public void setAllocationCongeNet(BigDecimal allocationCongeNet) {
 		this.allocationCongeNet = allocationCongeNet;
 	}
 
@@ -668,11 +669,11 @@ public class Conge extends Auditable {
 		this.montantAllocationCongeNet = montantAllocationCongeNet;
 	}
 
-	public Double getAllocationCongeNetPris() {
+	public BigDecimal getAllocationCongeNetPris() {
 		return allocationCongeNetPris;
 	}
 
-	public void setAllocationCongeNetPris(Double allocationCongeNetPris) {
+	public void setAllocationCongeNetPris(BigDecimal allocationCongeNetPris) {
 		this.allocationCongeNetPris = allocationCongeNetPris;
 	}
 
@@ -684,11 +685,11 @@ public class Conge extends Auditable {
 		this.montantAllocationCongeNetPris = montantAllocationCongeNetPris;
 	}
 
-	public Double getCnps() {
+	public BigDecimal getCnps() {
 		return cnps;
 	}
 
-	public void setCnps(Double cnps) {
+	public void setCnps(BigDecimal cnps) {
 		this.cnps = cnps;
 	}
 

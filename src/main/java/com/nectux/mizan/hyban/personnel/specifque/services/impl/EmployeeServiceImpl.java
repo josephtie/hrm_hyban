@@ -1,6 +1,7 @@
 package com.nectux.mizan.hyban.personnel.specifque.services.impl;
 
 
+import com.nectux.mizan.hyban.personnel.repository.FonctionRepository;
 import com.nectux.mizan.hyban.personnel.repository.NationnaliteRepository;
 import com.nectux.mizan.hyban.personnel.specifque.dto.EmployeeDTO;
 import com.nectux.mizan.hyban.personnel.specifque.dto.SpecialContractDTO;
@@ -12,6 +13,7 @@ import com.nectux.mizan.hyban.personnel.specifque.repository.EmployeeRepository;
 import com.nectux.mizan.hyban.personnel.specifque.repository.SpecialContractRepository;
 import com.nectux.mizan.hyban.personnel.specifque.services.EmployeeService;
 import com.nectux.mizan.hyban.personnel.web.PersonnelController;
+import com.nectux.mizan.hyban.rh.carriere.repository.SiteWorkRepository;
 import com.nectux.mizan.hyban.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +23,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityNotFoundException;
+
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -32,13 +37,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository repository;
     private final SpecialContractRepository contractRepository;
     private final NationnaliteRepository nationnaliteRepository;
-    public EmployeeServiceImpl(EmployeeRepository repository, SpecialContractRepository contractRepository, NationnaliteRepository nationnaliteRepository) {
+    private final FonctionRepository fonctionRepository;
+    private final SiteWorkRepository siteWorkRepository;
+
+    public EmployeeServiceImpl(EmployeeRepository repository, SpecialContractRepository contractRepository, NationnaliteRepository nationnaliteRepository, FonctionRepository fonctionRepository, SiteWorkRepository siteWorkRepository) {
         this.repository = repository;
         this.contractRepository = contractRepository;
         this.nationnaliteRepository = nationnaliteRepository;
+        this.fonctionRepository = fonctionRepository;
+
+        this.siteWorkRepository = siteWorkRepository;
     }
 
     @Override
+    @Transactional
     public SpecialContractDTO saveEmployeeWithContract(
             Long employeeId,
             String matricule,
@@ -50,67 +62,140 @@ public class EmployeeServiceImpl implements EmployeeService {
             String lieuHabitation,
             String dateNaissance,
             String phoneNumber,
-            Boolean actif,
             SpecialContractType typeContrat,
+            Long fonction,
+            Long site,
             String dateDebut,
             String dateFin,
             String modePaiement,
             String paiementNumber,
-            BigDecimal netAPayer
-    )  {
+            Double netAPayer
+    ) {
+
         SpecialContractDTO dto = new SpecialContractDTO();
-        // =======================
-        // EMPLOYEE
-        // =======================
-        try{
-        Employee employee = (employeeId != null)
-                ? repository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("Employé introuvable"))
-                : new Employee();
 
-        employee.setMatricule(matricule);
-        employee.setNom(nom);
-        employee.setPrenom(prenom);
-        employee.setNomComplet(nom + " " + prenom);
-        employee.setSexe(sexe);
-        employee.setNationnalite(nationnaliteRepository.findById(nationalite).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + nationalite)));
-        employee.setSituationMatrimoniale(situationMatrimoniale);
-        employee.setLieuHabitation(lieuHabitation);
-        employee.setDateofbrid(Utils.stringToDate(dateNaissance,"dd/MM/yyyy"));
-        employee.setPhoneNumber(phoneNumber);
-        employee.setActif(actif);
-        String categorie=typeContrat.name();
-        employee.setCategorieSpeciale(SpecialCategory.valueOf(categorie));
+        try {
 
-        employee = repository.save(employee);
+            // =======================
+            // 1️⃣ EMPLOYEE
+            // =======================
 
-        // =======================
-        // CONTRAT SPÉCIFIQUE
-        // =======================
-        SpecialContract contract = new SpecialContract();
-        contract.setEmployee(employee);
-        contract.setTypeContrat(typeContrat);
-        contract.setDateDebut(Utils.stringToDate(dateDebut,"dd/MM/yyyy"));
-        contract.setDateFin(Utils.stringToDate(dateFin,"dd/MM/yyyy"));
-        contract.setModepaiement(modePaiement);
-        contract.setPaiementNumber(paiementNumber);
-        contract.setRemunerationForfaitaire(netAPayer);
-        contract.setActif(true);
+            Employee employee = (employeeId != null)
+                    ? repository.findById(employeeId)
+                    .orElseThrow(() -> new RuntimeException("Employé introuvable"))
+                    : new Employee();
 
-        contract = contractRepository.save(contract);
+            employee.setMatricule(matricule);
+            employee.setNom(nom);
+            employee.setPrenom(prenom);
+            employee.setNomComplet(nom + " " + prenom);
+            employee.setSexe(sexe);
+            employee.setSituationMatrimoniale(situationMatrimoniale);
+            employee.setLieuHabitation(lieuHabitation);
+            employee.setPhoneNumber(phoneNumber);
+            employee.setActif(true);
 
-        // =======================
-        // DTO RETOUR
-        // =======================
+            if (dateNaissance != null && !dateNaissance.trim().isEmpty()) {
+                employee.setDateofbrid(Utils.stringToDate(dateNaissance, "dd/MM/yyyy"));
+            }
 
-        dto.setRow(contract);
-        dto.setStatus(true);
-        dto.setResult("succes");
-        } catch (Exception ex){
+            employee.setNationnalite(
+                    nationnaliteRepository.findById(nationalite)
+                            .orElseThrow(() ->
+                                    new EntityNotFoundException("Nationalité introuvable : " + nationalite))
+            );
+
+            employee.setCategorieSpeciale(SpecialCategory.valueOf(typeContrat.name()));
+
+            employee = repository.save(employee);
+
+            // =======================
+            // 2️⃣ GESTION CONTRAT ACTIF
+            // =======================
+
+            Optional<SpecialContract> oldContractOpt =
+                    contractRepository.findActiveContractByEmployeeId(employee.getId());
+
+            if (oldContractOpt.isPresent()) {
+                SpecialContract oldContract = oldContractOpt.get();
+                if (dateDebut != null && !dateDebut.trim().isEmpty()) {
+                    oldContract.setDateDebut(Utils.stringToDate(dateDebut, "dd/MM/yyyy"));
+                }
+
+                if (dateFin != null && !dateFin.trim().isEmpty()) {
+                    oldContract.setDateFin(Utils.stringToDate(dateFin, "dd/MM/yyyy"));
+                }
+
+                // Vérifier si modification du net à payer
+                BigDecimal ancienNet = safe(oldContract.getRemunerationForfaitaire());
+                BigDecimal nouveauNet = BigDecimal.valueOf(netAPayer);
+
+                if (ancienNet.compareTo(nouveauNet) != 0) {
+
+                    // 🔴 Désactiver ancien contrat
+                    oldContract.setActif(false);
+                    oldContract.setDateFin(new Date());
+                    contractRepository.save(oldContract);
+
+                } else {
+
+                    // 🟢 Aucun changement → retour direct
+                    dto.setRow(oldContract);
+                    dto.setStatus(true);
+                    dto.setResult("succes");
+                    return dto;
+                }
+            }
+
+            // =======================
+            // 3️⃣ CREATION NOUVEAU CONTRAT
+            // =======================
+
+            SpecialContract newContract = new SpecialContract();
+            newContract.setEmployee(employee);
+            newContract.setTypeContrat(typeContrat);
+
+            newContract.setFonction(
+                    fonctionRepository.findById(fonction)
+                            .orElseThrow(() ->
+                                    new EntityNotFoundException("Fonction introuvable : " + fonction))
+            );
+
+            newContract.setSite(
+                    siteWorkRepository.findById(site)
+                            .orElseThrow(() ->
+                                    new EntityNotFoundException("Site introuvable : " + site))
+            );
+
+            if (dateDebut != null && !dateDebut.trim().isEmpty()) {
+                newContract.setDateDebut(Utils.stringToDate(dateDebut, "dd/MM/yyyy"));
+            }
+
+            if (dateFin != null && !dateFin.trim().isEmpty()) {
+                newContract.setDateFin(Utils.stringToDate(dateFin, "dd/MM/yyyy"));
+            }
+
+            newContract.setModepaiement(modePaiement);
+            newContract.setPaiementNumber(paiementNumber);
+            newContract.setRemunerationForfaitaire(BigDecimal.valueOf(netAPayer));
+            newContract.setActif(true);
+
+            newContract = contractRepository.save(newContract);
+
+            // =======================
+            // 4️⃣ RETOUR DTO
+            // =======================
+
+            dto.setRow(newContract);
+            dto.setStatus(true);
+            dto.setResult("succes");
+
+        } catch (Exception ex) {
             ex.printStackTrace();
-            dto.setResult("echec");
             dto.setStatus(false);
+            dto.setResult("echec");
         }
+
         return dto;
     }
 
@@ -151,6 +236,10 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new RuntimeException("Employé introuvable"));
     }
 
+
+    private BigDecimal safe(BigDecimal val) {
+        return val == null ? BigDecimal.ZERO : val;
+    }
     // ==========================
     // FIND ALL
     // ==========================
@@ -179,20 +268,25 @@ public class EmployeeServiceImpl implements EmployeeService {
     // ==========================
     // DESACTIVER
     // ==========================
+    @Transactional
     @Override
-    public void deactivate(Long id) {
+    public  Boolean deactivate(Long id) {
 
         Employee employee = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Employé introuvable"));
 
         employee.setActif(false);
 
-        // Désactiver aussi les contrats spécifiques
-       contractRepository
-                .findByEmployeeAndActifTrue(employee)
-                .forEach(contract -> contract.setActif(false));
+        // Désactiver aussi les contrats spécifiques*
+       List<SpecialContract> specialContractList= contractRepository
+                .findByEmployeeAndActifTrue(employee);
+        for(SpecialContract c:specialContractList){
+            c.setActif(false);
+            contractRepository.save(c);
 
+         }
        repository.save(employee);
+       return true;
     }
 
 
@@ -201,8 +295,18 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeDTO loadPersonnel(Pageable pageable) {
         // TODO Auto-generated method stub
         EmployeeDTO personnelDTO = new EmployeeDTO();
-        Page<Employee> page = repository.findByActifTrue(pageable);
-        personnelDTO.setRows(page.getContent());
+        Page<Employee> page = repository.findByActifTrueOrderByNomCompletAsc(pageable);
+        List<Employee> personnelsWithContract = page.getContent().stream().map(p -> {
+            SpecialContract contrat = contractRepository
+                    .findFirstByEmployeeIdAndActifTrue(p.getId());
+
+            if (contrat != null) {
+                p.setNetapayer(contrat.getRemunerationForfaitaire().toString());
+                p.setFonction(contrat.getFonction().getLibelle());
+            }
+            return p;
+        }).toList();
+        personnelDTO.setRows(personnelsWithContract);
         personnelDTO.setTotal(page.getTotalElements());
         logger.info(new StringBuilder().append(">>>>> PERSONNELS CHARGES AVEC SUCCES").toString());
         return personnelDTO;
@@ -212,8 +316,20 @@ public class EmployeeServiceImpl implements EmployeeService {
     public EmployeeDTO loadPersonnel(Pageable pageable, String search,String search1) {
         // TODO Auto-generated method stub
         EmployeeDTO personnelDTO = new EmployeeDTO();
-        Page<Employee> page = repository.findByActifTrueAndNomCompletIgnoreCaseContainingOrMatriculeIgnoreCaseContaining(pageable, search,search1);
-        personnelDTO.setRows(page.getContent());
+        Page<Employee> page = repository.searchActiveEmployees(search, pageable);
+        List<Employee> personnelsWithContract = page.getContent().stream().map(p -> {
+            SpecialContract contrat = contractRepository
+                    .findFirstByEmployeeIdAndActifTrue(p.getId());
+
+            if (contrat != null) {
+                p.setNetapayer(contrat.getRemunerationForfaitaire().toString());
+                p.setFonction(contrat.getFonction().getLibelle());
+            }
+            return p;
+        }).toList();
+
+
+        personnelDTO.setRows(personnelsWithContract);
         personnelDTO.setTotal(page.getTotalElements());
         logger.info(new StringBuilder().append(">>>>> PERSONNELS CHARGES AVEC SUCCES").toString());
         return personnelDTO;

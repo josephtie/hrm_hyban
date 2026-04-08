@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -50,7 +51,7 @@ public class StockCongeServiceImpl implements StockCongeService {
 		try{
 			Conge conge = congeRepository.findById(idConge)  .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + idConge));
 			int nombreJourCongeRestant = conge.getNombreJourCongeDu() - conge.getNombreJourCongePris();
-			Double allocationCongeRestant = conge.getAllocationCongeNet() - conge.getAllocationCongeNetPris();
+			BigDecimal allocationCongeRestant = conge.getAllocationCongeNet().subtract(conge.getAllocationCongeNetPris());
 			if(id != null){
 				stockConge = stockCongeRepository.findById(id)  .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));
 				stockConge.setDateModification(new Date());
@@ -62,8 +63,8 @@ public class StockCongeServiceImpl implements StockCongeService {
 			stockConge.setDateRetour(DateManager.stringToDate(dateRetour, "dd/MM/yyyy"));
 			stockConge.setNombreJourPris(DateManager.dateDifference(stockConge.getDateDepart(), stockConge.getDateRetour()));
 			stockConge.setNombreJourRestant(nombreJourCongeRestant - stockConge.getNombreJourPris());
-			stockConge.setMontantVerse(montantVerse);
-			stockConge.setMontantRestant(allocationCongeRestant - stockConge.getMontantRestant());
+			stockConge.setMontantVerse(BigDecimal.valueOf(montantVerse));
+			stockConge.setMontantRestant(allocationCongeRestant.subtract(stockConge.getMontantRestant()));
 			stockConge.setConge(conge);
 			
 			if(nombreJourCongeRestant < stockConge.getNombreJourPris()){
@@ -75,8 +76,8 @@ public class StockCongeServiceImpl implements StockCongeService {
 				erreur.setMessage(sb.toString());
 				listErreur.add(erreur);
 			}
-			
-			if(allocationCongeRestant < stockConge.getMontantVerse()){
+
+            if (allocationCongeRestant.compareTo(stockConge.getMontantVerse()) < 0){
 				sb = new StringBuilder();
 				erreur = new Erreur();
 				erreur.setCode(10);
@@ -130,7 +131,7 @@ public class StockCongeServiceImpl implements StockCongeService {
 				stockCongeDTO.setErrors(listErreur);
 				
 				conge.setNombreJourCongePris(conge.getNombreJourCongePris() + stockConge.getNombreJourPris());
-				conge.setAllocationCongeNetPris(conge.getAllocationCongeNetPris() + stockConge.getMontantVerse());
+				conge.setAllocationCongeNetPris(conge.getAllocationCongeNetPris().add(stockConge.getMontantVerse()));
 				congeRepository.save(conge);
 			} else {
 				stockCongeDTO.setResult(false);
@@ -188,7 +189,7 @@ public class StockCongeServiceImpl implements StockCongeService {
 			}
 			
 			if(listErreur.isEmpty()) {
-				stockConge.getConge().setAllocationCongeNetPris(stockConge.getConge().getAllocationCongeNetPris() + stockConge.getMontantVerse());
+				stockConge.getConge().setAllocationCongeNetPris(stockConge.getConge().getAllocationCongeNetPris().add(stockConge.getMontantVerse()));
 				stockConge.getConge().setNombreJourCongePris(stockConge.getConge().getNombreJourCongePris() + stockConge.getNombreJourPris());
 				congeRepository.save(stockConge.getConge());
 				stockCongeRepository.delete(stockConge);

@@ -13,12 +13,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Transient;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import static com.nectux.mizan.hyban.utils.CalculRICF.getRICF;
 import static com.nectux.mizan.hyban.utils.ITSCalculator.calculerITS;
+import static java.lang.Math.ceil;
 
 
 public class LivreDePaieSimulation {
@@ -36,56 +43,56 @@ public class LivreDePaieSimulation {
 
 	private int anciennete;
 
-	private Double salaireBase;
+	private BigDecimal salaireBase;
 
 	@Transient
 	private String mtsalaireBase;
 
-	private Double autreImposable;
+	private BigDecimal autreImposable;
 
 	@Transient
 	private String mtautreImposable;
 
-	private Double autreIndemImposable;
+	private BigDecimal autreIndemImposable;
 
 	@Transient
 	private String mtautreIndemImposable;
 
 
-	private Double plafondFamiliale;
+	private BigDecimal plafondFamiliale;
 	@Transient
 	private String mtplafondFamiliale;
-	private Double autreNonImposable;
+	private BigDecimal autreNonImposable;
 
 	@Transient
 	private String mtautreNonImposable;
 
-	private Double sursalaire;
+	private BigDecimal sursalaire;
 
 	@Transient
 	private String mtsursalaire;
 
-	private Double autrePrelevment;
+	private BigDecimal autrePrelevment;
 
-	private Double primeAnciennete;
+	private BigDecimal primeAnciennete;
 
 	private Integer moisdepresence;
 
 	private Integer tempspresence;
 
 
-	private Double fpcregul;
+	private BigDecimal fpcregul;
 	@Transient
 	private String mtfpcregul;
 
 	@Transient
 	private String mtprimeAnciennete;
 
-	private Double indemniteLogement;
+	private BigDecimal indemniteLogement;
 	@Transient
 	private String mtindemniteLogement;
 
-	private Double brutImposable;
+	private BigDecimal brutImposable;
 	@Transient
 	private String mtbrutImposable;
 
@@ -94,140 +101,140 @@ public class LivreDePaieSimulation {
 	@Transient
 	private String mtautrePrelevment;
 
-	private Double regularisation;
+	private BigDecimal regularisation;
 	@Transient
 	private String mtregularisation;
 
-	private Double brutNonImposable;
+	private BigDecimal brutNonImposable;
 	@Transient
 	private String mtbrutNonImposable;
 
-	private Double its;
+	private BigDecimal its;
 	@Transient
 	private String mtits;
 
-	private Double cn;
+	private BigDecimal cn;
 	@Transient
 	private String mtcn;
 
-	private Double igr;
+	private BigDecimal igr;
 	@Transient
 	private String mtigr;
 
-	private Double totalRetenueFiscale;
+	private BigDecimal totalRetenueFiscale;
 	@Transient
 	private String mttotalRetenueFiscale;
 
-	private Double cnps;
+	private BigDecimal cnps;
 	@Transient
 	private String mtcnps;
 
-	private Double basecnps;
+	private BigDecimal basecnps;
 	@Transient
 	private String mtbasecnps;
 
-	private Double avceAcpte;
+	private BigDecimal avceAcpte;
 	@Transient
 	private String mtavceAcpte;
 
-	private Double pretAlios;
+	private BigDecimal pretAlios;
 	@Transient
 	private String mtpretAlios;
 
-	private Double carec;
+	private BigDecimal carec;
 	@Transient
 	private String mtcarec;
 
-	private Double totalRetenue;
+	private BigDecimal totalRetenue;
 	@Transient
 	private String mttotalRetenue;
 
-	private Double indemniteRepresentation;
+	private BigDecimal indemniteRepresentation;
 	@Transient
 	private String mtindemniteRepresentation;
 
-	private Double indemniteTransport;
+	private BigDecimal indemniteTransport;
 	@Transient
 	private String mtindemniteTransport;
 
-	private Double autrePrelevmentSociale;
+	private BigDecimal autrePrelevmentSociale;
 	@Transient
 	private String mtautrePrelevmentSociale;
-	private Double indemniteTransportImp;
+	private BigDecimal indemniteTransportImp;
 	@Transient
 	private String mtindemniteTransportImp;
 
-	private Double indemniteResponsabilte;
+	private BigDecimal indemniteResponsabilte;
 	@Transient
 	private String mtindemniteResponsabilte;
 
-	private Double retenueSociiale;
+	private BigDecimal retenueSociiale;
 	@Transient
 	private String mtretenueSociiale;
-	private Double netPayer;
+	private BigDecimal netPayer;
 	@Transient
 	private String mtnetPayer;
 
-	private Double totalBrut;
+	private BigDecimal totalBrut;
 	@Transient
 	private String mttotalBrut;
 
-	private Double is;
+	private BigDecimal is;
 	@Transient
 	private String mtis;
 
-	private Double ta;
+	private BigDecimal ta;
 	@Transient
 	private String mtta;
 
-	private Double fpc;
+	private BigDecimal fpc;
 	@Transient
 	private String mtfpc;
 
-	private Double prestationFamiliale;
+	private BigDecimal prestationFamiliale;
 	@Transient
 	private String mtprestationFamiliale;
 
-	private Double accidentTravail;
+	private BigDecimal accidentTravail;
 	@Transient
 	private String mtaccidentTravail;
 
-	private Double retraite;
+	private BigDecimal retraite;
 	@Transient
 	private String mtretraite;
 
-	private Double totalPatronal;
+	private BigDecimal totalPatronal;
 	@Transient
 	private String mttotalPatronal;
 
-	private Double totalMasseSalariale;
+	private BigDecimal totalMasseSalariale;
 	@Transient
 	private String mttotalMasseSalariale;
 
 	private BulletinPaie bullpaie;
 
-	private Double jourTravail;
+	private BigDecimal jourTravail;
 
-	private Double temptravail;
+	private BigDecimal temptravail;
 
 
-	private Double CMU;
+	private BigDecimal CMU;
 	@Transient
 	private String mtCMU ;
 
-	private Double CMUSalarial;
+	private BigDecimal CMUSalarial;
 	@Transient
 	private String mtCMUSalarial ;
 
-	private Double CMUPatronal;
+	private BigDecimal CMUPatronal;
 	@Transient
 	private String mtCMUPatronal ;
 
-	private Double RetenueSociale;
+	private BigDecimal RetenueSociale;
 	@Transient
 	private String mtRetenueSocial;
 
-	private Double totalRetenueSociale;
+	private BigDecimal totalRetenueSociale;
 	@Transient
 	private String mttotalRetenueSocial;
 
@@ -266,7 +273,7 @@ public class LivreDePaieSimulation {
 		// TODO Auto-generated constructor stub
 	}
 
-	public LivreDePaieSimulation(String mat, String nomPre, Float nbrePart, int ancien, Double salBase, Double sursal, Double indemLog,Double indemTrp, Double avanceEtAccompte, Double pretALIOS, Boolean ctratperso, TempEffectif tempeffect, PeriodePaie plconge, List<PrimePersonnel> listIndemnite, List<PrimePersonnel> listIndemniteNonImp1, List<PrimePersonnel> listMutuelle, List<PrimePersonnel> listGains) {
+	public LivreDePaieSimulation(String mat, String nomPre, Float nbrePart, int ancien, BigDecimal salBase, BigDecimal sursal, BigDecimal indemLog,BigDecimal indemTrp, BigDecimal avanceEtAccompte, BigDecimal pretALIOS, Boolean ctratperso, TempEffectif tempeffect, PeriodePaie plconge, List<PrimePersonnel> listIndemnite, List<PrimePersonnel> listIndemniteNonImp1, List<PrimePersonnel> listMutuelle, List<PrimePersonnel> listGains) {
 		super();
 		this.matricule = mat;
 		this.nomPrenom = nomPre;
@@ -279,65 +286,73 @@ public class LivreDePaieSimulation {
 		this.listGainsNet=listGains;
 		if(ctratperso==true){
 			if(tempeffect==null){
-		       this.salaireBase = Math.rint(salBase);
+		       this.salaireBase = salBase;
 		        if(sursal==null)
-		          this.sursalaire = Math.rint(0d);
+		          this.sursalaire = BigDecimal.ZERO;
 		        else
-		    	 this.sursalaire = Math.rint(sursal);
-		     
+		    	 this.sursalaire =sursal;
+
 		        if(ancien>= 2)
-		  		    this.primeAnciennete = Math.rint((salaireBase) * ancien / 100);
+		  		    this.primeAnciennete = salaireBase.multiply(BigDecimal.valueOf(ancien)).divide(BigDecimal.valueOf(100) );
 		    	else
-		    	 this.primeAnciennete = Math.rint(0); 
+		    	    this.primeAnciennete = BigDecimal.ZERO;
+
 		     	if(indemLog==null)
-		     		this.indemniteLogement = Math.rint(0);
+		     		this.indemniteLogement = BigDecimal.ZERO;
 		     	else
-		    	 this.indemniteLogement = Math.rint(indemLog);
-		     
-		     
+		    	 this.indemniteLogement = indemLog;
+
+
 		     	 if(indemTrp==null)
-		     	 {  this.indemniteTransportImp=Math.rint(0);
-		           this.indemniteTransport=Math.rint(0);
-		        
+		     	 {    this.indemniteTransportImp=BigDecimal.ZERO;
+		            this.indemniteTransport=BigDecimal.ZERO;
+
 		     	 }else{
-		        	if(indemTrp > 30000){
-		        	     this.indemniteTransportImp=indemTrp-30000;
-				        this.indemniteTransport=30000d;
-				     }else{
-				    	  this.indemniteTransportImp=Math.rint(0);
-					        this.indemniteTransport=indemTrp;
-				     }
+                     BigDecimal plafond = new BigDecimal("30000");
+                     BigDecimal transport = indemTrp;
+
+                     if (transport.compareTo(plafond) > 0) {
+
+                         this.indemniteTransportImp = transport.subtract(plafond);
+                         this.indemniteTransport = plafond;
+
+                     } else {
+
+                         this.indemniteTransportImp = BigDecimal.ZERO;
+                         this.indemniteTransport = transport;
+                     }
+
 				 }
-		   			
+
 //		   			if(ctratperso.getIndemniteRepresent()==null)
 //			   		ctratperso.setIndemniteRepresent(0d);
-		   			this.autreIndemImposable=0d;
-		   
+		   			this.autreIndemImposable=BigDecimal.ZERO;
+
 //		  			 if((indemniteTransport+ctratperso.getIndemniteRepresent())<(salaireBase+primeAnciennete+indemniteLogement+sursalaire+ctratperso.getIndemniteRepresent()+indemniteTransport)*10/100)
 //			  			 autreIndemImposable=0d;
 //			  		 	else
 //						autreIndemImposable=Math.rint((indemniteTransport+ctratperso.getIndemniteRepresent()-((salaireBase+primeAnciennete+indemniteLogement+sursalaire+ctratperso.getIndemniteRepresent()+indemniteTransport)*10/100)));
-		     		
-		  				 autreImposable=0d;
-		     			if(listIndemniteBrut.size()>0 || listIndemniteBrut!=null){
+
+		  				 autreImposable=BigDecimal.ZERO;
+		     			if(!listIndemniteBrut.isEmpty() || listIndemniteBrut!=null){
 		     				for(PrimePersonnel primeImpos : listIndemniteBrut){
 		     					if(primeImpos.getPrime().getTaux()!=null && primeImpos.getValeur()>0)
 		     					{
-		     					autreImposable=autreImposable+(primeImpos.getMontant());
+		     					autreImposable=autreImposable.add(primeImpos.getMontant());
 //		     					  primeImpos.setMontant(primeImpos.getValeur()*(primeImpos.getMontant()+(primeImpos.getMontant()*primeImpos.getPrime().getTaux()/100)));
 //									     if(primeImpos!=null)
 //										primePersonnelRepository.save(primeImpos);
 		     					}else{
-                                       if(primeImpos.getPrime().getMtExedent()!=null)   
-		     					           autreImposable=autreImposable+primeImpos.getMontant()-primeImpos.getPrime().getMtExedent();
+                                       if(primeImpos.getPrime().getMtExedent()!=null)
+		     					           autreImposable=autreImposable.add(primeImpos.getMontant()).subtract(primeImpos.getPrime().getMtExedent());
                                        else
-                                    	   autreImposable=autreImposable+primeImpos.getMontant();
+                                    	   autreImposable=autreImposable.add(primeImpos.getMontant());
 		     				}
 		     			}
 		     		}
-		     
-		         this.jourTravail=30d;
-				this.temptravail=173.33d;
+
+		         this.jourTravail=BigDecimal.valueOf(30);
+				this.temptravail=BigDecimal.valueOf(173.33);
 		    }
 //	 	   else
 //		   {
@@ -399,17 +414,20 @@ public class LivreDePaieSimulation {
 //		        this.jourTravail=tempeffect.getJourspresence();
 //				 this.temptravail=tempeffect.getHeurspresence();
 //		}
-		
-			this.brutImposable = Math.rint(salaireBase + sursalaire + primeAnciennete + indemniteLogement+indemniteTransportImp+autreIndemImposable+autreImposable);
-			Double ricf = getRICF(nombrePart);
-			double itsbrut =Math.ceil(calculerITS(brutImposable,true));
-			this.its = Math.max(0, itsbrut - ricf / 12);
+
+			this.brutImposable = salaireBase.add(sursalaire).add(primeAnciennete).add(indemniteLogement).add(indemniteTransportImp).add(autreIndemImposable).add(autreImposable);
+			BigDecimal ricf = BigDecimal.valueOf(getRICF(nombrePart));
+
+            BigDecimal itsBrut = calculerITS(brutImposable, true);
+            this.its = itsBrut
+                    .subtract(ricf.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP))
+                    .max(BigDecimal.ZERO);
 		//	this.its = Math.rint(brutImposable * 1.2 / 100);
 		  //  this.cn =  Math.rint(calculerCN());
 		    //this.igr = Math.rint(calculerIGR());
-		    this.totalRetenueFiscale = Math.rint(its ); // cn + igr
+		    this.totalRetenueFiscale = its ; // cn + igr
 	     	//if(ctratperso.getIndemniteRepresent()==null)
-			this.indemniteRepresentation = Math.rint(0);
+			this.indemniteRepresentation = BigDecimal.ZERO;
 			//else
 			//this.indemniteRepresentation = Math.rint(ctratperso.getIndemniteRepresent());
 
@@ -419,8 +437,8 @@ public class LivreDePaieSimulation {
 //		else
 //			this.indemniteResponsabilte = Math.rint(ctratperso.getIndemniteResp());
 
-			autreNonImposable=0d;
-			    if(listIndemniteNonImp.size()>0 || listIndemniteNonImp!=null){
+			autreNonImposable=BigDecimal.ZERO;
+			    if(!listIndemniteNonImp.isEmpty() || listIndemniteNonImp!=null){
 					for(PrimePersonnel primeImpos : listIndemniteNonImp){
 						/*if(primeImpos.getPrime().getTaux()!=null && primeImpos.getValeur()>0)
 						{
@@ -428,29 +446,29 @@ public class LivreDePaieSimulation {
 						}else{*/
 						if(tempeffect==null){
 							 if(primeImpos.getPrime().getMtExedent()!=null)
-							   autreNonImposable=autreNonImposable+primeImpos.getPrime().getMtExedent();
+							   autreNonImposable=autreNonImposable.add(primeImpos.getPrime().getMtExedent());
 							 else
-								autreNonImposable=autreNonImposable+primeImpos.getMontant();
+								autreNonImposable=autreNonImposable.add(primeImpos.getMontant());
 						}else{
 
 							 if(primeImpos.getPrime().getMtExedent()!=null)
-								   autreNonImposable=autreNonImposable+primeImpos.getPrime().getMtExedent()*tempeffect.getJourspresence()/30;
+								   autreNonImposable=autreNonImposable.add(primeImpos.getPrime().getMtExedent()).multiply(BigDecimal.valueOf(tempeffect.getJourspresence())).divide(BigDecimal.valueOf(30));
 								 else
-								   autreNonImposable=autreNonImposable+(primeImpos.getMontant()*tempeffect.getJourspresence()/30);
+								   autreNonImposable=autreNonImposable.add(primeImpos.getMontant().multiply(BigDecimal.valueOf(tempeffect.getJourspresence())).divide(BigDecimal.valueOf(30)));
 						}
 						//}
 					}
   			    }
 
-				this.brutNonImposable=indemniteRepresentation+indemniteTransport+autreNonImposable;
+				this.brutNonImposable=indemniteRepresentation.add(indemniteTransport).add(autreNonImposable);
 		//this.indemniteRepresentation = Math.rint(calculerIndemniterRepresentation());
-				this.basecnps=brutImposable + indemniteRepresentation+autreNonImposable-autreIndemImposable;
-				this.cnps = Math.rint(calculCNPS(basecnps));
-				this.avceAcpte = Math.rint(avanceEtAccompte);
-				this.pretAlios = Math.rint(pretALIOS);
+				this.basecnps=brutImposable.add(indemniteRepresentation).add(autreNonImposable).subtract(autreIndemImposable);
+				this.cnps = calculCNPS(basecnps);
+				this.avceAcpte = avanceEtAccompte;
+				this.pretAlios = pretALIOS;
 		//this.indemniteTransport = Math.rint(calculerIndemniteTransport());
-			this.totalBrut = Math.rint(brutImposable + indemniteRepresentation+ indemniteTransport+autreNonImposable);
-			autrePrelevmentSociale=0d; double patronalcmu=500d ;double salarialecmu=500d ;
+			this.totalBrut = brutImposable.add(indemniteRepresentation).add(indemniteTransport).add(autreNonImposable);
+			autrePrelevmentSociale= BigDecimal.valueOf(0d); BigDecimal patronalcmu= BigDecimal.valueOf(500d);BigDecimal salarialecmu= BigDecimal.valueOf(500d);
 //			if(listRetenueSociale.size()>0 || listRetenueSociale!=null){
 //				for(PrimePersonnel sociale : listRetenueSociale){
 //					if(sociale.getPrime().getLibelle().equals("CMU Patronal")){
@@ -462,214 +480,232 @@ public class LivreDePaieSimulation {
 //				}
 //			}
 			this.CMU=salarialecmu;
-			this.retenueSociiale=salarialecmu +cnps;
+			this.retenueSociiale=salarialecmu.add(cnps);
 			this.CMUPatronal=patronalcmu;
 
 
-			autrePrelevment=0d;
-			if(listMutuelle.size()>0 || listMutuelle!=null){
+			autrePrelevment= BigDecimal.valueOf(0d);
+			if(!listMutuelle.isEmpty()){
 				for(PrimePersonnel mutuell : listMutuelle){
-					autrePrelevment=autrePrelevment+mutuell.getMontant();
+					autrePrelevment=autrePrelevment.add(mutuell.getMontant());
 				}
 			}
 
-				this.totalRetenue = Math.rint(totalRetenueFiscale + cnps + avceAcpte + pretAlios+autrePrelevment );
-				regularisation=0d;
-			if(listGains.size()>0 || listGains!=null){
+				this.totalRetenue = totalRetenueFiscale.add(cnps).add(avceAcpte).add(pretAlios).add(autrePrelevment) ;
+				regularisation= BigDecimal.valueOf(0d);
+			if(!listGains.isEmpty() ){
 				for(PrimePersonnel primeGains : listGains){
-					regularisation=regularisation+primeGains.getMontant();
+					regularisation=regularisation.add(primeGains.getMontant());
 				}
 			}
-				this.netPayer = Math.rint((brutImposable + indemniteRepresentation + indemniteTransport+autreNonImposable)+ regularisation -autreIndemImposable- totalRetenue);
-				this.is = Math.rint(brutImposable * 1.2 / 100);
-			    this.ta = Math.ceil(brutImposable * 0.4 / 100);
+				this.netPayer = brutImposable.add(indemniteRepresentation).add(indemniteTransport).add(autreNonImposable).add(regularisation).subtract(autreIndemImposable).subtract(totalRetenue) ;
+				this.is =  this.its;
+			    this.ta = brutImposable.multiply(BigDecimal.valueOf(0.4)).divide(BigDecimal.valueOf(100));
 			   // this.fpc = Math.ceil(brutImposable * 0.6 / 100);
-			    this.fpc = Math.ceil(brutImposable * 0.6 / 100);
-			   this.fpcregul =Math.ceil(brutImposable * 0.6 / 100);
+			    this.fpc = brutImposable.multiply(BigDecimal.valueOf(0.6)).divide(BigDecimal.valueOf(100));
+			    this.fpcregul = brutImposable.multiply(BigDecimal.valueOf(0.6)).divide(BigDecimal.valueOf(100));
 				//this.ta = Math.rint(brutImposable * 0.4 / 100);
 				//this.fpc = Math.rint(brutImposable * 0.6 / 100);
-				this.prestationFamiliale = Math.rint(calcalerPrestationFamilial());
-				this.accidentTravail = Math.rint(calculerAccidentTravail());
-				this.retraite = Math.rint((brutImposable + indemniteRepresentation+autreNonImposable) * 7.7 / 100);
-				this.totalPatronal = Math.rint(is + ta + fpc +fpcregul+ prestationFamiliale + accidentTravail + retraite);
-				this.totalMasseSalariale = Math.rint(brutImposable + indemniteRepresentation+ indemniteTransport +autreNonImposable+regularisation+ totalPatronal);
+				this.prestationFamiliale = calculerPrestationFamiliale();
+				this.accidentTravail = calculerAccidentTravail();
+				this.retraite =brutImposable.add(indemniteRepresentation).add(autreNonImposable).multiply(BigDecimal.valueOf(7.7)).divide(BigDecimal.valueOf(100));
+				this.totalPatronal = is.add(ta).add(fpc).add(fpcregul).add(prestationFamiliale).add(accidentTravail).add(retraite);
+				this.totalMasseSalariale = brutImposable.add( indemniteRepresentation).add(indemniteTransport).add(autreNonImposable).add(regularisation).add(totalPatronal);
 				//this.tempspresence= countnbreJrdu(ctratperso.getPersonnel().getDateRetourcge(), plconge.getDatefin(), ctratperso);
 				//this.moisdepresence= ProvisionConge.calculerTempsPresence(ctratperso.getPersonnel().getDateRetourcge(), plconge.getDatefin());
 	    }
-	    else{
-
-			///// traitement consultant et stagiaire   //////////
-			    autreImposable=0d;
-			    if(listIndemniteBrut.size()>0 || listIndemniteBrut!=null){
-				  for(PrimePersonnel primeImpos : listIndemniteBrut){
-					if(primeImpos.getPrime().getTaux()!=null && primeImpos.getValeur()>0)
-					{
-						autreImposable=autreImposable+primeImpos.getValeur()*(primeImpos.getMontant()+(primeImpos.getMontant()*primeImpos.getPrime().getTaux()/100));
-					}else{
-						if(primeImpos.getPrime().getMtExedent()!=null)
-							autreImposable=autreImposable+primeImpos.getMontant()-primeImpos.getPrime().getMtExedent();
-						else
-							autreImposable=autreImposable+primeImpos.getMontant();
-					}
-				}
-
-				autreNonImposable=0d;
-				if(listIndemniteNonImp.size()>0 || listIndemniteNonImp!=null){
-						for(PrimePersonnel primeImpos : listIndemniteNonImp){
-					/*if(primeImpos.getPrime().getTaux()!=null && primeImpos.getValeur()>0)
-					{
-						autreNonImposable=autreNonImposable+(primeImpos.getMontant()*primeImpos.getPrime().getTaux()*primeImpos.getValeur())*tempeffect.getJourspresence()/30;
-					}else{*/
-							if(tempeffect==null){
-								if(primeImpos.getPrime().getMtExedent()!=null)
-									autreNonImposable=autreNonImposable+primeImpos.getPrime().getMtExedent();
-								else
-									autreNonImposable=autreNonImposable+primeImpos.getMontant();
-							}else{
-
-								if(primeImpos.getPrime().getMtExedent()!=null)
-									autreNonImposable=autreNonImposable+primeImpos.getPrime().getMtExedent()*tempeffect.getJourspresence()/30;
-								else
-									autreNonImposable=autreNonImposable+(primeImpos.getMontant()*tempeffect.getJourspresence()/30);
-							}
-							//}
-						}
-				}
-					regularisation=0d;
-					if(listGains.size()>0 || listGains!=null){
-						for(PrimePersonnel primeGains : listGains){
-
-							regularisation=regularisation+primeGains.getMontant();
-
-							//}
-						}
-					}
-			//if(ctratperso.getPersonnel().getCarec()==false)
-			//{	 this.its = Math.rint(0);
-				this.cn =  Math.rint(0);
-				this.igr = Math.rint(0);
-				this.totalRetenueFiscale = Math.rint(0);
-				this.brutImposable = Math.rint(autreImposable);
-				this.brutNonImposable = Math.rint(autreNonImposable);
-				this.basecnps=Math.rint(0);
-				this.is = Math.rint(0);
-				this.ta = Math.rint(0);
-				this.fpc = Math.rint(0);
-				this.prestationFamiliale = Math.rint(0);
-				this.accidentTravail = Math.rint(0);
-				this.retraite = Math.rint(0);
-				this.cnps = Math.rint(0);
-				this.retraite = Math.rint(0);
-				this.plafondFamiliale = Math.rint(0);
-
-				avceAcpte=Math.rint(0); pretAlios=Math.rint(0);
-					autrePrelevment=0d;
-					if(listMutuelle.size()>0 || listMutuelle!=null){
-						for(PrimePersonnel mutuell : listMutuelle){
-
-							autrePrelevment=autrePrelevment+mutuell.getMontant();
-
-							//}
-						}
-					}
-				this.totalRetenue = Math.rint(totalRetenueFiscale + cnps + avceAcpte + pretAlios +autrePrelevment);
-				this.netPayer = Math.rint(brutImposable +regularisation+ brutNonImposable-totalRetenue);
-				//this.is = Math.rint(brutImposable * 1.2 / 100);
-				//this.ta = Math.rint(brutImposable * 0.4 / 100);
-				//this.fpc = Math.rint(brutImposable * 1.2 / 100);
-				//this.prestationFamiliale = Math.rint(calcalerPrestationFamilial());
-				//this.accidentTravail = Math.rint(calculerAccidentTravail());
-				//this.retraite = Math.rint((brutImposable + indemniteRepresentation+indemniteResponsabilte+autreNonImposable) * 7.7 / 100);
-				this.totalPatronal = Math.rint(is + ta + fpc + prestationFamiliale + accidentTravail + retraite);
-				this.totalMasseSalariale = Math.rint(brutImposable + brutNonImposable+regularisation+ totalPatronal);
-			//	this.tempspresence= countnbreJrdu(ctratperso.getPersonnel().getDateRetourcge(), plconge.getDatefin(), ctratperso);
-			//	this.moisdepresence= ProvisionConge.calculerTempsPresence(ctratperso.getPersonnel().getDateRetourcge(), plconge.getDatefin());
-			//}
-
-		}
-		}
+//	    else{
+//
+//			///// traitement consultant et stagiaire   //////////
+//			    autreImposable=0d;
+//			    if(listIndemniteBrut.size()>0 || listIndemniteBrut!=null){
+//				  for(PrimePersonnel primeImpos : listIndemniteBrut){
+//					if(primeImpos.getPrime().getTaux()!=null && primeImpos.getValeur()>0)
+//					{
+//						autreImposable=autreImposable+primeImpos.getValeur()*(primeImpos.getMontant()+(primeImpos.getMontant()*primeImpos.getPrime().getTaux()/100));
+//					}else{
+//						if(primeImpos.getPrime().getMtExedent()!=null)
+//							autreImposable=autreImposable+primeImpos.getMontant()-primeImpos.getPrime().getMtExedent();
+//						else
+//							autreImposable=autreImposable+primeImpos.getMontant();
+//					}
+//				}
+//
+//				autreNonImposable=0d;
+//				if(listIndemniteNonImp.size()>0 || listIndemniteNonImp!=null){
+//						for(PrimePersonnel primeImpos : listIndemniteNonImp){
+//					/*if(primeImpos.getPrime().getTaux()!=null && primeImpos.getValeur()>0)
+//					{
+//						autreNonImposable=autreNonImposable+(primeImpos.getMontant()*primeImpos.getPrime().getTaux()*primeImpos.getValeur())*tempeffect.getJourspresence()/30;
+//					}else{*/
+//							if(tempeffect==null){
+//								if(primeImpos.getPrime().getMtExedent()!=null)
+//									autreNonImposable=autreNonImposable+primeImpos.getPrime().getMtExedent();
+//								else
+//									autreNonImposable=autreNonImposable+primeImpos.getMontant();
+//							}else{
+//
+//								if(primeImpos.getPrime().getMtExedent()!=null)
+//									autreNonImposable=autreNonImposable+primeImpos.getPrime().getMtExedent()*tempeffect.getJourspresence()/30;
+//								else
+//									autreNonImposable=autreNonImposable+(primeImpos.getMontant()*tempeffect.getJourspresence()/30);
+//							}
+//							//}
+//						}
+//				}
+//					regularisation=0d;
+//					if(listGains.size()>0 || listGains!=null){
+//						for(PrimePersonnel primeGains : listGains){
+//
+//							regularisation=regularisation+primeGains.getMontant();
+//
+//							//}
+//						}
+//					}
+//			//if(ctratperso.getPersonnel().getCarec()==false)
+//			//{	 this.its = Math.rint(0);
+//				this.cn =  Math.rint(0);
+//				this.igr = Math.rint(0);
+//				this.totalRetenueFiscale = Math.rint(0);
+//				this.brutImposable = Math.rint(autreImposable);
+//				this.brutNonImposable = Math.rint(autreNonImposable);
+//				this.basecnps=Math.rint(0);
+//				this.is = Math.rint(0);
+//				this.ta = Math.rint(0);
+//				this.fpc = Math.rint(0);
+//				this.prestationFamiliale = Math.rint(0);
+//				this.accidentTravail = Math.rint(0);
+//				this.retraite = Math.rint(0);
+//				this.cnps = Math.rint(0);
+//				this.retraite = Math.rint(0);
+//				this.plafondFamiliale = Math.rint(0);
+//
+//				avceAcpte=Math.rint(0); pretAlios=Math.rint(0);
+//					autrePrelevment=0d;
+//					if(listMutuelle.size()>0 || listMutuelle!=null){
+//						for(PrimePersonnel mutuell : listMutuelle){
+//
+//							autrePrelevment=autrePrelevment+mutuell.getMontant();
+//
+//							//}
+//						}
+//					}
+//				this.totalRetenue = Math.rint(totalRetenueFiscale + cnps + avceAcpte + pretAlios +autrePrelevment);
+//				this.netPayer = Math.rint(brutImposable +regularisation+ brutNonImposable-totalRetenue);
+//				//this.is = Math.rint(brutImposable * 1.2 / 100);
+//				//this.ta = Math.rint(brutImposable * 0.4 / 100);
+//				//this.fpc = Math.rint(brutImposable * 1.2 / 100);
+//				//this.prestationFamiliale = Math.rint(calcalerPrestationFamilial());
+//				//this.accidentTravail = Math.rint(calculerAccidentTravail());
+//				//this.retraite = Math.rint((brutImposable + indemniteRepresentation+indemniteResponsabilte+autreNonImposable) * 7.7 / 100);
+//				this.totalPatronal = Math.rint(is + ta + fpc + prestationFamiliale + accidentTravail + retraite);
+//				this.totalMasseSalariale = Math.rint(brutImposable + brutNonImposable+regularisation+ totalPatronal);
+//			//	this.tempspresence= countnbreJrdu(ctratperso.getPersonnel().getDateRetourcge(), plconge.getDatefin(), ctratperso);
+//			//	this.moisdepresence= ProvisionConge.calculerTempsPresence(ctratperso.getPersonnel().getDateRetourcge(), plconge.getDatefin());
+//			//}
+//
+//		}
+		//}
 	}
-	
-	public Double calculerAccidentTravail(){
-		Double pf = brutImposable + autreNonImposable;
-		if(pf > 70000)
-			pf = 70000 * 4.0 / 100;
-		else if(pf > 0)
-			pf = brutImposable * 4 / 100;
-		else 
-			pf = 0.0;
-		return pf;
-	}
-	
-	public Double calcalerPrestationFamilial(){
-		Double pf = brutImposable + autreNonImposable;
-		if(pf > 70000)
-			pf = 70000 * 5.75 / 100;
-		else if(pf > 0)
-			pf = brutImposable * 5.75 / 100;
-		else 
-			pf = 0.0;
-		return pf;
-	}
-	
-	public Double calculerIndemniteTransport(){
-		Double it = brutImposable * 10 / 100 - 25000.0;
-		if(it > 0)
-			it = 25000.0;
+
+
+
+    public BigDecimal calculerAccidentTravail() {
+
+        BigDecimal plafond = new BigDecimal("70000");
+        BigDecimal taux = new BigDecimal("0.04");
+
+        BigDecimal pf = safe(brutImposable).add(safe(autreNonImposable));
+
+        if (pf.compareTo(plafond) > 0) {
+            return plafond.multiply(taux).setScale(0, RoundingMode.HALF_UP);
+        } else if (pf.compareTo(BigDecimal.ZERO) > 0) {
+            return safe(brutImposable)
+                    .multiply(taux)
+                    .setScale(0, RoundingMode.HALF_UP);
+        } else {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    public BigDecimal calculerPrestationFamiliale() {
+
+        BigDecimal plafond = new BigDecimal("70000");
+        BigDecimal taux = new BigDecimal("0.0575");
+
+        BigDecimal pf = safe(brutImposable).add(safe(autreNonImposable));
+
+        if (pf.compareTo(plafond) > 0) {
+            return plafond.multiply(taux).setScale(0, RoundingMode.HALF_UP);
+        } else if (pf.compareTo(BigDecimal.ZERO) > 0) {
+            return safe(brutImposable)
+                    .multiply(taux)
+                    .setScale(0, RoundingMode.HALF_UP);
+        } else {
+            return BigDecimal.ZERO;
+        }
+    }
+    private BigDecimal safe(BigDecimal val) {
+        return val == null ? BigDecimal.ZERO : val;
+    }
+//	public BigDecimal calculerIndemniteTransport(){
+//		BigDecimal it = brutImposable * 10 / 100 - 25000.0;
+//		if(it > 0)
+//			it = 25000.0;
+//		else
+//			it = 0.0;
+//		return it;
+//	}
+//
+//	public BigDecimal calculerIndemniterRepresentation(){
+//		BigDecimal ir = brutImposable * 10 / 100 - 25000.0;
+//		if(ir > 0)
+//			ir = brutImposable * 10 / 100 - 25000.0;
+//		else
+//			ir = 0.0;
+//		return ir;
+//	}
+
+//	public BigDecimal calculerCN(){
+//		BigDecimal cn;
+//		if(brutImposable > 250000.0)
+//			cn = (brutImposable - 250000.0) * 8 / 100 + 4700;
+//		else if(brutImposable > 162500.0)
+//			cn = (brutImposable - 162500.0) * 4 / 100 + 1200;
+//		else if(brutImposable > 62500.0)
+//			cn = brutImposable * 1.2 / 100 - 750;
+//		else
+//			cn = 0.0;
+//		return cn;
+//	}
+
+//	public BigDecimal calculerIGR(){
+//		BigDecimal igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100;
+//		if(igr > 842167.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 60 / 160 - 98633.0 * nombrePart;
+//		else if(igr > 389084.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 45 / 145 - 44181.0 * nombrePart;
+//		else if(igr > 220334.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 35 / 135 - 24306.0 * nombrePart;
+//		else if(igr > 126584.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 25 / 125 - 11250.0 * nombrePart;
+//		else if(igr > 81584.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 20 / 120 - 7031.0 * nombrePart;
+//		else if(igr > 45584.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 15 / 115 - 4076.0 * nombrePart;
+//		else if(igr > 25000.0)
+//			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 15 / 110 - 2273.0 * nombrePart;
+//		else
+//			igr = 0.0;
+//		return igr;
+//	}
+
+	public BigDecimal calculCNPS(BigDecimal basecnps){
+		BigDecimal cnps = (basecnps );
+		if(cnps.compareTo(BigDecimal.valueOf(3375000.0))  <0)
+			cnps = (basecnps ).multiply(BigDecimal.valueOf(6.3)).divide(BigDecimal.valueOf(100));
 		else
-			it = 0.0;
-		return it;
-	}
-	
-	public Double calculerIndemniterRepresentation(){
-		Double ir = brutImposable * 10 / 100 - 25000.0;
-		if(ir > 0)
-			ir = brutImposable * 10 / 100 - 25000.0;
-		else 
-			ir = 0.0;
-		return ir;
-	}
-	
-	public Double calculerCN(){
-		Double cn;
-		if(brutImposable > 250000.0)
-			cn = (brutImposable - 250000.0) * 8 / 100 + 4700;
-		else if(brutImposable > 162500.0)
-			cn = (brutImposable - 162500.0) * 4 / 100 + 1200;
-		else if(brutImposable > 62500.0)
-			cn = brutImposable * 1.2 / 100 - 750;
-		else
-			cn = 0.0;
-		return cn;
-	}
-	
-	public Double calculerIGR(){
-		Double igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100;
-		if(igr > 842167.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 60 / 160 - 98633.0 * nombrePart;
-		else if(igr > 389084.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 45 / 145 - 44181.0 * nombrePart;
-		else if(igr > 220334.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 35 / 135 - 24306.0 * nombrePart;
-		else if(igr > 126584.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 25 / 125 - 11250.0 * nombrePart;
-		else if(igr > 81584.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 20 / 120 - 7031.0 * nombrePart;
-		else if(igr > 45584.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 15 / 115 - 4076.0 * nombrePart;
-		else if(igr > 25000.0)
-			igr = ((brutImposable * 80 / 100 - its - cn) / nombrePart) * 85 / 100 * nombrePart * 15 / 110 - 2273.0 * nombrePart;
-		else 
-			igr = 0.0;
-		return igr;
-	}
-	
-	public Double calculCNPS(Double basecnps){
-		Double cnps = (basecnps );
-		if(cnps < 3375000.0)
-			cnps = (basecnps ) * 6.3 / 100;
-		else 
-			cnps = 3375000.0 * 6.3 / 100;
+			cnps = BigDecimal.valueOf(3375000.0).multiply(BigDecimal.valueOf(6.3)).divide(BigDecimal.valueOf(100));
 		return cnps;
 	}
 
@@ -705,15 +741,15 @@ public class LivreDePaieSimulation {
 		this.anciennete = anciennete;
 	}
 
-	public Double getSalaireBase() {
+	public BigDecimal getSalaireBase() {
 		return salaireBase;
 	}
 
-	public void setSalaireBase(Double salaireBase) {
+	public void setSalaireBase(BigDecimal salaireBase) {
 		this.salaireBase = salaireBase;
 	}
 
-	public Double getSursalaire() {
+	public BigDecimal getSursalaire() {
 		return sursalaire;
 	}
 
@@ -733,204 +769,204 @@ public class LivreDePaieSimulation {
 		this.tempspresence = tempspresence;
 	}
 
-	public void setSursalaire(Double sursalaire) {
+	public void setSursalaire(BigDecimal sursalaire) {
 		this.sursalaire = sursalaire;
 	}
 
-	public Double getPrimeAnciennete() {
+	public BigDecimal getPrimeAnciennete() {
 		return primeAnciennete;
 	}
 
-	public void setPrimeAnciennete(Double primeAnciennete) {
+	public void setPrimeAnciennete(BigDecimal primeAnciennete) {
 		this.primeAnciennete = primeAnciennete;
 	}
 
-	public Double getIndemniteLogement() {
+	public BigDecimal getIndemniteLogement() {
 		return indemniteLogement;
 	}
 
-	public void setIndemniteLogement(Double indemniteLogement) {
+	public void setIndemniteLogement(BigDecimal indemniteLogement) {
 		this.indemniteLogement = indemniteLogement;
 	}
 
-	public Double getBrutImposable() {
+	public BigDecimal getBrutImposable() {
 		return brutImposable;
 	}
 
-	public void setBrutImposable(Double brutImposable) {
+	public void setBrutImposable(BigDecimal brutImposable) {
 		this.brutImposable = brutImposable;
 	}
 
-	public Double getIts() {
+	public BigDecimal getIts() {
 		return its;
 	}
 
-	public void setIts(Double its) {
+	public void setIts(BigDecimal its) {
 		this.its = its;
 	}
 
-	public Double getCn() {
+	public BigDecimal getCn() {
 		return cn;
 	}
 
-	public void setCn(Double cn) {
+	public void setCn(BigDecimal cn) {
 		this.cn = cn;
 	}
 
-	public Double getIgr() {
+	public BigDecimal getIgr() {
 		return igr;
 	}
 
-	public void setIgr(Double igr) {
+	public void setIgr(BigDecimal igr) {
 		this.igr = igr;
 	}
 
-	public Double getTotalRetenueFiscale() {
+	public BigDecimal getTotalRetenueFiscale() {
 		return totalRetenueFiscale;
 	}
 
-	public void setTotalRetenueFiscale(Double totalRetenueFiscale) {
+	public void setTotalRetenueFiscale(BigDecimal totalRetenueFiscale) {
 		this.totalRetenueFiscale = totalRetenueFiscale;
 	}
 
-	public Double getCnps() {
+	public BigDecimal getCnps() {
 		return cnps;
 	}
 
-	public void setCnps(Double cnps) {
+	public void setCnps(BigDecimal cnps) {
 		this.cnps = cnps;
 	}
 
-	public Double getAvceAcpte() {
+	public BigDecimal getAvceAcpte() {
 		return avceAcpte;
 	}
 
-	public void setAvceAcpte(Double avceAcpte) {
+	public void setAvceAcpte(BigDecimal avceAcpte) {
 		this.avceAcpte = avceAcpte;
 	}
 
-	public Double getPretAlios() {
+	public BigDecimal getPretAlios() {
 		return pretAlios;
 	}
 
-	public void setPretAlios(Double pretAlios) {
+	public void setPretAlios(BigDecimal pretAlios) {
 		this.pretAlios = pretAlios;
 	}
 
-	public Double getCarec() {
+	public BigDecimal getCarec() {
 		return carec;
 	}
 
-	public void setCarec(Double carec) {
+	public void setCarec(BigDecimal carec) {
 		this.carec = carec;
 	}
 
-	public Double getTotalRetenue() {
+	public BigDecimal getTotalRetenue() {
 		return totalRetenue;
 	}
 
-	public void setTotalRetenue(Double totalRetenue) {
+	public void setTotalRetenue(BigDecimal totalRetenue) {
 		this.totalRetenue = totalRetenue;
 	}
 
-	public Double getIndemniteRepresentation() {
+	public BigDecimal getIndemniteRepresentation() {
 		return indemniteRepresentation;
 	}
 
-	public void setIndemniteRepresentation(Double indemniteRepresentation) {
+	public void setIndemniteRepresentation(BigDecimal indemniteRepresentation) {
 		this.indemniteRepresentation = indemniteRepresentation;
 	}
 
-	public Double getIndemniteTransport() {
+	public BigDecimal getIndemniteTransport() {
 		return indemniteTransport;
 	}
 
-	public void setIndemniteTransport(Double indemniteTransport) {
+	public void setIndemniteTransport(BigDecimal indemniteTransport) {
 		this.indemniteTransport = indemniteTransport;
 	}
 
-	public Double getNetPayer() {
+	public BigDecimal getNetPayer() {
 		return netPayer;
 	}
 
-	public void setNetPayer(Double netPayer) {
+	public void setNetPayer(BigDecimal netPayer) {
 		this.netPayer = netPayer;
 	}
 
-	public Double getTotalBrut() {
+	public BigDecimal getTotalBrut() {
 		return totalBrut;
 	}
 
-	public void setTotalBrut(Double totalBrut) {
+	public void setTotalBrut(BigDecimal totalBrut) {
 		this.totalBrut = totalBrut;
 	}
 
-	public Double getIs() {
+	public BigDecimal getIs() {
 		return is;
 	}
 
-	public void setIs(Double is) {
+	public void setIs(BigDecimal is) {
 		this.is = is;
 	}
 
-	public Double getTa() {
+	public BigDecimal getTa() {
 		return ta;
 	}
 
-	public void setTa(Double ta) {
+	public void setTa(BigDecimal ta) {
 		this.ta = ta;
 	}
 
-	public Double getFpc() {
+	public BigDecimal getFpc() {
 		return fpc;
 	}
 
-	public void setFpc(Double fpc) {
+	public void setFpc(BigDecimal fpc) {
 		this.fpc = fpc;
 	}
 
-	public Double getPrestationFamiliale() {
+	public BigDecimal getPrestationFamiliale() {
 		return prestationFamiliale;
 	}
 
-	public void setPrestationFamiliale(Double prestationFamiliale) {
+	public void setPrestationFamiliale(BigDecimal prestationFamiliale) {
 		this.prestationFamiliale = prestationFamiliale;
 	}
 
-	public Double getAccidentTravail() {
+	public BigDecimal getAccidentTravail() {
 		return accidentTravail;
 	}
 
-	public void setAccidentTravail(Double accidentTravail) {
+	public void setAccidentTravail(BigDecimal accidentTravail) {
 		this.accidentTravail = accidentTravail;
 	}
 
-	public Double getRetraite() {
+	public BigDecimal getRetraite() {
 		return retraite;
 	}
 
-	public void setRetraite(Double retraite) {
+	public void setRetraite(BigDecimal retraite) {
 		this.retraite = retraite;
 	}
 
-	public Double getTotalPatronal() {
+	public BigDecimal getTotalPatronal() {
 		return totalPatronal;
 	}
 
-	public void setTotalPatronal(Double totalPatronal) {
+	public void setTotalPatronal(BigDecimal totalPatronal) {
 		this.totalPatronal = totalPatronal;
 	}
 
-	public Double getTotalMasseSalariale() {
+	public BigDecimal getTotalMasseSalariale() {
 		return totalMasseSalariale;
 	}
 
-	public void setTotalMasseSalariale(Double totalMasseSalariale) {
+	public void setTotalMasseSalariale(BigDecimal totalMasseSalariale) {
 		this.totalMasseSalariale = totalMasseSalariale;
 	}
 
-	
-	
+
+
 	public ContratPersonnel getContratPersonnel() {
 		return contratPersonnel;
 	}
@@ -947,20 +983,20 @@ public class LivreDePaieSimulation {
 		this.periodePaie = periodePaie;
 	}
 
-	
-	public Double getJourTravail() {
+
+	public BigDecimal getJourTravail() {
 		return jourTravail;
 	}
 
-	public void setJourTravail(Double jourTravail) {
+	public void setJourTravail(BigDecimal jourTravail) {
 		this.jourTravail = jourTravail;
 	}
 
-	public Double getTemptravail() {
+	public BigDecimal getTemptravail() {
 		return temptravail;
 	}
 
-	public void setTemptravail(Double temptravail) {
+	public void setTemptravail(BigDecimal temptravail) {
 		this.temptravail = temptravail;
 	}
 
@@ -972,10 +1008,10 @@ public class LivreDePaieSimulation {
 		this.bullpaie = bullpaie;
 	}
 
-	
-	
+
+
 	public String getMtsalaireBase() {
-	
+
 		return mtsalaireBase= Utils.formattingAmount(salaireBase);
 	}
 
@@ -984,7 +1020,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtsursalaire() {
-		
+
 		return mtsursalaire= Utils.formattingAmount(sursalaire);
 	}
 
@@ -993,7 +1029,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtprimeAnciennete() {
-		
+
 		return mtprimeAnciennete= Utils.formattingAmount(primeAnciennete);
 	}
 
@@ -1002,7 +1038,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtindemniteLogement() {
-	
+
 		return mtindemniteLogement= Utils.formattingAmount(indemniteLogement);
 	}
 
@@ -1011,7 +1047,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtbrutImposable() {
-	
+
 		return mtbrutImposable= Utils.formattingAmount(brutImposable);
 	}
 
@@ -1020,7 +1056,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtits() {
-		
+
 		return mtits= Utils.formattingAmount(its);
 	}
 
@@ -1029,7 +1065,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtcn() {
-		
+
 		return mtcn= Utils.formattingAmount(cn);
 	}
 
@@ -1038,7 +1074,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtigr() {
-	
+
 		return mtigr= Utils.formattingAmount(igr);
 	}
 
@@ -1047,7 +1083,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMttotalRetenueFiscale() {
-		
+
 		return mttotalRetenueFiscale= Utils.formattingAmount(totalRetenueFiscale);
 	}
 
@@ -1056,7 +1092,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtcnps() {
-		
+
 		return mtcnps= Utils.formattingAmount(cnps);
 	}
 
@@ -1065,7 +1101,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtavceAcpte() {
-		
+
 		return mtavceAcpte= Utils.formattingAmount(avceAcpte);
 	}
 
@@ -1074,7 +1110,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtpretAlios() {
-		
+
 		return mtpretAlios= Utils.formattingAmount(pretAlios);
 	}
 
@@ -1083,7 +1119,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtcarec() {
-		
+
 		return mtcarec= Utils.formattingAmount(carec);
 	}
 
@@ -1092,7 +1128,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMttotalRetenue() {
-	
+
 		return mttotalRetenue= Utils.formattingAmount(totalRetenue);
 	}
 
@@ -1101,7 +1137,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtindemniteRepresentation() {
-		
+
 		return mtindemniteRepresentation= Utils.formattingAmount(indemniteRepresentation);
 	}
 
@@ -1110,17 +1146,17 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtindemniteTransport() {
-		
+
 		return mtindemniteTransport= Utils.formattingAmount(indemniteTransport);
 	}
 
 	public void setMtindemniteTransport(String mtindemniteTransport) {
 		this.mtindemniteTransport = mtindemniteTransport;
-		
+
 	}
 
 	public String getMtnetPayer() {
-		
+
 		return mtnetPayer= Utils.formattingAmount(netPayer);
 	}
 
@@ -1129,7 +1165,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMttotalBrut() {
-		
+
 		return mttotalBrut= Utils.formattingAmount(totalBrut);
 	}
 
@@ -1138,7 +1174,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtis() {
-		
+
 		return mtis= Utils.formattingAmount(is);
 	}
 
@@ -1147,7 +1183,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtta() {
-		
+
 		return mtta= Utils.formattingAmount(ta);
 	}
 
@@ -1156,7 +1192,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtfpc() {
-	
+
 		return mtfpc= Utils.formattingAmount(fpc);
 	}
 
@@ -1165,7 +1201,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtprestationFamiliale() {
-		
+
 		return mtprestationFamiliale= Utils.formattingAmount(prestationFamiliale);
 	}
 
@@ -1174,7 +1210,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMtaccidentTravail() {
-		
+
 		return mtaccidentTravail= Utils.formattingAmount(accidentTravail);
 	}
 
@@ -1191,7 +1227,7 @@ public class LivreDePaieSimulation {
 	}
 
 	public String getMttotalPatronal() {
-	
+
 		return mttotalPatronal= Utils.formattingAmount(totalPatronal);
 	}
 
@@ -1207,11 +1243,11 @@ public class LivreDePaieSimulation {
 		this.mttotalMasseSalariale = mttotalMasseSalariale;
 	}
 
-	public Double getBasecnps() {
+	public BigDecimal getBasecnps() {
 		return basecnps;
 	}
 
-	public void setBasecnps(Double basecnps) {
+	public void setBasecnps(BigDecimal basecnps) {
 		this.basecnps = basecnps;
 	}
 
@@ -1223,11 +1259,11 @@ public class LivreDePaieSimulation {
 		this.mtbasecnps = mtbasecnps;
 	}
 
-	public Double getIndemniteTransportImp() {
+	public BigDecimal getIndemniteTransportImp() {
 		return indemniteTransportImp;
 	}
 
-	public void setIndemniteTransportImp(Double indemniteTransportImp) {
+	public void setIndemniteTransportImp(BigDecimal indemniteTransportImp) {
 		this.indemniteTransportImp = indemniteTransportImp;
 	}
 
@@ -1239,11 +1275,11 @@ public class LivreDePaieSimulation {
 		this.mtindemniteTransportImp = mtindemniteTransportImp;
 	}
 
-	public Double getIndemniteResponsabilte() {
+	public BigDecimal getIndemniteResponsabilte() {
 		return indemniteResponsabilte;
 	}
 
-	public void setIndemniteResponsabilte(Double indemniteResponsabilte) {
+	public void setIndemniteResponsabilte(BigDecimal indemniteResponsabilte) {
 		this.indemniteResponsabilte = indemniteResponsabilte;
 	}
 
@@ -1255,11 +1291,11 @@ public class LivreDePaieSimulation {
 		this.mtindemniteResponsabilte = mtindemniteResponsabilte;
 	}
 
-	public Double getBrutNonImposable() {
+	public BigDecimal getBrutNonImposable() {
 		return brutNonImposable;
 	}
 
-	public void setBrutNonImposable(Double brutNonImposable) {
+	public void setBrutNonImposable(BigDecimal brutNonImposable) {
 		this.brutNonImposable = brutNonImposable;
 	}
 
@@ -1295,11 +1331,11 @@ public class LivreDePaieSimulation {
 		this.listIndemBrutNonImp = listIndemBrutNonImp;
 	}
 
-	public Double getAutreImposable() {
+	public BigDecimal getAutreImposable() {
 		return autreImposable;
 	}
 
-	public void setAutreImposable(Double autreImposable) {
+	public void setAutreImposable(BigDecimal autreImposable) {
 		this.autreImposable = autreImposable;
 	}
 
@@ -1311,11 +1347,11 @@ public class LivreDePaieSimulation {
 		this.mtautreImposable = mtautreImposable;
 	}
 
-	public Double getAutreNonImposable() {
+	public BigDecimal getAutreNonImposable() {
 		return autreNonImposable;
 	}
 
-	public void setAutreNonImposable(Double autreNonImposable) {
+	public void setAutreNonImposable(BigDecimal autreNonImposable) {
 		this.autreNonImposable = autreNonImposable;
 	}
 
@@ -1327,11 +1363,11 @@ public class LivreDePaieSimulation {
 		this.mtautreNonImposable = mtautreNonImposable;
 	}
 
-	public Double getAutreIndemImposable() {
+	public BigDecimal getAutreIndemImposable() {
 		return autreIndemImposable;
 	}
 
-	public void setAutreIndemImposable(Double autreIndemImposable) {
+	public void setAutreIndemImposable(BigDecimal autreIndemImposable) {
 		this.autreIndemImposable = autreIndemImposable;
 	}
 
@@ -1343,11 +1379,11 @@ public class LivreDePaieSimulation {
 		this.mtautreIndemImposable = mtautreIndemImposable;
 	}
 
-	public Double getPlafondFamiliale() {
+	public BigDecimal getPlafondFamiliale() {
 		return plafondFamiliale;
 	}
 
-	public void setPlafondFamiliale(Double plafondFamiliale) {
+	public void setPlafondFamiliale(BigDecimal plafondFamiliale) {
 		this.plafondFamiliale = plafondFamiliale;
 	}
 
@@ -1375,11 +1411,11 @@ public class LivreDePaieSimulation {
 		this.listGainsNet = listGainsNet;
 	}
 
-	public Double getAutrePrelevment() {
+	public BigDecimal getAutrePrelevment() {
 		return autrePrelevment;
 	}
 
-	public void setAutrePrelevment(Double autrePrelevment) {
+	public void setAutrePrelevment(BigDecimal autrePrelevment) {
 		this.autrePrelevment = autrePrelevment;
 	}
 
@@ -1391,11 +1427,11 @@ public class LivreDePaieSimulation {
 		this.mtautrePrelevment = mtautrePrelevment;
 	}
 
-	public Double getRegularisation() {
+	public BigDecimal getRegularisation() {
 		return regularisation;
 	}
 
-	public void setRegularisation(Double regularisation) {
+	public void setRegularisation(BigDecimal regularisation) {
 		this.regularisation = regularisation;
 	}
 
@@ -1407,11 +1443,11 @@ public class LivreDePaieSimulation {
 		this.mtregularisation = mtregularisation;
 	}
 
-	public Double getAutrePrelevmentSociale() {
+	public BigDecimal getAutrePrelevmentSociale() {
 		return autrePrelevmentSociale;
 	}
 
-	public void setAutrePrelevmentSociale(Double autrePrelevmentSociale) {
+	public void setAutrePrelevmentSociale(BigDecimal autrePrelevmentSociale) {
 		this.autrePrelevmentSociale = autrePrelevmentSociale;
 	}
 
@@ -1423,11 +1459,11 @@ public class LivreDePaieSimulation {
 		this.mtautrePrelevmentSociale = mtautrePrelevmentSociale;
 	}
 
-	public Double getRetenueSociiale() {
+	public BigDecimal getRetenueSociiale() {
 		return retenueSociiale;
 	}
 
-	public void setRetenueSociiale(Double retenueSociiale) {
+	public void setRetenueSociiale(BigDecimal retenueSociiale) {
 		this.retenueSociiale = retenueSociiale;
 	}
 
@@ -1439,11 +1475,11 @@ public class LivreDePaieSimulation {
 		this.mtretenueSociiale = mtretenueSociiale;
 	}
 
-	public Double getCMU() {
+	public BigDecimal getCMU() {
 		return CMU;
 	}
 
-	public void setCMU(Double CMU) {
+	public void setCMU(BigDecimal CMU) {
 		this.CMU = CMU;
 	}
 
@@ -1455,11 +1491,11 @@ public class LivreDePaieSimulation {
 		this.mtCMU = mtCMU;
 	}
 
-	public Double getCMUSalarial() {
+	public BigDecimal getCMUSalarial() {
 		return CMUSalarial;
 	}
 
-	public void setCMUSalarial(Double CMUSalarial) {
+	public void setCMUSalarial(BigDecimal CMUSalarial) {
 		this.CMUSalarial = CMUSalarial;
 	}
 
@@ -1471,11 +1507,11 @@ public class LivreDePaieSimulation {
 		this.mtCMUSalarial = mtCMUSalarial;
 	}
 
-	public Double getCMUPatronal() {
+	public BigDecimal getCMUPatronal() {
 		return CMUPatronal;
 	}
 
-	public void setCMUPatronal(Double CMUPatronal) {
+	public void setCMUPatronal(BigDecimal CMUPatronal) {
 		this.CMUPatronal = CMUPatronal;
 	}
 
@@ -1487,11 +1523,11 @@ public class LivreDePaieSimulation {
 		this.mtCMUPatronal = mtCMUPatronal;
 	}
 
-	public Double getRetenueSociale() {
+	public BigDecimal getRetenueSociale() {
 		return RetenueSociale;
 	}
 
-	public void setRetenueSociale(Double retenueSociale) {
+	public void setRetenueSociale(BigDecimal retenueSociale) {
 		RetenueSociale = retenueSociale;
 	}
 
@@ -1503,11 +1539,11 @@ public class LivreDePaieSimulation {
 		this.mtRetenueSocial = mtRetenueSocial;
 	}
 
-	public Double getTotalRetenueSociale() {
+	public BigDecimal getTotalRetenueSociale() {
 		return totalRetenueSociale;
 	}
 
-	public void setTotalRetenueSociale(Double totalRetenueSociale) {
+	public void setTotalRetenueSociale(BigDecimal totalRetenueSociale) {
 		this.totalRetenueSociale = totalRetenueSociale;
 	}
 
@@ -1624,33 +1660,33 @@ public class LivreDePaieSimulation {
 
 	public int countnbreJrdu(Date dateRetourDernierConge, Date dateDepartConge, ContratPersonnel Contratp) {
 		// TODO Auto-generated method stub
-		
+
 		int tps=ProvisionConge.calculerTempsPresence(dateRetourDernierConge,dateDepartConge);
 		int rf=(int) (tps*2.2*1.25);
-		 Double[]ancienete= calculAnciennete(Contratp.getCategorie().getSalaireDeBase(),Contratp.getPersonnel().getDateArrivee());
-		 	double newancienete;
-	    	if(Contratp.getAncienneteInitial()!=0) {
-	    		 newancienete=ancienete[1] +Contratp.getAncienneteInitial();
-	    	}else{
-	    		newancienete=ancienete[1];
-	    	}
-	    	double anc=(int)newancienete ;
-	    	
+        // 🔹 Ancienneté
+        long anneesAnciennete = ChronoUnit.YEARS.between(
+                Contratp.getPersonnel().getDateArrivee().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                LocalDate.now()
+        );
+        int anciennete = (int) (anneesAnciennete + Contratp.getAncienneteInitial());
+        int op = anciennete < 2 ? 0 : Math.min(anciennete, 25);
+        int anc=(int)op ;
+
 	     int jourSuppAnc=0; int jourSuppDam = 0;int jourSuppMed = 0;
-	     
+
 		 if(anc>5 && anc<=10)  jourSuppAnc=1;
 		 if(anc>10 && anc<=15) jourSuppAnc=2;
 		 if(anc>15 && anc<=20) jourSuppAnc=3;
 		 if(anc>20 && anc<=25) jourSuppAnc=5;
 		 if(anc>25 && anc<=30) jourSuppAnc=7;
 		 if(anc>30) jourSuppAnc=8;
-		 
+
 		 Double age= DifferenceDate.valAge(new Date(), Contratp.getPersonnel().getDateNaissance());
 		 if(Contratp.getPersonnel().getSexe().equals("Feminin") && age<=21 && Contratp.getPersonnel().getNombrEnfant()>0){
 			 jourSuppDam=2*Contratp.getPersonnel().getNombrEnfant();
 		 }
 		 if(Contratp.getPersonnel().getSexe().equals("Feminin") && age>21 && Contratp.getPersonnel().getNombrEnfant()>0){
-			 
+
 			 if(Contratp.getPersonnel().getNombrEnfant()>=4)jourSuppDam=2*1;
 			 if(Contratp.getPersonnel().getNombrEnfant()>=5)jourSuppDam=2*2;
 			 if(Contratp.getPersonnel().getNombrEnfant()>=6)jourSuppDam=2*3;
@@ -1658,44 +1694,44 @@ public class LivreDePaieSimulation {
 			 if(Contratp.getPersonnel().getNombrEnfant()>=8)jourSuppDam=2*5;
 			 if(Contratp.getPersonnel().getNombrEnfant()>=9)jourSuppDam=2*6;
 		 }
-		 
+
 		 if(Contratp.getPersonnel().getSituationMedaille()==1 ){
 			 jourSuppMed=1;
-		 } 
+		 }
 		 int rfp=(int) (jourSuppAnc+jourSuppDam+jourSuppMed);
 		return (int) rfp+rf;
 	}
 
 
-	
-	
-public  Double[] calculAnciennete(Double salaireCategoriel, Date dateEntree){
-		
-		Double[] tab = new Double[5];
-		
-		Double anciennete = (double) 0;
-		
-		
-		double age = DifferenceDate.valAge(new Date(), dateEntree);
-		
-		int partieEntiere = (int) age; 
-		int partieApresVirg = (int)((age - partieEntiere) * 12); 
-		
-		
-		if(age>=2)
-			anciennete = (double) (salaireCategoriel*partieEntiere/100);
-		
-		tab[0] = anciennete;
-		
-		
-		tab[1] = (double) partieEntiere;
-		tab[2] = (double) partieApresVirg;
-		
-	
-		
-		return tab;
-	}
-	
+
+
+//public  BigDecimal[] calculAnciennete(BigDecimal salaireCategoriel, Date dateEntree){
+//
+//		BigDecimal[] tab = new BigDecimal[5];
+//
+//		BigDecimal anciennete = (BigDecimal) 0;
+//
+//
+//		BigDecimal age = DifferenceDate.valAge(new Date(), dateEntree);
+//
+//		int partieEntiere = (int) age;
+//		int partieApresVirg = (int)((age - partieEntiere) * 12);
+//
+//
+//		if(age>=2)
+//			anciennete = (BigDecimal) (salaireCategoriel*partieEntiere/100);
+//
+//		tab[0] = anciennete;
+//
+//
+//		tab[1] = (BigDecimal) partieEntiere;
+//		tab[2] = (BigDecimal) partieApresVirg;
+//
+//
+//
+//		return tab;
+//	}
+
 
 
 

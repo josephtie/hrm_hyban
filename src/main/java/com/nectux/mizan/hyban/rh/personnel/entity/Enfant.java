@@ -51,6 +51,10 @@ public class Enfant extends Auditable {
 	
 	@Transient
 	private MultipartFile fileData;
+
+    private Boolean aCharge;
+
+    private String ecole;
 	
 	@ManyToOne
 	@JoinColumn(nullable = false, unique=false)
@@ -142,11 +146,37 @@ public class Enfant extends Auditable {
 		this.personnel = personnel;
 	}
 
-	@Override
-	public String toString() {
-		return "Enfant [id=" + id + ", matricule=" + matricule + ", nom=" + nom + ", dateNaissance=" + dateNaissance
-				+ ", lieuNaissance=" + lieuNaissance + ", sexe=" + sexe + ", photo=" + photo + ", fileData=" + fileData
-				+ "]";
-	}
+    public Boolean getaCharge() {
+        return aCharge;
+    }
 
+    public void setaCharge(Boolean aCharge) {
+        this.aCharge = aCharge;
+    }
+
+    public String getEcole() {
+        return ecole;
+    }
+
+    public void setEcole(String ecole) {
+        this.ecole = ecole;
+    }
+
+    @Override
+    public String toString() {
+        return "Enfant{" +
+                "id=" + id +
+                ", matricule='" + matricule + '\'' +
+                ", nom='" + nom + '\'' +
+                ", dateNaissance=" + dateNaissance +
+                ", dNaissance='" + dNaissance + '\'' +
+                ", lieuNaissance='" + lieuNaissance + '\'' +
+                ", sexe=" + sexe +
+                ", photo='" + photo + '\'' +
+                ", fileData=" + fileData +
+                ", aCharge=" + aCharge +
+                ", ecole='" + ecole + '\'' +
+                ", personnel=" + personnel +
+                '}';
+    }
 }

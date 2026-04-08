@@ -9,7 +9,7 @@ public interface RubriqVariableService {
 	
 	public RubriqVariable save(RubriqVariable rubriqVariable);
 	
-	public RubriqVariableDTO saver(Double cn, Double igr, Double amao, Double synaoni, Double mugefci, Double ivoireSante, Double ivoirePrev, Double diversgainsImp, Double diversgains, Double regularisation, Long idpers);
+//	public RubriqVariableDTO saver(Double cn, Double igr, Double amao, Double synaoni, Double mugefci, Double ivoireSante, Double ivoirePrev, Double diversgainsImp, Double diversgains, Double regularisation, Long idpers);
 	
 	
 	//public TempEffectif update(Long  id,Long periodId);

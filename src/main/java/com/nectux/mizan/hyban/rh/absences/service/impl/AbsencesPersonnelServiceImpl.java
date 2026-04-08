@@ -100,7 +100,7 @@ public class AbsencesPersonnelServiceImpl implements AbsencesPersonnelService {
 				erreur.setMessage(sb.toString());
 				listErreur.add(erreur);
 			} else 
-				absencesPersonnel.setDateDebut(DateManager.stringToDate(dateDebut, "dd/MM/yyyy HH:mm"));
+				absencesPersonnel.setDateDebut(DateManager.stringToDate(dateDebut, "dd/MM/yyyy"));
 			
 			if(dateFin == null || dateFin.trim().equals("")){
 				sb = new StringBuilder();
@@ -111,7 +111,7 @@ public class AbsencesPersonnelServiceImpl implements AbsencesPersonnelService {
 				erreur.setMessage(sb.toString());
 				listErreur.add(erreur);
 			} else 
-				absencesPersonnel.setDateRet(DateManager.stringToDate(dateFin, "dd/MM/yyyy HH:mm"));
+				absencesPersonnel.setDateRet(DateManager.stringToDate(dateFin, "dd/MM/yyyy"));
 		
 				absencesPersonnel.setHeursabsence(tempabsence);
 	
@@ -119,20 +119,18 @@ public class AbsencesPersonnelServiceImpl implements AbsencesPersonnelService {
 				absencesPersonnel.setObservation(observation);
 	
 				absencesPersonnel.setStatut(justifier);
-			
-			
+
+                 absencesPersonnel.setPeriodePaie(myperiodePaie);
 				absencesPersonnel.setSanctionsalaire(sanctSall);			
 			if(listErreur.isEmpty()){
 				absencesPersonnel = absencesPersonnelRepository.save(absencesPersonnel);
 				sb = new StringBuilder();
 				sb.append(" absence personnel enregistree avec succes");
-				absencesPersonnelDTO.setResult(true);
+				absencesPersonnelDTO.setResult("success");
 				absencesPersonnelDTO.setStatus(true);
 				absencesPersonnelDTO.setRow(absencesPersonnel);
 				absencesPersonnelDTO.setRows(null);
-				absencesPersonnelDTO.setMessage(sb.toString());
-				absencesPersonnelDTO.setTotal(0);
-				absencesPersonnelDTO.setErrors(listErreur);
+
 				if(absencesPersonnel.getSanctionsalaire()==4){
 				         TempEffectif tpeff=new TempEffectif();
 				         tpeff=tempEffectifRepository.findByPersonnelAndPeriodePaie(absencesPersonnel.getPersonnel(), myperiodePaie);

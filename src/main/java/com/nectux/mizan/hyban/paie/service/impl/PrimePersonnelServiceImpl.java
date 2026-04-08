@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -89,17 +90,17 @@ public class PrimePersonnelServiceImpl implements PrimePersonnelService {
 			if (primeperso.getPrime().getTaux() != null && primeperso.getValeur() > 0) {
 				// Calculate the montant based on the value and the salary or hourly rate
 				if (primeperso.getContratPersonnel() != null && primeperso.getContratPersonnel().getCategorie().getSalaireDeBase()!= null) {
-					double salaireHoraire = calculerTauxHoraire(primeperso.getContratPersonnel().getCategorie().getSalaireDeBase());
-					primeperso.setMontant(Math.rint(primeperso.getValeur() * (salaireHoraire + (salaireHoraire * primeperso.getPrime().getTaux() / 100))));
+					BigDecimal salaireHoraire = calculerTauxHoraire(primeperso.getContratPersonnel().getCategorie().getSalaireDeBase());
+					primeperso.setMontant(BigDecimal.valueOf(primeperso.getValeur()).multiply(salaireHoraire.add (salaireHoraire.multiply(primeperso.getPrime().getTaux() ).divide(BigDecimal.valueOf(100)))));
 					// For example, if "valeur" is multiplied by the hourly rate:
 					// primeperso.setMontant(primeperso.getValeur() * salaireHoraire);
 				} else {
 					// If there's no hourly rate, you can calculate based on the salary
 					//double salaireBase = primeperso.getContratPersonnel().getSalaireBase(); // Assuming 'SalaireBase' is available in the contract
-					primeperso.setMontant(primeperso.getValeur() * montant);
+					primeperso.setMontant(BigDecimal.valueOf(primeperso.getValeur()).multiply (BigDecimal.valueOf(montant)));
 				}
 			} else {
-				primeperso.setMontant(montant);
+				primeperso.setMontant(BigDecimal.valueOf(montant));
 			}
 			primeperso.setDateSaisie(new Date());		
 			

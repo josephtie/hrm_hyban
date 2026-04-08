@@ -32,7 +32,7 @@ public class EnfantServiceImpl implements EnfantService {
 
 	@Override
 	@Transactional(rollbackFor = Exception.class)
-	public EnfantDTO save(Long id, Long idPersonnel, String matricule, String nom, Date dateNaissance, String lieuNaissance, char sexe) {
+	public EnfantDTO save(Long id, Long idPersonnel, String matricule, String nom, Date dateNaissance, String lieuNaissance, char sexe,Boolean acharge,String ecole) {
 		// TODO Auto-generated method stub
 		EnfantDTO enfantDTO = new EnfantDTO();
 		Enfant enfant;
@@ -50,6 +50,8 @@ public class EnfantServiceImpl implements EnfantService {
 			enfant.setDateNaissance(dateNaissance);
 			enfant.setLieuNaissance(lieuNaissance);
 			enfant.setSexe(sexe);
+			enfant.setaCharge(acharge);
+			enfant.setEcole(ecole);
 			enfant.setPersonnel(personnel);
 			
 			if(enfant.getNom() == null || enfant.getNom().equals("")){

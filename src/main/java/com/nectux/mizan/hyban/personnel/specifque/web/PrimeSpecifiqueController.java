@@ -1,12 +1,10 @@
 package com.nectux.mizan.hyban.personnel.specifque.web;
 
 import com.nectux.mizan.hyban.parametrages.entity.Societe;
-// import com.nectux.mizan.hyban.parametrages.entity.Utilisateur;
+import com.nectux.mizan.hyban.parametrages.entity.Utilisateur;
 import com.nectux.mizan.hyban.parametrages.service.RubriqueService;
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
-// import com.nectux.mizan.hyban.parametrages.service.UtilisateurRoleService;
-// import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
-import com.nectux.mizan.hyban.parametrages.web.RubriqueRestController;
+
 import com.nectux.mizan.hyban.personnel.specifque.entity.PrimeSpecifique;
 import com.nectux.mizan.hyban.personnel.specifque.services.PrimeSpecifiqueService;
 import org.apache.logging.log4j.LogManager;
@@ -28,36 +26,35 @@ public class PrimeSpecifiqueController {
 
     @Autowired
     private RubriqueService rubriqueService;
-    // @Autowired
-    // private UtilisateurService utilisateurService;
+    //@Autowired private UtilisateurService utilisateurService;
     @Autowired private SocieteService societeService;
-    // @Autowired
-    // private UtilisateurRoleService utilisateurRoleService;
+    //@Autowired private UtilisateurRoleService utilisateurRoleService;
 
 
-    @RequestMapping("/speciales")
-    public String viewAccountType(ModelMap modelMap, Principal principal) throws IOException {
-        logger.info(">>>>> Types Documents");
-        modelMap.addAttribute("activeSetting", "active");
-        modelMap.addAttribute("blockSetting", "block");
-        modelMap.addAttribute("activePRubrique", "active");
-        // modelMap.addAttribute("user", utilisateurService.findByUsername(principal.getName()));
-        // Utilisateur utilisateur=utilisateurService.findByUsername(principal.getName());
-        // System.out.println("utilisateur    " +utilisateur.toString());
-        // modelMap.addAttribute("profil", utilisateur.getUtilisateurRoles().stream()
-        //         .map(utilisateurRole -> utilisateurRole.getRole().getName().name())
-        //         .findFirst().orElse(""));
-        modelMap.addAttribute("icon", "fa fa-shopping-cart");
-        modelMap.addAttribute("littleTitle", "Parametrages");
-        modelMap.addAttribute("bigTitle", "Rubrique speciale");
-        Societe mysociete=null;
-        java.util.List<Societe> malist=societeService.findtsmois();
-        if(malist.size()>0)
-        {	mysociete=malist.get(0);
-            modelMap.addAttribute("urllogo",mysociete.getUrlLogo()); }
-
-        return "speciales";
-    }
+//    @RequestMapping("/speciales")
+//    public String viewAccountType(ModelMap modelMap, Principal principal) throws IOException {
+//        logger.info(">>>>> Types Documents");
+//        modelMap.addAttribute("activeSetting", "active");
+//        modelMap.addAttribute("blockSetting", "block");
+//        modelMap.addAttribute("activePRubrique", "active");
+//        modelMap.addAttribute("user", utilisateurService.findByUsername(principal.getName()));
+//        Utilisateur utilisateur=utilisateurService.findByUsername(principal.getName());
+//        System.out.println("utilisateur    " +utilisateur.toString());
+//
+//        modelMap.addAttribute("profil", utilisateur.getUtilisateurRoles().stream()
+//                .map(utilisateurRole -> utilisateurRole.getRole().getName().name())
+//                .findFirst().orElse(""));
+//        modelMap.addAttribute("icon", "fa fa-shopping-cart");
+//        modelMap.addAttribute("littleTitle", "Parametrages");
+//        modelMap.addAttribute("bigTitle", "Rubrique speciale");
+//        Societe mysociete=null;
+//        List<Societe> malist=societeService.findtsmois();
+//        if(malist.size()>0)
+//        {	mysociete=malist.get(0);
+//            modelMap.addAttribute("urllogo",mysociete.getUrlLogo()); }
+//
+//        return "speciales";
+//    }
 
     private final PrimeSpecifiqueService service;
 

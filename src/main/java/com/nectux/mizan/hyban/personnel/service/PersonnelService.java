@@ -8,18 +8,19 @@ import com.nectux.mizan.hyban.personnel.entity.Service;
 import com.nectux.mizan.hyban.utils.PrintLsDTO;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public interface PersonnelService {
-	
+
 	public Personnel save(Personnel personnel);
 	
 	public ContratPersonnelDTO save(Long id, String nom, String prenom, Long nationalite, Long service, Long categorie, Long fonction, Long typeContrat,
                                     String matricule, String sexe, String dateNaissance, String lieuNaissance, String email, String residence, int situationMatrimoniale,
                                     int nombreEnfant, String dateArrivee, String numeroCNPS, String adresse, String dateDebut, String dateFin,
-                                    Double salaireNet, Double indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg, Double indemniteRespons, Double indemniteRepresent, Double indemniteTransport, Double sursalaire);
+                                    BigDecimal salaireNet, BigDecimal indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg, BigDecimal indemniteRespons, BigDecimal indemniteRepresent, BigDecimal indemniteTransport, BigDecimal sursalaire);
 	
 	public PersonnelDTO save(Long id, String nom, String prenom, Long nationalite, Long service, String matricule, String sexe, String dateNaissance, String lieuNaissance, String email,
                              String residence, int situationMatrimoniale, int nombreEnfant, String dateArrivee, String numeroCNPS, String adresse, Boolean statut,

@@ -1,0 +1,42 @@
+# Étape 1: Build Maven
+FROM maven:3.9-openjdk-17 AS builder
+
+WORKDIR /app
+
+# Copier les fichiers Maven
+COPY pom.xml .
+COPY src ./src
+
+# Build l'application
+RUN mvn clean package -DskipTests
+
+# Étape 2: Runtime
+FROM openjdk:17-jdk-slim
+
+# Installation des dépendances système nécessaires
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Créer l'utilisateur non-root
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Copier le JAR depuis l'étape de build
+COPY --from=builder /app/target/*.jar app.jar
+
+# Créer le répertoire d'uploads
+RUN mkdir -p /app/uploads && chown -R appuser:appuser /app
+
+# Changer vers l'utilisateur non-root
+USER appuser
+
+# Exposer le port
+EXPOSE 7200
+
+# Variables d'environnement
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+
+# Commande de démarrage
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

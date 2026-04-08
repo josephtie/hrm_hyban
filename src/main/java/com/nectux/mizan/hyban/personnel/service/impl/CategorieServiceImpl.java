@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.personnel.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -48,8 +49,8 @@ public class CategorieServiceImpl implements CategorieService {
 			if(id != null)
 				categorie = categorieRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));
 			categorie.setLibelle(libelle);
-			categorie.setSalaireDeBase(salaireDeBase);
-			categorie.setIndemniteLogement(indemniteLogement);
+			categorie.setSalaireDeBase(BigDecimal.valueOf(salaireDeBase));
+			categorie.setIndemniteLogement(BigDecimal.valueOf(indemniteLogement));
 			categorie = categorieRepository.save(categorie);
 			categorieDTO.setRow(categorie);
 			categorieDTO.setResult("succes");

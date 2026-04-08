@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Documentation
+*.md
+!README.md
+
+# Temporary files
+*.tmp
+*.temp
+
+# Node modules (pour le frontend)
+vue3rhpaie-app/node_modules/
+vue3rhpaie-app/dist/
+vue3rhpaie-app/.nuxt/
+vue3rhpaie-app/.output/
+vue3rhpaie-app/.vite/
+
+# Uploads (sera monté comme volume)
+uploads/
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore

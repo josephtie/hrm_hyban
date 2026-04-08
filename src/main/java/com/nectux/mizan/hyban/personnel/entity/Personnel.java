@@ -13,6 +13,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.math.BigDecimal;
+
 @Entity
 @Component("personnelnt")
 @Scope("prototype")
@@ -58,7 +61,7 @@ public class Personnel   extends Auditable {
     private int nombreJourdu=0; 
 	
 	@Column(nullable=true)
-    private Double mtcongedu=0d;
+    private BigDecimal mtcongedu;
 	
 	@Column(nullable=true)
 	private String residence;
@@ -79,7 +82,7 @@ public class Personnel   extends Auditable {
 	private String rib;
 	
 	@Column(nullable=true)
-	private Double sursalaire;
+	private BigDecimal sursalaire;
 	
 	@Transient
 	private String situationMatri;
@@ -155,7 +158,7 @@ public class Personnel   extends Auditable {
      private Boolean retraitEffect;
 
     @Transient
-     private Double netapayer;
+     private BigDecimal netapayer;
     @Transient
      private String fonction;
 
@@ -584,21 +587,21 @@ public class Personnel   extends Auditable {
 		this.nombreJourdu = nombreJourdu;
 	}
 
-	public Double getMtcongedu() {
+	public BigDecimal getMtcongedu() {
 		return mtcongedu;
 	}
 
-	public void setMtcongedu(Double mtcongedu) {
+	public void setMtcongedu(BigDecimal mtcongedu) {
 		this.mtcongedu = mtcongedu;
 	}
 
 	
 	
-	public Double getSursalaire() {
+	public BigDecimal getSursalaire() {
 		return sursalaire;
 	}
 
-	public void setSursalaire(Double sursalaire) {
+	public void setSursalaire(BigDecimal sursalaire) {
 		this.sursalaire = sursalaire;
 	}
 
@@ -668,11 +671,11 @@ public class Personnel   extends Auditable {
 		return statfonct;
 	}
 
-    public Double getNetapayer() {
+    public BigDecimal getNetapayer() {
         return netapayer;
     }
 
-    public void setNetapayer(Double netapayer) {
+    public void setNetapayer(BigDecimal netapayer) {
         this.netapayer = netapayer;
     }
 

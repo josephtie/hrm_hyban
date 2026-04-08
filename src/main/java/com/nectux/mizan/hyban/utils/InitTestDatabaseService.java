@@ -20,6 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.nectux.mizan.hyban.personnel.service.NationnaliteService;
 import com.nectux.mizan.hyban.personnel.service.ServiceService;
 
+import java.math.BigDecimal;
+
 public class InitTestDatabaseService {
 
 	//@Autowired private RoleRepository roleRepository;
@@ -83,7 +85,7 @@ public class InitTestDatabaseService {
 		if(categorieService.count() == 0){
 			Categorie categorie = new Categorie();
 			categorie.setLibelle("7A");
-			categorie.setSalaireDeBase(170000.0);
+			categorie.setSalaireDeBase(BigDecimal.valueOf(170000));
 			categorieService.save(categorie);
 			
 		}

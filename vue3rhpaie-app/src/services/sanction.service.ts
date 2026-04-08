@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://192.168.1.5:7200/api/rh/carriere/sanctions'
+const API_BASE_URL = 'http://192.168.1.8:7200/api/rh/carriere/sanctions'
 
 export interface SanctionDto {
   id: number

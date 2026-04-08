@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.personnel.service.impl;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
@@ -82,12 +83,12 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 				else
 					contratPersonnel.setDateFin(Utils.stringToDate(dateFin, "dd/MM/yyyy"));
 
-			contratPersonnel.setNetAPayer(netAPayer);
-			contratPersonnel.setIndemniteLogement(indemniteLogement);
-			contratPersonnel.setIndemniteRepresent(indemniterepresent);
-			contratPersonnel.setIndemniteTransport(indemnitetransport);
+			contratPersonnel.setNetAPayer(BigDecimal.valueOf(netAPayer));
+			contratPersonnel.setIndemniteLogement(BigDecimal.valueOf(indemniteLogement));
+			contratPersonnel.setIndemniteRepresent(BigDecimal.valueOf(indemniterepresent));
+			contratPersonnel.setIndemniteTransport(BigDecimal.valueOf(indemnitetransport));
 			//contratPersonnel.setIndemniteResp(indemniterespons);
-			contratPersonnel.setSursalaire(sursalaire);
+			contratPersonnel.setSursalaire(BigDecimal.valueOf(sursalaire));
 			contratPersonnel.setAncienneteInitial(ancienete);
 			//contratPersonnel.setStatut(statut);
 			contratPersonnel.setStatut(true);
@@ -558,7 +559,7 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 		try{
 			
 			ContratPersonnel contratPersonnel = contratPersonnelRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));
-			contratPersonnel.setSursalaire(sursalaire);
+			contratPersonnel.setSursalaire(BigDecimal.valueOf(sursalaire));
 			//contratPersonnel.setStatut(false);
 			contratPersonnel = contratPersonnelRepository.save(contratPersonnel);			
 			contratPersonnelDTO.setRow(contratPersonnel);
@@ -600,20 +601,19 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 //		return contratPersonnelDTO;
 //	}
 
-	public LivreDePaie calculbullFirst(ContratPersonnel ctratpersonnellz,PeriodePaie periodePaieActif){
+	public LivreDePaie calculbullFirst(ContratPersonnel ctratpersonnellz, PeriodePaie periodePaieActif){
 		
-		Double[]  ancienete=calculAnciennete(ctratpersonnellz.getCategorie().getSalaireDeBase(),ctratpersonnellz.getPersonnel().getDateArrivee());
-		double newancienete;
+		BigDecimal[]  ancienete=calculAnciennete(ctratpersonnellz.getCategorie().getSalaireDeBase(),ctratpersonnellz.getPersonnel().getDateArrivee());
+        BigDecimal newancienete;
 		if(ctratpersonnellz.getAncienneteInitial()!=0) {
-			 newancienete=ancienete[1] +ctratpersonnellz.getAncienneteInitial();
+			 newancienete=ancienete[1].add(BigDecimal.valueOf(ctratpersonnellz.getAncienneteInitial()));
 		}else{
 			newancienete=ancienete[1];
 		}
-		int anc=(int)newancienete;
-		 int op=0;
-		 if(anc < 2) op=0;		    		 
-		 if(anc>=2 && anc<=25) op=anc;
-		 if(anc>25) op=25;
+        BigDecimal anc=newancienete;
+        int op = (anc.compareTo(BigDecimal.valueOf(2)) < 0) ? 0
+                : (anc.compareTo(BigDecimal.valueOf(25)) <= 0) ? anc.intValue()
+                : 25;
 		 List<PrimePersonnel> listIndemniteBrut=new ArrayList<PrimePersonnel>();
 		 List<PrimePersonnel> listIndemniteNonBrut=new ArrayList<PrimePersonnel>();
 		List<PrimePersonnel> listRetenueMutuelle=new ArrayList<PrimePersonnel>();
@@ -652,15 +652,15 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 				}
 				
 			} 
-			LivreDePaie	 livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),5000d, ctratpersonnellz.getIndemniteLogement(),0d, 0d,ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+			LivreDePaie livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),BigDecimal.valueOf(5000), ctratpersonnellz.getIndemniteLogement(),BigDecimal.valueOf(0), BigDecimal.valueOf(0),ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
 			try { 
 			 int pi=0;
 				while (livrePaiecalpm.getNetPayer()!=ctratpersonnellz.getNetAPayer() || pi==3) {		 				
-					 Double nouvSursal = 0d;Double nouvDiff= 0d;Double nouvMontantBrutImp=0d;
-					nouvMontantBrutImp=Math.rint(ctratpersonnellz.getNetAPayer()*livrePaiecalpm.getBrutImposable()/livrePaiecalpm.getNetPayer());
-					nouvDiff=nouvMontantBrutImp-livrePaiecalpm.getBrutImposable();						
-					nouvSursal=nouvDiff+livrePaiecalpm.getSursalaire();						
-					livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),nouvSursal, ctratpersonnellz.getIndemniteLogement(), 0d, 0d,ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+					 BigDecimal nouvSursal = BigDecimal.ZERO;BigDecimal nouvDiff= BigDecimal.ZERO;BigDecimal nouvMontantBrutImp=BigDecimal.ZERO;
+					nouvMontantBrutImp=ctratpersonnellz.getNetAPayer().multiply(livrePaiecalpm.getBrutImposable()).divide(livrePaiecalpm.getNetPayer());
+					nouvDiff=nouvMontantBrutImp.subtract(livrePaiecalpm.getBrutImposable());
+					nouvSursal=nouvDiff.add(livrePaiecalpm.getSursalaire());
+					livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),nouvSursal, ctratpersonnellz.getIndemniteLogement(), BigDecimal.valueOf(0), BigDecimal.valueOf(0),ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
 			//	 logger.info("*********************SECOND BULLETIN********************############## SECOND BULLETIN #############-----------"+livrePaiecal.toString());	
 					pi=pi+1;
 			  }
@@ -672,32 +672,34 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 			 return livrePaiecalpm;
 		}
 
-	public  Double[] calculAnciennete(Double salaireCategoriel, Date dateEntree){
-		
-		Double[] tab = new Double[5];
-		
-		Double anciennete = (double) 0;
-		
-		
-		double age = DifferenceDate.valAge(new Date(), dateEntree);
-		
-		int partieEntiere = (int) age; 
-		int partieApresVirg = (int)((age - partieEntiere) * 12); 
-		
-		
-		if(age>=2)
-			anciennete = (double) (salaireCategoriel*partieEntiere/100);
-		
-		tab[0] = anciennete;
-		tab[1] = age;
-		tab[2] = (double) partieEntiere;
-		tab[3] = (double) partieApresVirg;
-		tab[4] = 0d; //anciennete
-		
-		return tab;
-	}
+    public  BigDecimal[] calculAnciennete(BigDecimal salaireCategoriel, Date dateEntree){
 
-	@Override
+        BigDecimal[] tab = new BigDecimal[5];
+
+        BigDecimal anciennete = BigDecimal.valueOf(0) ;
+
+
+        double age = DifferenceDate.valAge(new Date(), dateEntree);
+
+        int partieEntiere = (int) age;
+        int partieApresVirg = (int)((age - partieEntiere) * 12);
+
+
+        if(age>=2)
+            anciennete = salaireCategoriel.multiply(BigDecimal.valueOf(partieEntiere)).divide(BigDecimal.valueOf(100));
+
+        tab[0] = anciennete;
+
+
+        tab[1] = BigDecimal.valueOf(partieEntiere);
+        tab[2] = BigDecimal.valueOf((partieApresVirg));
+
+
+
+        return tab;
+    }
+
+    @Override
 	public ContratPersonnelDTO loadContratExpieredumois(Pageable pageable, Long IdTypctr, String ddeb, String dfin) {
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
 		try {

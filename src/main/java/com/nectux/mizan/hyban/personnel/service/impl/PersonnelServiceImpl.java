@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.personnel.service.impl;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 import com.nectux.mizan.hyban.paie.entity.BulletinPaie;
@@ -79,8 +80,8 @@ public class PersonnelServiceImpl implements PersonnelService {
 	public ContratPersonnelDTO save(Long id, String nom, String prenom, Long nationalite, Long service, Long categorie, Long fonction,
                                     Long typeContrat, String matricule, String sexe, String dateNaissance, String lieuNaissance, String email,
                                     String residence, int situationMatrimoniale, int nombreEnfant, String dateArrivee, String numeroCNPS,
-                                    String adresse, String dateDebut, String dateFin, Double salaireNet, Double indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib,
-                                    int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg, Double indemniteRespons, Double indemniteRepresent, Double indemniteTransport, Double sursalaire) {
+                                    String adresse, String dateDebut, String dateFin, BigDecimal salaireNet, BigDecimal indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib,
+                                    int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg, BigDecimal indemniteRespons, BigDecimal indemniteRepresent, BigDecimal indemniteTransport, BigDecimal sursalaire) {
 		// TODO Auto-generated method stub
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
 		Personnel personnel = new Personnel();Personnel personnelmat = new Personnel();Personnel personnelcnps = new Personnel();
@@ -531,6 +532,21 @@ public class PersonnelServiceImpl implements PersonnelService {
 		// Commencer avec une spécification vide (pas de filtres par défaut)
 		Specification<Personnel> specification = Specification.where(null);
 		
+		// AJOUTER LE FILTRE IMPORTANT : retraitEffect = false
+		Specification<Personnel> retraitEffectSpec = (root, query, criteriaBuilder) -> {
+			return criteriaBuilder.equal(root.get("retraitEffect"), false);
+		};
+		specification = specification.and(retraitEffectSpec);
+		
+		// AJOUTER LE FILTRE : statut = true
+		Specification<Personnel> statutSpec = (root, query, criteriaBuilder) -> {
+			return criteriaBuilder.equal(root.get("statut"), true);
+		};
+		specification = specification.and(statutSpec);
+
+
+
+
 		// Ajouter la recherche textuelle si présente
 		if (search != null && !search.trim().isEmpty()) {
 			Specification<Personnel> searchSpec = (root, query, criteriaBuilder) -> {
@@ -546,11 +562,11 @@ public class PersonnelServiceImpl implements PersonnelService {
 		
 		// Ajouter le filtre statut/carec si présent
 		if (statutFilter != null && !statutFilter.trim().isEmpty()) {
-			Specification<Personnel> statutSpec = (root, query, criteriaBuilder) -> {
+			Specification<Personnel> carecSpec = (root, query, criteriaBuilder) -> {
 				boolean carecValue = Boolean.parseBoolean(statutFilter);
 				return criteriaBuilder.equal(root.get("carec"), carecValue);
 			};
-			specification = specification.and(statutSpec);
+			specification = specification.and(carecSpec);
 		}
 		
 		// Ajouter les autres filtres JPA (sans utiliser GenericSpecifications pour éviter les problèmes)
@@ -832,104 +848,104 @@ public class PersonnelServiceImpl implements PersonnelService {
 		return listPersonnel;
 	}
 	
-public LivreDePaie calculbullFirst(ContratPersonnel ctratpersonnellz,PeriodePaie periodePaieActif){
-		
-	Double[]  ancienete=calculAnciennete(ctratpersonnellz.getCategorie().getSalaireDeBase(),ctratpersonnellz.getPersonnel().getDateArrivee());
-	double newancienete;
-	if(ctratpersonnellz.getAncienneteInitial()!=0) {
-		 newancienete=ancienete[1] +ctratpersonnellz.getAncienneteInitial();
-	}else{
-		newancienete=ancienete[1];
-	}
-	int anc=(int)newancienete;
-	 int op=0;
-	 if(anc < 2) op=0;		    		 
-	 if(anc>=2 && anc<=25) op=anc;
-	 if(anc>25) op=25;
-	 List<PrimePersonnel> listIndemniteBrut=new ArrayList<PrimePersonnel>();
-	 List<PrimePersonnel> listIndemniteNonBrut=new ArrayList<PrimePersonnel>();
-	 List<PrimePersonnel> listRetenueMutuelle=new ArrayList<PrimePersonnel>();
-	 List<PrimePersonnel> listRetenueSociale=new ArrayList<PrimePersonnel>();
-	List<PrimePersonnel> listGainsNet=new ArrayList<PrimePersonnel>();
-	 List<PrimePersonnel> listIndemnite  =new ArrayList<PrimePersonnel>();
-	 listIndemnite =  primePersonnelRepository.findByContratPersonnelPersonnelIdAndPeriodePaieId(ctratpersonnellz.getPersonnel().getId(), periodePaieActif.getId());
-		if(listIndemnite.size()>0){
-			for(PrimePersonnel kprme:listIndemnite){
-				 if(kprme.getPrime().getEtatImposition()==1)
-				 {
-					 listIndemniteBrut.add(kprme);
-				 }
-				 if(kprme.getPrime().getEtatImposition()==2)
-				 {
-					 listIndemniteNonBrut.add(kprme);
-				 }
-				 if(kprme.getPrime().getEtatImposition()==3)
-				 {
-					 if(kprme.getPrime().getMtExedent()!=null)
-					 {listIndemniteNonBrut.add(kprme);
-					 listIndemniteNonBrut.add(kprme);}
-				 }
-				if(kprme.getPrime().getEtatImposition()==4)
-				{
-					listRetenueMutuelle.add(kprme);
-				}
-				if(kprme.getPrime().getEtatImposition()==5)
-				{
-					listGainsNet.add(kprme);
-				}
-				if(kprme.getPrime().getEtatImposition()==6)
-				{
-					listRetenueSociale.add(kprme);
-				}
-			}
-			
-		}
-		LivreDePaie	 livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),5000d, ctratpersonnellz.getIndemniteLogement(),0d, 0d,ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
-		try { 
-		int i=0;
-			while (livrePaiecalpm.getNetPayer()!=ctratpersonnellz.getNetAPayer()|| i==3) {		 				
-				 Double nouvSursal = 0d;Double nouvDiff= 0d;Double nouvMontantBrutImp= 0d;
-				nouvMontantBrutImp=Math.rint(ctratpersonnellz.getNetAPayer()*livrePaiecalpm.getBrutImposable()/livrePaiecalpm.getNetPayer());
-				nouvDiff=nouvMontantBrutImp-livrePaiecalpm.getBrutImposable();						
-				nouvSursal=nouvDiff+livrePaiecalpm.getSursalaire();						
-				livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),nouvSursal, ctratpersonnellz.getIndemniteLogement(), 0d, 0d,ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
-		//	 logger.info("*********************SECOND BULLETIN********************############## SECOND BULLETIN #############-----------"+livrePaiecal.toString());	
-		 i++;
-			}
-		
-		 
-		} catch (Exception e) {
-			System.out.println("FINISH"+ e.getMessage());
-		} 
-		 return livrePaiecalpm;
-	}
-
-public  Double[] calculAnciennete(Double salaireCategoriel, Date dateEntree){
-	
-	Double[] tab = new Double[5];
-	
-	Double anciennete = (double) 0;
-	
-	
-	double age = DifferenceDate.valAge(new Date(), dateEntree);
-	
-	int partieEntiere = (int) age; 
-	int partieApresVirg = (int)((age - partieEntiere) * 12); 
-	
-	
-	if(age>=2)
-		anciennete = (double) (salaireCategoriel*partieEntiere/100);
-	
-	tab[0] = anciennete;
-	
-	
-	tab[1] = (double) partieEntiere;
-	tab[2] = (double) partieApresVirg;
-	
-
-	
-	return tab;
-}
+//public LivreDePaie calculbullFirst(ContratPersonnel ctratpersonnellz, PeriodePaie periodePaieActif){
+//
+//	BigDecimal[]  ancienete=calculAnciennete(ctratpersonnellz.getCategorie().getSalaireDeBase(),ctratpersonnellz.getPersonnel().getDateArrivee());
+//	BigDecimal newancienete;
+//	if(ctratpersonnellz.getAncienneteInitial()!=0) {
+//		 newancienete=ancienete[1].add(BigDecimal.valueOf(ctratpersonnellz.getAncienneteInitial()));
+//	}else{
+//		newancienete=ancienete[1];
+//	}
+//	int anc=(int)newancienete;
+//	 int op=0;
+//	 if(anc < 2) op=0;
+//	 if(anc>=2 && anc<=25) op=anc;
+//	 if(anc>25) op=25;
+//	 List<PrimePersonnel> listIndemniteBrut=new ArrayList<PrimePersonnel>();
+//	 List<PrimePersonnel> listIndemniteNonBrut=new ArrayList<PrimePersonnel>();
+//	 List<PrimePersonnel> listRetenueMutuelle=new ArrayList<PrimePersonnel>();
+//	 List<PrimePersonnel> listRetenueSociale=new ArrayList<PrimePersonnel>();
+//	List<PrimePersonnel> listGainsNet=new ArrayList<PrimePersonnel>();
+//	 List<PrimePersonnel> listIndemnite  =new ArrayList<PrimePersonnel>();
+//	 listIndemnite =  primePersonnelRepository.findByContratPersonnelPersonnelIdAndPeriodePaieId(ctratpersonnellz.getPersonnel().getId(), periodePaieActif.getId());
+//		if(listIndemnite.size()>0){
+//			for(PrimePersonnel kprme:listIndemnite){
+//				 if(kprme.getPrime().getEtatImposition()==1)
+//				 {
+//					 listIndemniteBrut.add(kprme);
+//				 }
+//				 if(kprme.getPrime().getEtatImposition()==2)
+//				 {
+//					 listIndemniteNonBrut.add(kprme);
+//				 }
+//				 if(kprme.getPrime().getEtatImposition()==3)
+//				 {
+//					 if(kprme.getPrime().getMtExedent()!=null)
+//					 {listIndemniteNonBrut.add(kprme);
+//					 listIndemniteNonBrut.add(kprme);}
+//				 }
+//				if(kprme.getPrime().getEtatImposition()==4)
+//				{
+//					listRetenueMutuelle.add(kprme);
+//				}
+//				if(kprme.getPrime().getEtatImposition()==5)
+//				{
+//					listGainsNet.add(kprme);
+//				}
+//				if(kprme.getPrime().getEtatImposition()==6)
+//				{
+//					listRetenueSociale.add(kprme);
+//				}
+//			}
+//
+//		}
+//		LivreDePaie livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),5000d, ctratpersonnellz.getIndemniteLogement(),0d, 0d,ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+//		try {
+//		int i=0;
+//			while (livrePaiecalpm.getNetPayer()!=ctratpersonnellz.getNetAPayer()|| i==3) {
+//				 BigDecimal nouvSursal = 0d;BigDecimal nouvDiff= 0d;BigDecimal nouvMontantBrutImp= 0d;
+//				nouvMontantBrutImp=Math.rint(ctratpersonnellz.getNetAPayer()*livrePaiecalpm.getBrutImposable()/livrePaiecalpm.getNetPayer());
+//				nouvDiff=nouvMontantBrutImp-livrePaiecalpm.getBrutImposable();
+//				nouvSursal=nouvDiff+livrePaiecalpm.getSursalaire();
+//				livrePaiecalpm = new LivreDePaie(ctratpersonnellz.getPersonnel().getMatricule(),ctratpersonnellz.getPersonnel().getNom()+" "+ctratpersonnellz.getPersonnel().getPrenom(), ctratpersonnellz.getPersonnel().getNombrePart(), op, ctratpersonnellz.getCategorie().getSalaireDeBase(),nouvSursal, ctratpersonnellz.getIndemniteLogement(), 0d, 0d,ctratpersonnellz,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+//		//	 logger.info("*********************SECOND BULLETIN********************############## SECOND BULLETIN #############-----------"+livrePaiecal.toString());
+//		 i++;
+//			}
+//
+//
+//		} catch (Exception e) {
+//			System.out.println("FINISH"+ e.getMessage());
+//		}
+//		 return livrePaiecalpm;
+//	}
+//
+//public  BigDecimal[] calculAnciennete(BigDecimal salaireCategoriel, Date dateEntree){
+//
+//	BigDecimal[] tab = new BigDecimal[5];
+//
+//	BigDecimal anciennete = (BigDecimal) 0;
+//
+//
+//	BigDecimal age = DifferenceDate.valAge(new Date(), dateEntree);
+//
+//	int partieEntiere = (int) age;
+//	int partieApresVirg = (int)((age - partieEntiere) * 12);
+//
+//
+//	if(age>=2)
+//		anciennete = (BigDecimal) (salaireCategoriel*partieEntiere/100);
+//
+//	tab[0] = anciennete;
+//
+//
+//	tab[1] = (BigDecimal) partieEntiere;
+//	tab[2] = (BigDecimal) partieApresVirg;
+//
+//
+//
+//	return tab;
+//}
 
 
 }

@@ -56,7 +56,7 @@ export interface ApiResponse<T> {
   message: string
 }
 
-const API_BASE_URL = 'http://192.168.1.5:7200/api/parametrages/societes'
+const API_BASE_URL = 'http://192.168.1.8:7200/api/parametrages/societes'
 
 class SocieteService {
   // Récupérer la liste des sociétés avec pagination

@@ -1,5 +1,9 @@
 package com.nectux.mizan.hyban.paie.web;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -115,7 +119,7 @@ public class CongeRestController {
             // Calcul des allocations congé
             ImprimBulletinPaie imprimBulletinPaieSB = new ImprimBulletinPaie();
             imprimBulletinPaieSB.setLibelle("Conge de base");
-            imprimBulletinPaieSB.setTaux(30D);
+            imprimBulletinPaieSB.setTaux(BigDecimal.valueOf(30));
             imprimBulletinPaieSB.setBase(bullconge.getBaseImposableAllocationConge());
             imprimBulletinPaieSB.setGain(bullconge.getBaseImposableAllocationConge());
             listImprimBulletinPaie.add(imprimBulletinPaieSB);
@@ -127,7 +131,7 @@ public class CongeRestController {
 
             ImprimBulletinPaie imprimBulletinPaieIts = new ImprimBulletinPaie();
             imprimBulletinPaieIts.setLibelle("Impot sur salaire");
-            imprimBulletinPaieIts.setTaux(1.2D);
+            imprimBulletinPaieIts.setTaux(BigDecimal.valueOf(1.2));
             imprimBulletinPaieIts.setBase(bullconge.getBaseImposableAllocationConge());
             imprimBulletinPaieIts.setRetenue(bullconge.getIts());
             listImprimBulletinPaie.add(imprimBulletinPaieIts);
@@ -149,12 +153,12 @@ public class CongeRestController {
 
             ImprimBulletinPaie imprimBulletinPaieRetfiscsoc = new ImprimBulletinPaie();
             imprimBulletinPaieRetfiscsoc.setLibelle("Total retenues fiscales et sociales(2)");
-            imprimBulletinPaieRetfiscsoc.setRetenue(bullconge.getCnps() + bullconge.getIgr() + bullconge.getCn() + bullconge.getIts());
+            imprimBulletinPaieRetfiscsoc.setRetenue(bullconge.getCnps().add(bullconge.getIts()) );
             listImprimBulletinPaie.add(imprimBulletinPaieRetfiscsoc);
 
             ImprimBulletinPaie imprimBulletinPaieTotAutrRet = new ImprimBulletinPaie();
             imprimBulletinPaieTotAutrRet.setLibelle("TOTAL AUTRES RETENUES(3)");
-            imprimBulletinPaieTotAutrRet.setRetenue(0d);
+            imprimBulletinPaieTotAutrRet.setRetenue(BigDecimal.valueOf(0d));
             listImprimBulletinPaieEngt.add(imprimBulletinPaieTotAutrRet);
 
             ImprimBulletinPaie imprimBulletinPaieTotalR = new ImprimBulletinPaie();
@@ -164,24 +168,24 @@ public class CongeRestController {
 
             ImprimBulletinPaie imprimBulletinPaieRepres = new ImprimBulletinPaie();
             imprimBulletinPaieRepres.setLibelle("AUTRE INDEMNITES NON IMPOSABLE");
-            imprimBulletinPaieRepres.setTaux(30D);
-            imprimBulletinPaieRepres.setGain(0d);
+            imprimBulletinPaieRepres.setTaux(BigDecimal.valueOf(30D));
+            imprimBulletinPaieRepres.setGain(BigDecimal.valueOf(0d));
             listImprimBulletinPaieIndem.add(imprimBulletinPaieRepres);
 
             ImprimBulletinPaie imprimBulletinPaieTOTgainsNonImpos = new ImprimBulletinPaie();
             imprimBulletinPaieTOTgainsNonImpos.setLibelle("TOTAL GAINS NON IMPOSABLES (4)");
-            imprimBulletinPaieTOTgainsNonImpos.setTaux(30D);
-            imprimBulletinPaieTOTgainsNonImpos.setGain(0d);
+            imprimBulletinPaieTOTgainsNonImpos.setTaux(BigDecimal.valueOf(30D));
+            imprimBulletinPaieTOTgainsNonImpos.setGain(BigDecimal.valueOf(0d));
             listImprimBulletinPaieIndem.add(imprimBulletinPaieTOTgainsNonImpos);
 
             ImprimBulletinPaie imprimBulletinPaieTBrutMens = new ImprimBulletinPaie();
             imprimBulletinPaieTBrutMens.setLibelle("SALAIRE BRUT MENSUEL (1+4) )");
-            imprimBulletinPaieTBrutMens.setTaux(30D);
+            imprimBulletinPaieTBrutMens.setTaux(BigDecimal.valueOf(30D));
             imprimBulletinPaieTBrutMens.setGain(bullconge.getBaseImposableAllocationConge());
             listImprimBulletinPaieIndem.add(imprimBulletinPaieTBrutMens);
 
             // Calcul du net à payer
-            bullconge.setAllocationCongeNet(bullconge.getBaseImposableAllocationConge() - bullconge.getCnps() - bullconge.getIgr() - bullconge.getCn() - bullconge.getIts());
+            bullconge.setAllocationCongeNet(bullconge.getBaseImposableAllocationConge().subtract(bullconge.getCnps()).subtract(bullconge.getIts()) );
             bullconge.setMontantNetPayer(Utils.formattingAmount(bullconge.getAllocationCongeNet()));
 
             bullconge.setListImprimBulletinPaie(listImprimBulletinPaie);
@@ -204,14 +208,14 @@ public class CongeRestController {
             bullconge.setTpsdepresence(String.valueOf(bullconge.getMoisOfpresence()));
 
             // Calcul des jours supplémentaires
-            Double[] ancienete = calculAnciennete(bullconge.getContratPersonnel().getCategorie().getSalaireDeBase(), bullconge.getContratPersonnel().getPersonnel().getDateArrivee());
-            double newancienete;
-            if (bullconge.getContratPersonnel().getAncienneteInitial() != 0) {
-                newancienete = ancienete[1] + bullconge.getContratPersonnel().getAncienneteInitial();
-            } else {
-                newancienete = ancienete[1];
-            }
-            double anc = (int) newancienete;
+            // 🔹 Ancienneté
+            long anneesAnciennete = ChronoUnit.YEARS.between(
+                    bullconge.getContratPersonnel().getPersonnel().getDateArrivee().toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                    LocalDate.now()
+            );
+            int anciennete = (int) (anneesAnciennete + bullconge.getContratPersonnel().getAncienneteInitial());
+            int op = anciennete < 2 ? 0 : Math.min(anciennete, 25);
+            double anc = (double) op;
 
             int jourSuppAnc = 0;
             int jourSuppDam = 0;

@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.rh.absences.entity;
 
+import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import jakarta.persistence.*;
 
 import com.nectux.mizan.hyban.parametrages.entity.Auditable;
@@ -78,6 +79,10 @@ public class AbsencesPersonnel extends Auditable {
 	@ManyToOne
 	@JoinColumn(nullable=false)
 	private Personnel personnel;
+
+    @ManyToOne
+    @JoinColumn(nullable=false)
+    private PeriodePaie periodePaie;
 
 	public AbsencesPersonnel() {
 		super();
@@ -265,9 +270,15 @@ public class AbsencesPersonnel extends Auditable {
 		this.personnel = personnel;
 	}
 
-	
+    public PeriodePaie getPeriodePaie() {
+        return periodePaie;
+    }
 
-	@Override
+    public void setPeriodePaie(PeriodePaie periodePaie) {
+        this.periodePaie = periodePaie;
+    }
+
+    @Override
 	public String toString() {
 		return "AbsencesPersonnel [id=" + id + ", observation=" + observation
 				+ ", dateDebut=" + dateDebut + ", dDebut=" + dDebut

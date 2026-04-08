@@ -68,26 +68,26 @@ public class AbsencesPersonnelController {
 	public ResponseEntity<AbsencesPersonnelDTO> saveAbsencesPersonnel(@RequestBody AbsencesPersonnelRequest req) throws Exception {
 		logger.info(">>> ENREGISTRER SANCTION PERSONNEL");
 		AbsencesPersonnelDTO absencesPersonnelDTO = absencesPersonnelService.save(req.getId(), req.getIdPersonnel(), req.getIdAbsence(), req.getDateDebut(), req.getDateFin(), req.getHeursabsence(), req.getJoursabsence(), req.getObservation(), req.getStatut(), req.getSanctionsalaire());
-		PeriodePaie myperiodePaie=periodePaieService.findPeriodeactive();
-		if(absencesPersonnelDTO.getRow().getSanctionsalaire()==4){
-			TempEffectif tpeffop= new TempEffectif();
-			tpeffop=tempEffectifRepository.findByPersonnelAndPeriodePaie(absencesPersonnelDTO.getRow().getPersonnel(), myperiodePaie);
-			if(tpeffop==null){
-				// create new
-				tpeffop.setHeurspresence(173.33-req.getHeursabsence());
-				tpeffop.setJourspresence(30-req.getJoursabsence());
-				tpeffop.setPersonnel(absencesPersonnelDTO.getRow().getPersonnel());
-				tpeffop.setPeriodePaie(myperiodePaie);
-				tpeffop=tempEffectifService.save(tpeffop);
-			}else{
-				tpeffop.setDatedesaisie(DateManager.stringToDate(req.getDateDebut(), "dd/MM/yyyy"));
-				tpeffop.setHeurspresence(tpeffop.getHeurspresence()-req.getHeursabsence());
-				tpeffop.setJourspresence(tpeffop.getJourspresence()-req.getJoursabsence());
-				tpeffop.setPersonnel(absencesPersonnelDTO.getRow().getPersonnel());
-				tpeffop.setPeriodePaie(myperiodePaie);
-				tpeffop=tempEffectifService.save(tpeffop);
-			}
-		}
+//		PeriodePaie myperiodePaie=periodePaieService.findPeriodeactive();
+//		if(absencesPersonnelDTO.getRow().getSanctionsalaire()==4){
+//			TempEffectif tpeffop= new TempEffectif();
+//			tpeffop=tempEffectifRepository.findByPersonnelAndPeriodePaie(absencesPersonnelDTO.getRow().getPersonnel(), myperiodePaie);
+//			if(tpeffop==null){
+//				// create new
+//				tpeffop.setHeurspresence(173.33-req.getHeursabsence());
+//				tpeffop.setJourspresence(30-req.getJoursabsence());
+//				tpeffop.setPersonnel(absencesPersonnelDTO.getRow().getPersonnel());
+//				tpeffop.setPeriodePaie(myperiodePaie);
+//				tpeffop=tempEffectifService.save(tpeffop);
+//			}else{
+//				tpeffop.setDatedesaisie(DateManager.stringToDate(req.getDateDebut(), "dd/MM/yyyy"));
+//				tpeffop.setHeurspresence(tpeffop.getHeurspresence()-req.getHeursabsence());
+//				tpeffop.setJourspresence(tpeffop.getJourspresence()-req.getJoursabsence());
+//				tpeffop.setPersonnel(absencesPersonnelDTO.getRow().getPersonnel());
+//				tpeffop.setPeriodePaie(myperiodePaie);
+//				tpeffop=tempEffectifService.save(tpeffop);
+//			}
+//		}
 		return ResponseEntity.ok(absencesPersonnelDTO);
 	}
 

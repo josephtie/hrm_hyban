@@ -22,6 +22,8 @@ import org.springframework.stereotype.Component;
 import com.nectux.mizan.hyban.utils.DateManager;
 import com.nectux.mizan.hyban.utils.Utils;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("stockconge")
 @Scope("prototype")
@@ -54,12 +56,12 @@ public class StockConge extends Auditable {
 	
     private int nombreJourPris;
 	
-    private Double montantVerse; // 12 dernier mois
+    private BigDecimal montantVerse; // 12 dernier mois
 	
 	@Transient
 	private String mtnVerse;
 	
-	 private Double montantRestant; // 12 dernier mois
+	 private BigDecimal montantRestant; // 12 dernier mois
 		
 	@Transient
 	private String mntRestant;
@@ -144,11 +146,11 @@ public class StockConge extends Auditable {
 		this.nombreJourPris = nombreJourPris;
 	}
 
-	public Double getMontantVerse() {
+	public BigDecimal getMontantVerse() {
 		return montantVerse;
 	}
 
-	public void setMontantVerse(Double montantVerse) {
+	public void setMontantVerse(BigDecimal montantVerse) {
 		this.montantVerse = montantVerse;
 	}
 
@@ -160,11 +162,11 @@ public class StockConge extends Auditable {
 		this.mtnVerse = mtnVerse;
 	}
 
-	public Double getMontantRestant() {
+	public BigDecimal getMontantRestant() {
 		return montantRestant;
 	}
 
-	public void setMontantRestant(Double montantRestant) {
+	public void setMontantRestant(BigDecimal montantRestant) {
 		this.montantRestant = montantRestant;
 	}
 

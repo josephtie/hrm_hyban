@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.service.impl;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -134,7 +135,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 			List<PretPersonnel> personnelpretList = new ArrayList<PretPersonnel>();
 			PretPersonnel pretperso = new PretPersonnel();
 		
-			pretperso.setMontant(montant);
+			pretperso.setMontant(BigDecimal.valueOf(montant));
 			pretperso.setDateEmprunt(DateManager.stringToDate(dEmprunt,"dd/MM/yyyy"));
 			pretperso.setEchelonage(echelonage);
 			pretperso.setPeriode(PeriodePaieRepository.findById(idPeriodDep) .orElseThrow(() -> new EntityNotFoundException("PeriodePaie not found for id " + idPeriodDep)));
@@ -152,9 +153,9 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 			if(pretperso.getId() != null){
 				
 				//Calcul du montant en fonction de l'echellonnage
-				Double montEchell = (double) 0;
+                BigDecimal montEchell = BigDecimal.ZERO;
 				try {
-				montEchell = (pretperso.getMontant())/pretperso.getEchelonage();
+				montEchell = (pretperso.getMontant()).divide(BigDecimal.valueOf(pretperso.getEchelonage()));
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -247,7 +248,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 				 pretpersoDTO.setResult("Impossible de modifier ce pret:reglement en cours");
 			 } else{
 				
-				pretperso.setMontant(montant);
+				pretperso.setMontant(BigDecimal.valueOf(montant));
 				pretperso.setDateEmprunt(DateManager.stringToDate(dEmprunt,"dd/MM/yyyy"));
 				pretperso.setEchelonage(echelonage);
 				 pretperso.setPeriode(PeriodePaieRepository.findById(idPeriodDep)
@@ -268,9 +269,9 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 				if(pretperso.getId() != null){
 					
 					//Calcul du montant en fonction de l'echellonnage
-					Double montEchell =  (double)0;
+                    BigDecimal montEchell =  BigDecimal.ZERO;
 					try {
-					montEchell = (pretperso.getMontant())/pretperso.getEchelonage();
+					montEchell = (pretperso.getMontant()).divide(BigDecimal.valueOf(pretperso.getEchelonage()));
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

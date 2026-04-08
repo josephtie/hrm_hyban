@@ -7,6 +7,8 @@ import com.nectux.mizan.hyban.utils.Utils;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Entity
 @Component("categorie")
 @Scope("prototype")
@@ -23,12 +25,12 @@ public class Categorie extends Auditable {
 	private String libelle;
 	
 	@Column(nullable=false)
-	private Double salaireDeBase;
+	private BigDecimal salaireDeBase;
 	
 	@Transient
 	private String salaireBase;
 	
-	private Double indemniteLogement;
+	private BigDecimal indemniteLogement;
 	
 	@Transient
 	private String montantIndemniteLogement;
@@ -54,11 +56,11 @@ public class Categorie extends Auditable {
 		this.libelle = libelle;
 	}
 
-	public Double getSalaireDeBase() {
+	public BigDecimal getSalaireDeBase() {
 		return salaireDeBase;
 	}
 
-	public void setSalaireDeBase(Double salaireDeBase) {
+	public void setSalaireDeBase(BigDecimal salaireDeBase) {
 		this.salaireDeBase = salaireDeBase;
 	}
 
@@ -71,11 +73,11 @@ public class Categorie extends Auditable {
 		this.salaireBase = salaireBase;
 	}
 
-	public Double getIndemniteLogement() {
+	public BigDecimal getIndemniteLogement() {
 		return indemniteLogement;
 	}
 
-	public void setIndemniteLogement(Double indemniteLogement) {
+	public void setIndemniteLogement(BigDecimal indemniteLogement) {
 		this.indemniteLogement = indemniteLogement;
 	}
 

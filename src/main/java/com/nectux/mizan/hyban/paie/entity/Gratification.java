@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.entity;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -32,186 +33,186 @@ public class Gratification extends Auditable {
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="CGECI_RHPAIE_GRATIFICATION_SEQUENCE")
 	@Column(unique=true, nullable=false)
 	private Long id;
-	
-	private Double nombrePart;
-	
+
+	private BigDecimal nombrePart;
+
 	@Transient
 	private String nbrePart;
-	
-	private Double gratificationBase;
-	
+
+	private BigDecimal gratificationBase;
+
 	@Transient
 	private String montantGratificationBase;
-	
-	private Double sursalaire;
-	
+
+	private BigDecimal sursalaire;
+
 	@Transient
 	private String montantSursalaire;
-	
-	private Double tauxGratification;
-	
+
+	private BigDecimal tauxGratification;
+
 	@Transient
 	private String montantTauxGratification;
-	
-	private Double indemniteTransport;
-	
+
+	private BigDecimal indemniteTransport;
+
 	@Transient
 	private String indemniteTransp;
-	
-	private Double its;
-	
+
+	private BigDecimal its;
+
 	@Transient
 	private String montantIts;
-	
-	private Double cn;
-	
+
+	private BigDecimal cn;
+
 	@Transient
 	private String montantCn;
-	
-	private Double igr;
-	
+
+	private BigDecimal igr;
+
 	@Transient
 	private String montantIgr;
-	
-	private Double cnps;
-	
+
+	private BigDecimal cnps;
+
 	@Transient
 	private String montantCnps;
-	
-	private Double impotSalaire;
-	
+
+	private BigDecimal impotSalaire;
+
 	@Transient
 	private String montantIs;
-	
-	private Double ta;
-	
+
+	private BigDecimal ta;
+
 	@Transient
 	private String montantTa;
-	
-	private Double fpc;
-	
+
+	private BigDecimal fpc;
+
 	@Transient
 	private String montantFpc;
-	
-	private Double prestationFamiliale;
-	
+
+	private BigDecimal prestationFamiliale;
+
 	@Transient
 	private String prestationFamil;
-	
-	private Double accidentTravail;
-	
+
+	private BigDecimal accidentTravail;
+
 	@Transient
 	private String accidentTrav;
-	
-	private Double retraite;
-	
+
+	private BigDecimal retraite;
+
 	@Transient
 	private String montantRetraite;
-	
-	private Double indemniteFinCarriere;
-	
+
+	private BigDecimal indemniteFinCarriere;
+
 	@Transient
 	private String montantIndemniteFinCarriere;
-	
-	private Double totalPatronal;
-	
+
+	private BigDecimal totalPatronal;
+
 	@Transient
 	private String montantTotalPatronal;
-	
-	private Double totalMasseSalariale;
-	
+
+	private BigDecimal totalMasseSalariale;
+
 	@Transient
 	private String montantTotalMasseSalariale;
-	
-	private Double brutImposable;
-	
+
+	private BigDecimal brutImposable;
+
 	@Transient
 	private String montantBrutImposable;
-	
-	private Double netPayer;
-	
+
+	private BigDecimal netPayer;
+
 	@Transient
 	private String montantNetPayer;
-	
-	private Double totalRetenueFiscale;
-	
+
+	private BigDecimal totalRetenueFiscale;
+
 	@Transient
 	private String montantTotalRetenueFiscale;
-	
-	private Double totalRetenue;
-	
+
+	private BigDecimal totalRetenue;
+
 	@Transient
 	private String montantTotalRetenu;
-	
-	private Double totalBrut;
-	
+
+	private BigDecimal totalBrut;
+
 	@Transient
 	private String montantTotalBrut;
-	
-	private Double totalChargeFiscalePatronale;
-	
+
+	private BigDecimal totalChargeFiscalePatronale;
+
 	@Transient
 	private String montantcumulIts;
-	
+
 	@Transient
 	private String montantcumulCn;
-	
+
 	private String montantcumulIgr;
-	
+
 	@Transient
 	private String montantcumulCnpsSal;
-	
+
 	@Transient
 	private String montantTotalChargeFiscalePatronale;
-	
-	private Double totalChargeSocialePatronale;
-	
+
+	private BigDecimal totalChargeSocialePatronale;
+
 	@Transient
 	private String montantTotalChargeSocialePatronale;
-	
-	private Double totalMasseSalarialeMensuelle;
-	
+
+	private BigDecimal totalMasseSalarialeMensuelle;
+
 	@Transient
 	private String montantTotalMasseSalarialeMensuelle;
-	
-	private Double totalMasseSalarialeAnnuelle;
-	
+
+	private BigDecimal totalMasseSalarialeAnnuelle;
+
 	@Transient
 	private String montantTotalMasseSalarialeAnnuelle;
-	
-	
+
+
 	@Transient
 	private List<ImprimBulletinPaie> listImprimBulletinPaie;
-	
+
 	@Transient
 	private List<ImprimBulletinPaie> listImprimBulletinPaieEngagement;
-	
+
 	@Transient
 	private List<ImprimBulletinPaie> listImprimBulletinPaieIndemniteNonImp;
-	
+
 	/*private Boolean statut;
-	
+
 	@Transient
 	private String enSommeil;*/
-	
+
 	@ManyToOne
 	@JoinColumn(nullable=false)
 	private ContratPersonnel contratPersonnel;
-	
+
 	@ManyToOne
 	@JoinColumn(nullable=false)
 	private PeriodePaie periodePaie;
-	
-	
+
+
 	public Gratification() {
 		super();
 	}
 
-	
 
-	/*public Gratification(Long id, Double nombrePart, Double gratificationBase, Double sursalaire, Double indemniteTransport, 
-			Double its, Double cn, Double igr, Double cnps, Double impotSalaire, Double ta, Double fpc, Double prestationFamiliale,
-			Double accidentTravail, Double retraite, Double indemniteFinCarriere, Double netPayer, Double brutImposable, Double totalPatronal, Double totalMasseSalariale, 
+
+	/*public Gratification(Long id, BigDecimal nombrePart, BigDecimal gratificationBase, BigDecimal sursalaire, BigDecimal indemniteTransport,
+			BigDecimal its, BigDecimal cn, BigDecimal igr, BigDecimal cnps, BigDecimal impotSalaire, BigDecimal ta, BigDecimal fpc, BigDecimal prestationFamiliale,
+			BigDecimal accidentTravail, BigDecimal retraite, BigDecimal indemniteFinCarriere, BigDecimal netPayer, BigDecimal brutImposable, BigDecimal totalPatronal, BigDecimal totalMasseSalariale,
 			ContratPersonnel contratPersonnel, PeriodePaie periodePaie) {
 		super();
 		this.id = id;
@@ -239,12 +240,12 @@ public class Gratification extends Auditable {
 	}*/
 
 
-	public Gratification(Double nombrePart, Double gratificationBase, Double indemniteTransport, Double its, Double cn,
-			Double igr, Double cnps, Double impotSalaire, Double ta, Double fpc, Double prestationFamiliale,
-			Double accidentTravail, Double retraite, Double indemniteFinCarriere, Double totalPatronal,
-			/*Double totalMasseSalariale, */Double brutImposable, Double netPayer, Double totalRetenueFiscale,
-			Double totalRetenue, Double totalBrut, Double totalChargeFiscalePatronale, Double totalChargeSocialePatronale, Double totalMasseSalarialeMensuelle,
-			Double totalMasseSalarialeAnnuelle, ContratPersonnel contratPersonnel, PeriodePaie periodePaie) {
+	public Gratification(BigDecimal nombrePart, BigDecimal gratificationBase, BigDecimal indemniteTransport, BigDecimal its, BigDecimal cn,
+			BigDecimal igr, BigDecimal cnps, BigDecimal impotSalaire, BigDecimal ta, BigDecimal fpc, BigDecimal prestationFamiliale,
+			BigDecimal accidentTravail, BigDecimal retraite, BigDecimal indemniteFinCarriere, BigDecimal totalPatronal,
+			/*BigDecimal totalMasseSalariale, */BigDecimal brutImposable, BigDecimal netPayer, BigDecimal totalRetenueFiscale,
+			BigDecimal totalRetenue, BigDecimal totalBrut, BigDecimal totalChargeFiscalePatronale, BigDecimal totalChargeSocialePatronale, BigDecimal totalMasseSalarialeMensuelle,
+			BigDecimal totalMasseSalarialeAnnuelle, ContratPersonnel contratPersonnel, PeriodePaie periodePaie) {
 		super();
 		this.nombrePart = nombrePart;
 		this.gratificationBase = gratificationBase;
@@ -285,12 +286,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getNombrePart() {
+	public BigDecimal getNombrePart() {
 		return nombrePart;
 	}
 
 
-	public void setNombrePart(Double nombrePart) {
+	public void setNombrePart(BigDecimal nombrePart) {
 		this.nombrePart = nombrePart;
 	}
 
@@ -306,12 +307,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getGratificationBase() {
+	public BigDecimal getGratificationBase() {
 		return gratificationBase;
 	}
 
 
-	public void setGratificationBase(Double gratificationBase) {
+	public void setGratificationBase(BigDecimal gratificationBase) {
 		this.gratificationBase = gratificationBase;
 	}
 
@@ -327,12 +328,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getTauxGratification() {
+	public BigDecimal getTauxGratification() {
 		return tauxGratification;
 	}
 
 
-	public void setTauxGratification(Double tauxGratification) {
+	public void setTauxGratification(BigDecimal tauxGratification) {
 		this.tauxGratification = tauxGratification;
 	}
 
@@ -348,12 +349,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getIndemniteTransport() {
+	public BigDecimal getIndemniteTransport() {
 		return indemniteTransport;
 	}
 
 
-	public void setIndemniteTransport(Double indemniteTransport) {
+	public void setIndemniteTransport(BigDecimal indemniteTransport) {
 		this.indemniteTransport = indemniteTransport;
 	}
 
@@ -369,12 +370,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getIts() {
+	public BigDecimal getIts() {
 		return its;
 	}
 
 
-	public void setIts(Double its) {
+	public void setIts(BigDecimal its) {
 		this.its = its;
 	}
 
@@ -390,12 +391,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getCn() {
+	public BigDecimal getCn() {
 		return cn;
 	}
 
 
-	public void setCn(Double cn) {
+	public void setCn(BigDecimal cn) {
 		this.cn = cn;
 	}
 
@@ -411,12 +412,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getIgr() {
+	public BigDecimal getIgr() {
 		return igr;
 	}
 
 
-	public void setIgr(Double igr) {
+	public void setIgr(BigDecimal igr) {
 		this.igr = igr;
 	}
 
@@ -432,12 +433,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getCnps() {
+	public BigDecimal getCnps() {
 		return cnps;
 	}
 
 
-	public void setCnps(Double cnps) {
+	public void setCnps(BigDecimal cnps) {
 		this.cnps = cnps;
 	}
 
@@ -452,12 +453,12 @@ public class Gratification extends Auditable {
 		this.montantCnps = montantCnps;
 	}
 
-	public Double getImpotSalaire() {
+	public BigDecimal getImpotSalaire() {
 		return impotSalaire;
 	}
 
 
-	public void setImpotSalaire(Double impotSalaire) {
+	public void setImpotSalaire(BigDecimal impotSalaire) {
 		this.impotSalaire = impotSalaire;
 	}
 
@@ -473,12 +474,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getTa() {
+	public BigDecimal getTa() {
 		return ta;
 	}
 
 
-	public void setTa(Double ta) {
+	public void setTa(BigDecimal ta) {
 		this.ta = ta;
 	}
 
@@ -494,12 +495,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getFpc() {
+	public BigDecimal getFpc() {
 		return fpc;
 	}
 
 
-	public void setFpc(Double fpc) {
+	public void setFpc(BigDecimal fpc) {
 		this.fpc = fpc;
 	}
 
@@ -515,12 +516,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getPrestationFamiliale() {
+	public BigDecimal getPrestationFamiliale() {
 		return prestationFamiliale;
 	}
 
 
-	public void setPrestationFamiliale(Double prestationFamiliale) {
+	public void setPrestationFamiliale(BigDecimal prestationFamiliale) {
 		this.prestationFamiliale = prestationFamiliale;
 	}
 
@@ -536,12 +537,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getAccidentTravail() {
+	public BigDecimal getAccidentTravail() {
 		return accidentTravail;
 	}
 
 
-	public void setAccidentTravail(Double accidentTravail) {
+	public void setAccidentTravail(BigDecimal accidentTravail) {
 		this.accidentTravail = accidentTravail;
 	}
 
@@ -557,12 +558,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getRetraite() {
+	public BigDecimal getRetraite() {
 		return retraite;
 	}
 
 
-	public void setRetraite(Double retraite) {
+	public void setRetraite(BigDecimal retraite) {
 		this.retraite = retraite;
 	}
 
@@ -578,12 +579,12 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getIndemniteFinCarriere() {
+	public BigDecimal getIndemniteFinCarriere() {
 		return indemniteFinCarriere;
 	}
 
 
-	public void setIndemniteFinCarriere(Double indemniteFinCarriere) {
+	public void setIndemniteFinCarriere(BigDecimal indemniteFinCarriere) {
 		this.indemniteFinCarriere = indemniteFinCarriere;
 	}
 
@@ -619,11 +620,11 @@ public class Gratification extends Auditable {
 	}
 
 
-	public Double getSursalaire() {
+	public BigDecimal getSursalaire() {
 		return sursalaire;
 	}
 
-	public void setSursalaire(Double sursalaire) {
+	public void setSursalaire(BigDecimal sursalaire) {
 		this.sursalaire = sursalaire;
 	}
 
@@ -636,11 +637,11 @@ public class Gratification extends Auditable {
 		this.montantSursalaire = montantSursalaire;
 	}
 
-	public Double getTotalPatronal() {
+	public BigDecimal getTotalPatronal() {
 		return totalPatronal;
 	}
 
-	public void setTotalPatronal(Double totalPatronal) {
+	public void setTotalPatronal(BigDecimal totalPatronal) {
 		this.totalPatronal = totalPatronal;
 	}
 
@@ -653,11 +654,11 @@ public class Gratification extends Auditable {
 		this.montantTotalPatronal = montantTotalPatronal;
 	}
 
-	public Double getTotalMasseSalariale() {
+	public BigDecimal getTotalMasseSalariale() {
 		return totalMasseSalariale;
 	}
 
-	public void setTotalMasseSalariale(Double totalMassaeSalariale) {
+	public void setTotalMasseSalariale(BigDecimal totalMassaeSalariale) {
 		this.totalMasseSalariale = totalMassaeSalariale;
 	}
 
@@ -670,11 +671,11 @@ public class Gratification extends Auditable {
 		this.montantTotalMasseSalariale = montantTotalMassaeSalariale;
 	}
 
-	public Double getBrutImposable() {
+	public BigDecimal getBrutImposable() {
 		return brutImposable;
 	}
 
-	public void setBrutImposable(Double brutImposable) {
+	public void setBrutImposable(BigDecimal brutImposable) {
 		this.brutImposable = brutImposable;
 	}
 
@@ -687,11 +688,11 @@ public class Gratification extends Auditable {
 		this.montantBrutImposable = montantBrutImposable;
 	}
 
-	public Double getNetPayer() {
+	public BigDecimal getNetPayer() {
 		return netPayer;
 	}
 
-	public void setNetPayer(Double netPayer) {
+	public void setNetPayer(BigDecimal netPayer) {
 		this.netPayer = netPayer;
 	}
 
@@ -704,11 +705,11 @@ public class Gratification extends Auditable {
 		this.montantNetPayer = montantNetPayer;
 	}
 
-	public Double getTotalRetenueFiscale() {
+	public BigDecimal getTotalRetenueFiscale() {
 		return totalRetenueFiscale;
 	}
 
-	public void setTotalRetenueFiscale(Double totalRetenueFiscale) {
+	public void setTotalRetenueFiscale(BigDecimal totalRetenueFiscale) {
 		this.totalRetenueFiscale = totalRetenueFiscale;
 	}
 
@@ -721,11 +722,11 @@ public class Gratification extends Auditable {
 		this.montantTotalRetenueFiscale = montantTotalRetenueFiscale;
 	}
 
-	public Double getTotalRetenue() {
+	public BigDecimal getTotalRetenue() {
 		return totalRetenue;
 	}
 
-	public void setTotalRetenue(Double totalRetenue) {
+	public void setTotalRetenue(BigDecimal totalRetenue) {
 		this.totalRetenue = totalRetenue;
 	}
 
@@ -738,11 +739,11 @@ public class Gratification extends Auditable {
 		this.montantTotalRetenu = montantTotalRetenu;
 	}
 
-	public Double getTotalBrut() {
+	public BigDecimal getTotalBrut() {
 		return totalBrut;
 	}
 
-	public void setTotalBrut(Double totalBrut) {
+	public void setTotalBrut(BigDecimal totalBrut) {
 		this.totalBrut = totalBrut;
 	}
 
@@ -755,11 +756,11 @@ public class Gratification extends Auditable {
 		this.montantTotalBrut = montantTotalBrut;
 	}
 
-	public Double getTotalChargeFiscalePatronale() {
+	public BigDecimal getTotalChargeFiscalePatronale() {
 		return totalChargeFiscalePatronale;
 	}
 
-	public void setTotalChargeFiscalePatronale(Double total) {
+	public void setTotalChargeFiscalePatronale(BigDecimal total) {
 		this.totalChargeFiscalePatronale = total;
 	}
 
@@ -772,11 +773,11 @@ public class Gratification extends Auditable {
 		this.montantTotalChargeFiscalePatronale = montantTotal;
 	}
 
-	public Double getTotalChargeSocialePatronale() {
+	public BigDecimal getTotalChargeSocialePatronale() {
 		return totalChargeSocialePatronale;
 	}
 
-	public void setTotalChargeSocialePatronale(Double totalChargeSocialePatronale) {
+	public void setTotalChargeSocialePatronale(BigDecimal totalChargeSocialePatronale) {
 		this.totalChargeSocialePatronale = totalChargeSocialePatronale;
 	}
 
@@ -789,11 +790,11 @@ public class Gratification extends Auditable {
 		this.montantTotalChargeSocialePatronale = montantTotalChargeSocialePatronale;
 	}
 
-	public Double getTotalMasseSalarialeMensuelle() {
+	public BigDecimal getTotalMasseSalarialeMensuelle() {
 		return totalMasseSalarialeMensuelle;
 	}
 
-	public void setTotalMasseSalarialeMensuelle(Double totalMasseSalarialeMensuelle) {
+	public void setTotalMasseSalarialeMensuelle(BigDecimal totalMasseSalarialeMensuelle) {
 		this.totalMasseSalarialeMensuelle = totalMasseSalarialeMensuelle;
 	}
 
@@ -806,11 +807,11 @@ public class Gratification extends Auditable {
 		this.montantTotalMasseSalarialeMensuelle = montantTotalMasseSalarialeMensuelle;
 	}
 
-	public Double getTotalMasseSalarialeAnnuelle() {
+	public BigDecimal getTotalMasseSalarialeAnnuelle() {
 		return totalMasseSalarialeAnnuelle;
 	}
 
-	public void setTotalMasseSalarialeAnnuelle(Double totalMasseSalarialeAnnuelle) {
+	public void setTotalMasseSalarialeAnnuelle(BigDecimal totalMasseSalarialeAnnuelle) {
 		this.totalMasseSalarialeAnnuelle = totalMasseSalarialeAnnuelle;
 	}
 
@@ -943,5 +944,5 @@ public class Gratification extends Auditable {
 	public void setMontantcumulCnpsSal(String montantcumulCnpsSal) {
 		this.montantcumulCnpsSal = montantcumulCnpsSal;
 	}
-	
+
 }

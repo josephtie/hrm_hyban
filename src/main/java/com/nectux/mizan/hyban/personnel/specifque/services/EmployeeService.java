@@ -1,15 +1,12 @@
 package com.nectux.mizan.hyban.personnel.specifque.services;
 
 
-import com.nectux.mizan.hyban.personnel.dto.PersonnelDTO;
 import com.nectux.mizan.hyban.personnel.specifque.dto.EmployeeDTO;
 import com.nectux.mizan.hyban.personnel.specifque.dto.SpecialContractDTO;
 import com.nectux.mizan.hyban.personnel.specifque.entity.Employee;
 import com.nectux.mizan.hyban.personnel.specifque.enums.SpecialContractType;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
 import org.springframework.data.domain.Pageable;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 public interface EmployeeService {
@@ -25,13 +22,14 @@ public interface EmployeeService {
             String lieuHabitation,
             String dateNaissance,
             String phoneNumber,
-            Boolean actif,
             SpecialContractType typeContrat,
+            Long fonction,
+            Long site,
             String dateDebut,
             String dateFin,
             String modePaiement,
             String paiementNumber,
-            BigDecimal netAPayer
+            Double netAPayer
     );
     Employee update(Long id, Employee employee);
 
@@ -41,7 +39,7 @@ public interface EmployeeService {
 
     List<Employee> findPersonnelSpecifique();
 
-    void deactivate(Long id);
+    public Boolean deactivate(Long id);
 
     EmployeeDTO loadPersonnel( Pageable pageable);
 
