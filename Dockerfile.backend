@@ -1,43 +1,35 @@
-# Étape 1: Build Maven
+# -------- BUILD --------
 FROM maven:3.9-eclipse-temurin-17 AS builder
 
 WORKDIR /app
 
-# Copier les fichiers Maven
 COPY pom.xml .
-COPY src ./src
+RUN mvn -B -q -e -DskipTests dependency:go-offline
 
-# Build l'application
+COPY src ./src
 RUN mvn clean package -DskipTests
 
-# Étape 2: Runtime
-# RUNTIME
+# -------- RUNTIME --------
 FROM eclipse-temurin:17-jre-alpine
-
-# Installation des dépendances système nécessaires
-RUN apt-get update && apt-get install -y \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Créer l'utilisateur non-root
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+# Installer curl (version Alpine)
+RUN apk add --no-cache curl
 
-# Copier le JAR depuis l'étape de build
+# Créer user non-root (version Alpine)
+RUN addgroup -S appuser && adduser -S appuser -G appuser
+
+# Copier le JAR
 COPY --from=builder /app/target/*.jar app.jar
 
-# Créer le répertoire d'uploads
+# Créer dossier uploads
 RUN mkdir -p /app/uploads && chown -R appuser:appuser /app
 
-# Changer vers l'utilisateur non-root
 USER appuser
 
-# Exposer le port
 EXPOSE 7200
 
-# Variables d'environnement
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
 
-# Commande de démarrage
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
