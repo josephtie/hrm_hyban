@@ -49,7 +49,7 @@ services:
       KC_DB_PASSWORD: keycloak
 
     ports:
-      - "8081:8080"
+      - "8083:8080"
     depends_on:
       - postgres-keycloak
     networks:
