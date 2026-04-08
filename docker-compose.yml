@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: directus
       POSTGRES_PASSWORD: directus
     ports:
-      - "5433:5432"
+      - "5438:5432"
     volumes:
       - postgres_hrm_data:/var/lib/postgresql/data
     networks:
@@ -27,7 +27,7 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloak
     ports:
-      - "5434:5432"
+      - "5437:5432"
     volumes:
       - postgres_keycloak_data:/var/lib/postgresql/data
     networks:
