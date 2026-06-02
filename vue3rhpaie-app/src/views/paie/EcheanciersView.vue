@@ -23,33 +23,34 @@
     <div class="filters-section enhanced-card">
       <div class="filters-content">
         <el-row :gutter="16">
-          <el-col :span="6">
-            <el-select v-model="filters.personnelId" placeholder="Personnel" clearable style="width: 100%">
+          <el-col :span="8">
+            <el-input
+              v-model="filters.search"
+              placeholder="Rechercher par nom, prénom ou matricule..."
+              clearable
+              style="width: 100%"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+          </el-col>
+          <el-col :span="5">
+            <el-select v-model="filters.statut" placeholder="Statut" clearable style="width: 100%">
+              <el-option label="Tous" :value="null" />
+              <el-option label="Payés" :value="true" />
+              <el-option label="Non payés" :value="false" />
+            </el-select>
+          </el-col>
+          <el-col :span="5">
+            <el-select v-model="filters.periodePaieId" placeholder="Période de paie" clearable style="width: 100%">
               <el-option
-                v-for="personnel in personnels"
-                :key="personnel.id"
-                :label="`${personnel.nomComplet} - ${personnel.matricule}`"
-                :value="personnel.id"
+                v-for="periode in periodes"
+                :key="periode.id"
+                :label="periode.affiche"
+                :value="periode.id"
               />
             </el-select>
-          </el-col>
-          <el-col :span="6">
-            <el-select v-model="filters.statut" placeholder="Statut" clearable style="width: 100%">
-              <el-option label="En attente" value="en_attente" />
-              <el-option label="Payé" value="paye" />
-              <el-option label="En retard" value="en_retard" />
-              <el-option label="Partiellement payé" value="partiellement_paye" />
-            </el-select>
-          </el-col>
-          <el-col :span="6">
-            <el-date-picker
-              v-model="filters.periode"
-              type="month"
-              placeholder="Période"
-              format="MM/YYYY"
-              value-format="YYYY-MM"
-              style="width: 100%"
-            />
           </el-col>
           <el-col :span="6">
             <el-button type="primary" @click="applyFilters">
@@ -105,21 +106,15 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="Échéance N°" width="100" align="center">
+          <!-- <el-table-column label="Échéance N°" width="100" align="center">
             <template #default="{ row }">
               <el-tag type="info">{{ row.numeroEcheance }}/{{ row.totalEcheances }}</el-tag>
             </template>
-          </el-table-column>
+          </el-table-column> -->
 
           <el-table-column label="Période" width="120" sortable>
             <template #default="{ row }">
-              {{ formatPeriode(row.periode) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column label="Date Échéance" width="120" sortable>
-            <template #default="{ row }">
-              {{ formatDate(row.dateEcheance) }}
+              {{ row.periodePaie.affiche }}
             </template>
           </el-table-column>
 
@@ -129,11 +124,6 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="Intérêts" width="100" sortable>
-            <template #default="{ row }">
-              <span class="interest">{{ formatCurrency(row.interets) }}</span>
-            </template>
-          </el-table-column>
 
           <el-table-column label="Principal" width="100" sortable>
             <template #default="{ row }">
@@ -163,19 +153,8 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="Actions" width="150" fixed="right">
+          <el-table-column label="Actions" width="100" fixed="right">
             <template #default="{ row }">
-              <el-button 
-                type="success" 
-                size="small" 
-                @click="markAsPaidSingle(row)"
-                :disabled="row.statut === 'paye'"
-              >
-                <el-icon><Check /></el-icon>
-              </el-button>
-              <el-button type="info" size="small" @click="viewDetails(row)">
-                <el-icon><View /></el-icon>
-              </el-button>
               <el-button type="warning" size="small" @click="editEcheancier(row)">
                 <el-icon><Edit /></el-icon>
               </el-button>
@@ -189,7 +168,7 @@
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50, 100]"
-            :total="filteredEcheanciers.length"
+            :total="totalEcheanciers"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -240,6 +219,134 @@
         </el-descriptions>
       </div>
     </el-dialog>
+
+    <!-- Modal de modification d'échéancier -->
+    <el-dialog 
+      v-model="showEditModal" 
+      title="Modifier/Reporter le Remboursement" 
+      width="800px"
+      :close-on-click-modal="false"
+    >
+      <div v-if="selectedEcheancier" class="edit-form">
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form :model="editForm" label-width="140px">
+              <!-- Informations de l'échéancier -->
+              <el-divider content-position="left">
+                <span style="font-weight: bold; color: #409EFF;">Informations de l'Échéancier</span>
+              </el-divider>
+              
+              <el-form-item label="Personnel concerné">
+                <el-input 
+                  :value="`${selectedEcheancier.personnelNom} (${selectedEcheancier.matricule})`" 
+                  disabled 
+                  style="background-color: #f5f5f5;"
+                />
+              </el-form-item>
+              
+              <el-form-item label="Type de prêt">
+                <el-input 
+                  :value="selectedEcheancier.typePret" 
+                  disabled 
+                  style="background-color: #f5f5f5;"
+                />
+              </el-form-item>
+              
+              <el-form-item label="Montant de l'échéance">
+                <el-input 
+                  :value="formatCurrency(selectedEcheancier.mensualite)" 
+                  disabled 
+                  style="background-color: #f5f5f5;"
+                />
+              </el-form-item>
+              
+              <el-form-item label="Montant total du prêt">
+                <el-input 
+                  :value="formatCurrency(selectedEcheancier.montantPret)" 
+                  disabled 
+                  style="background-color: #f5f5f5;"
+                />
+              </el-form-item>
+              
+              <el-form-item label="Statut actuel">
+                <el-tag :type="getStatusColor(selectedEcheancier.statut)" size="large">
+                  {{ getStatusLabel(selectedEcheancier.statut) }}
+                </el-tag>
+              </el-form-item>
+              
+              <!-- Nouvelles informations -->
+              <el-divider content-position="left">
+                <span style="font-weight: bold; color: #67C23A;">Nouvelles Informations</span>
+              </el-divider>
+              
+              <el-form-item label="Nouvelle période de paiement" required>
+                <el-select 
+                  v-model="editForm.periodePaieId" 
+                  placeholder="Sélectionner une nouvelle période"
+                  style="width: 100%"
+                  clearable
+                >
+                  <template #prefix>
+                    <el-icon><Calendar /></el-icon>
+                  </template>
+                  <el-option
+                    v-for="periode in periodes"
+                    :key="periode.id"
+                    :label="periode.affiche"
+                    :value="periode.id"
+                  >
+                    <span>{{ periode.affiche }}</span>
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              
+              <el-form-item label="Date de remboursement prévue">
+                <el-date-picker
+                  v-model="editForm.dateRemboursement"
+                  type="date"
+                  placeholder="Sélectionner la date de remboursement"
+                  format="DD/MM/YYYY"
+                  value-format="YYYY-MM-DD"
+                  style="width: 100%"
+                  clearable
+                >
+                  <template #prefix>
+                    <el-icon><Clock /></el-icon>
+                  </template>
+                </el-date-picker>
+              </el-form-item>
+              
+              <el-form-item label="Observations">
+                <el-input
+                  v-model="editForm.observations"
+                  type="textarea"
+                  :rows="3"
+                  placeholder="Ajouter des observations sur cette modification..."
+                />
+              </el-form-item>
+            </el-form>
+          </el-col>
+        </el-row>
+        
+        <el-divider />
+        
+        <div class="dialog-footer" style="text-align: right; margin-top: 20px;">
+          <el-button size="large" @click="showEditModal = false">
+            <el-icon><Close /></el-icon>
+            Annuler
+          </el-button>
+          <el-button 
+            type="primary" 
+            size="large" 
+            @click="saveEcheancierModification"
+            :loading="loading"
+          >
+            <el-icon><Check /></el-icon>
+            {{ editForm.periodePaieId ? 'Confirmer la modification' : 'Confirmer le report' }}
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -247,8 +354,20 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  List, Refresh, Search, Check, Download, View, Edit 
+  List, Refresh, Search, Check, Download, View, Edit, Calendar, Clock, Close 
 } from '@element-plus/icons-vue'
+import echelonnementrestService, { 
+  type Echelonnement, 
+  type EchelonnementFilter, 
+  type PeriodePaie 
+} from '@/services/echelonnementrest.service'
+
+// Interfaces locales
+interface Personnel {
+  id: number
+  matricule: string
+  nomComplet: string
+}
 
 interface Echeancier {
   id: number
@@ -260,171 +379,195 @@ interface Echeancier {
   montantPret: number
   numeroEcheance: number
   totalEcheances: number
-  periode: string
+  periodePaie: PeriodePaie | { affiche: string }
   dateEcheance: string
   mensualite: number
   interets: number
   principal: number
   montantPaye: number
   resteAPayer: number
-  statut: 'en_attente' | 'paye' | 'en_retard' | 'partiellement_paye'
+  statut: string
   datePaiement?: string
-}
-
-interface Personnel {
-  id: number
-  matricule: string
-  nomComplet: string
 }
 
 // Données réactives
 const loading = ref(false)
 const showDetailsModal = ref(false)
+const showEditModal = ref(false)
 const selectedEcheancier = ref<Echeancier | null>(null)
+const editForm = reactive({
+  id: 0,
+  periodePaieId: null as number | null,
+  dateRemboursement: '',
+  montant: 0,
+  observations: ''
+})
 const selectedEcheanciers = ref<Echeancier[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
+const totalEcheanciers = ref(0)
 
 // Filtres
 const filters = reactive({
-  personnelId: null as number | null,
-  statut: '',
-  periode: ''
+  search: '',
+  statut: null as boolean | null,
+  periodePaieId: null as number | null
 })
 
-// Données mockées
-const echeanciers = ref<Echeancier[]>([
-  {
-    id: 1,
-    pretId: 1,
-    personnelId: 1,
-    personnelNom: 'Kouadio Jean',
-    matricule: 'EMP001',
-    typePret: 'Prêt Personnel',
-    montantPret: 500000,
-    numeroEcheance: 1,
-    totalEcheances: 12,
-    periode: '2024-02',
-    dateEcheance: '2024-02-28',
-    mensualite: 42800,
-    interets: 2083,
-    principal: 40717,
-    montantPaye: 0,
-    resteAPayer: 42800,
-    statut: 'en_attente'
-  },
-  {
-    id: 2,
-    pretId: 1,
-    personnelId: 1,
-    personnelNom: 'Kouadio Jean',
-    matricule: 'EMP001',
-    typePret: 'Prêt Personnel',
-    montantPret: 500000,
-    numeroEcheance: 2,
-    totalEcheances: 12,
-    periode: '2024-03',
-    dateEcheance: '2024-03-31',
-    mensualite: 42800,
-    interets: 1920,
-    principal: 40880,
-    montantPaye: 42800,
-    resteAPayer: 0,
-    statut: 'paye',
-    datePaiement: '2024-03-15'
-  },
-  {
-    id: 3,
-    pretId: 2,
-    personnelId: 2,
-    personnelNom: 'Touré Aminata',
-    matricule: 'EMP002',
-    typePret: 'Prêt Logement',
-    montantPret: 2000000,
-    numeroEcheance: 6,
-    totalEcheances: 36,
-    periode: '2024-02',
-    dateEcheance: '2024-02-28',
-    mensualite: 59400,
-    interets: 7500,
-    principal: 51900,
-    montantPaye: 30000,
-    resteAPayer: 29400,
-    statut: 'partiellement_paye'
-  },
-  {
-    id: 4,
-    pretId: 2,
-    personnelId: 2,
-    personnelNom: 'Touré Aminata',
-    matricule: 'EMP002',
-    typePret: 'Prêt Logement',
-    montantPret: 2000000,
-    numeroEcheance: 7,
-    totalEcheances: 36,
-    periode: '2024-01',
-    dateEcheance: '2024-01-31',
-    mensualite: 59400,
-    interets: 7560,
-    principal: 51840,
-    montantPaye: 0,
-    resteAPayer: 59400,
-    statut: 'en_retard'
-  }
-])
+// Données du backend
+const echeanciers = ref<Echeancier[]>([])
+const personnels = ref<Personnel[]>([])
+const periodes = ref<PeriodePaie[]>([])
 
-const personnels = ref<Personnel[]>([
-  { id: 1, nomComplet: 'Kouadio Jean', matricule: 'EMP001' },
-  { id: 2, nomComplet: 'Touré Aminata', matricule: 'EMP002' },
-  { id: 3, nomComplet: 'Soro Mohamed', matricule: 'EMP003' },
-  { id: 4, nomComplet: 'Koné Fatoumata', matricule: 'EMP004' },
-  { id: 5, nomComplet: 'Bamba Yves', matricule: 'EMP005' }
-])
+// Fonctions de chargement
+const loadEcheanciers = async () => {
+  try {
+    loading.value = true
+    const filter: EchelonnementFilter = {
+      limit: pageSize.value,
+      offset: currentPage.value - 1,
+      search: filters.search || '',
+      statut: filters.statut ?? undefined,
+      periodePaieId: filters.periodePaieId ?? undefined
+    }
+    
+    const response = await echelonnementrestService.getEchelonnements(filter)
+    
+    if (response.success && response.data) {
+      // Mapper les données du backend vers le format frontend
+      echeanciers.value = response.data.rows.map((ech: any) => ({
+        id: ech.id,
+        pretId: ech.pretPersonnel?.id || 0,
+        personnelId: ech.pretPersonnel?.personnel?.id || 0,
+        personnelNom: ech.pretPersonnel?.personnel?.nomComplet || 'Inconnu',
+        matricule: ech.pretPersonnel?.personnel?.matricule || '',
+        typePret: ech.pretPersonnel?.pret?.libelle || 'Prêt',
+        montantPret: ech.pretPersonnel?.montantPret || 0,
+        numeroEcheance: 1, // À adapter selon la logique métier
+        totalEcheances: ech.pretPersonnel?.echelonage || 12, // Utiliser echelonage du prêt
+        periodePaie: ech.periodePaie || { affiche: 'Période inconnue' },
+        dateEcheance: ech.dateRemboursement || ech.dateEcheance || '',
+        mensualite: ech.montant || 0, // Utiliser montant du backend
+        interets: 0, // À calculer selon la logique métier
+        principal: parseFloat(ech.pretPersonnel?.montantPret?.replace(/\s/g, '')) || 0, // Utiliser montantPret du prêt et convertir en nombre
+        montantPaye: ech.paye ? ech.montant : 0, // Utiliser le booléen paye
+        resteAPayer: ech.paye ? 0 : ech.montant, // Calculer le reste selon paye
+        statut: ech.paye ? 'Payé' : 'Non payé', // Utiliser le booléen paye pour déterminer le statut
+        datePaiement: ech.dateRemboursement
+      }))
+      
+      totalEcheanciers.value = response.total
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des échéanciers:', error)
+    ElMessage.error('Erreur lors du chargement des échéanciers')
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadPersonnels = async () => {
+  try {
+    // Pour l'instant, utilisation du service des prêts personnels
+    const { pretspersonnelsService } = await import('@/services/pretspersonnels.service')
+    const response = await pretspersonnelsService.getPersonnels()
+    
+    personnels.value = response.map((p: any) => ({
+      id: p.id,
+      nomComplet: p.nomComplet || `${p.prenom || ''} ${p.nom || ''}`.trim(),
+      matricule: p.matricule
+    }))
+  } catch (error) {
+    console.error('Erreur lors du chargement des personnels:', error)
+    personnels.value = []
+  }
+}
+
+const loadPeriodes = async () => {
+  try {
+    const response = await echelonnementrestService.getPeriodesPaie()
+    
+    if (response.success) {
+      periodes.value = response.data
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des périodes:', error)
+    periodes.value = []
+  }
+}
 
 // Computed properties
 const filteredEcheanciers = computed(() => {
-  let filtered = echeanciers.value
-
-  // Filtrage par personnel
-  if (filters.personnelId) {
-    filtered = filtered.filter(e => e.personnelId === filters.personnelId)
-  }
-
-  // Filtrage par statut
-  if (filters.statut) {
-    filtered = filtered.filter(e => e.statut === filters.statut)
-  }
-
-  // Filtrage par période
-  if (filters.periode) {
-    filtered = filtered.filter(e => e.periode === filters.periode)
-  }
-
-  return filtered
+  return echeanciers.value
 })
 
 // Méthodes
-const applyFilters = () => {
+const applyFilters = async () => {
   currentPage.value = 1
+  await loadEcheanciers()
   ElMessage.success('Filtres appliqués')
 }
 
-const resetFilters = () => {
+const resetFilters = async () => {
   Object.assign(filters, {
-    personnelId: null,
-    statut: '',
-    periode: ''
+    search: '',
+    statut: null,
+    periodePaieId: null
   })
   currentPage.value = 1
+  await loadEcheanciers()
   ElMessage.info('Filtres réinitialisés')
+}
+
+const editEcheancier = (echeancier: Echeancier) => {
+  selectedEcheancier.value = echeancier
+  
+  // Initialiser le formulaire avec les données actuelles
+  Object.assign(editForm, {
+    id: echeancier.id,
+    periodePaieId: echeancier.periodePaie?.id || null,
+    dateRemboursement: echeancier.dateEcheance || '',
+    montant: echeancier.mensualite
+  })
+  
+  showEditModal.value = true
+}
+
+const saveEcheancierModification = async () => {
+  if (!editForm.periodePaieId) {
+    ElMessage.warning('Veuillez sélectionner une période')
+    return
+  }
+  
+  try {
+    // Format des données attendu par le backend : EchelonnementRequest
+    const updateData = {
+      idechel: editForm.id,
+      periodPaie: editForm.periodePaieId.toString() // Le backend attend une string pour periodPaie
+    }
+    
+    const response = await echelonnementrestService.updateEchelonnement(updateData)
+    
+    if (response.success) {
+      ElMessage.success('Échéancier modifié avec succès')
+      showEditModal.value = false
+      await loadEcheanciers() // Recharger les données
+    } else {
+      ElMessage.error(response.message || 'Erreur lors de la modification')
+    }
+  } catch (error) {
+    console.error('Erreur lors de la modification de l\'échéancier:', error)
+    ElMessage.error('Erreur lors de la modification')
+  }
 }
 
 const generateEcheanciers = async () => {
   loading.value = true
   try {
-    // Simulation de génération d'échéanciers
+    // TODO: Implémenter la génération d'échéanciers via le backend
     await new Promise(resolve => setTimeout(resolve, 2000))
     ElMessage.success('Échéanciers générés avec succès')
+    await loadEcheanciers()
   } catch (error) {
     ElMessage.error('Erreur lors de la génération des échéanciers')
   } finally {
@@ -453,17 +596,20 @@ const markAsPaid = async () => {
       }
     )
 
-    selectedEcheanciers.value.forEach(echeancier => {
-      echeancier.statut = 'paye'
-      echeancier.montantPaye = echeancier.mensualite
-      echeancier.resteAPayer = 0
-      echeancier.datePaiement = new Date().toISOString().split('T')[0]
-    })
+    const echelonnementIds = selectedEcheanciers.value.map(e => e.id)
+    const response = await echelonnementrestService.markMultipleAsPaid(echelonnementIds)
 
-    ElMessage.success('Échéances marquées comme payées')
-    selectedEcheanciers.value = []
-  } catch {
-    // L'utilisateur a annulé
+    if (response.success) {
+      ElMessage.success('Échéances marquées comme payées')
+      selectedEcheanciers.value = []
+      await loadEcheanciers()
+    } else {
+      ElMessage.error(response.message || 'Erreur lors du marquage des échéances')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('Erreur lors du marquage des échéances')
+    }
   }
 }
 
@@ -479,14 +625,21 @@ const markAsPaidSingle = async (echeancier: Echeancier) => {
       }
     )
 
-    echeancier.statut = 'paye'
-    echeancier.montantPaye = echeancier.mensualite
-    echeancier.resteAPayer = 0
-    echeancier.datePaiement = new Date().toISOString().split('T')[0]
+    const response = await echelonnementrestService.updateEchelonnement({
+      idechel: echeancier.id,
+      periodPaie: new Date().toISOString().split('T')[0]
+    })
 
-    ElMessage.success('Échéance marquée comme payée')
-  } catch {
-    // L'utilisateur a annulé
+    if (response.success) {
+      ElMessage.success('Échéance marquée comme payée')
+      await loadEcheanciers()
+    } else {
+      ElMessage.error(response.message || 'Erreur lors du marquage de l\'échéance')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('Erreur lors du marquage de l\'échéance')
+    }
   }
 }
 
@@ -495,21 +648,61 @@ const viewDetails = (echeancier: Echeancier) => {
   showDetailsModal.value = true
 }
 
-const editEcheancier = (echeancier: Echeancier) => {
-  ElMessage.info(`Modification de l'échéance N°${echeancier.numeroEcheance}`)
+
+const exportEcheanciers = async () => {
+  try {
+    loading.value = true
+    ElMessage.info('Préparation de l\'export en cours...')
+    
+    // Utiliser les filtres actuels
+    const filter: EchelonnementFilter = {
+      search: filters.search || '',
+      statut: filters.statut,
+      periodePaieId: filters.periodePaieId
+    }
+    
+    const response = await echelonnementrestService.exportEcheanciers(filter)
+    
+    if (response.success && response.data) {
+      // Créer un URL pour le blob et déclencher le téléchargement
+      const blob = response.data
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      
+      // Générer un nom de fichier avec la date actuelle
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
+      link.setAttribute('download', `echeanciers_export_${timestamp}.csv`)
+      
+      // Ajouter le lien au DOM, cliquer dessus, puis le nettoyer
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      
+      // Nettoyer l'URL
+      window.URL.revokeObjectURL(url)
+      
+      ElMessage.success('Export des échéanciers terminé avec succès')
+    } else {
+      ElMessage.error(response.message || 'Erreur lors de l\'export')
+    }
+  } catch (error) {
+    console.error('Erreur lors de l\'export des échéanciers:', error)
+    ElMessage.error('Erreur lors de l\'export des échéanciers')
+  } finally {
+    loading.value = false
+  }
 }
 
-const exportEcheanciers = () => {
-  ElMessage.success('Export des échéanciers en cours...')
-}
-
-const handleSizeChange = (size: number) => {
+const handleSizeChange = async (size: number) => {
   pageSize.value = size
   currentPage.value = 1
+  await loadEcheanciers()
 }
 
-const handleCurrentChange = (page: number) => {
+const handleCurrentChange = async (page: number) => {
   currentPage.value = page
+  await loadEcheanciers()
 }
 
 // Fonctions utilitaires
@@ -518,41 +711,65 @@ const formatCurrency = (amount: number) => {
 }
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleDateString('fr-FR')
+  if (!date || date === 'undefined') return 'Date inconnue'
+  
+  try {
+    const dateObj = new Date(date)
+    if (isNaN(dateObj.getTime())) {
+      return 'Date invalide'
+    }
+    return dateObj.toLocaleDateString('fr-FR')
+  } catch (error) {
+    return date
+  }
 }
 
-const formatPeriode = (periode: string) => {
-  const [year, month] = periode.split('-')
-  const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
-  return `${monthNames[parseInt(month) - 1]} ${year}`
+const formatPeriode = (periode: any) => {
+  if (!periode) return 'Période inconnue'
+  
+  // Si periode est un objet avec la propriété affiche
+  if (typeof periode === 'object' && periode.affiche) {
+    return periode.affiche
+  }
+  
+  // Si periode est une string, essayer de la formater
+  if (typeof periode === 'string') {
+    if (periode === 'undefined') return 'Période inconnue'
+    
+    try {
+      const [year, month] = periode.split('-')
+      const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
+      return `${monthNames[parseInt(month) - 1]} ${year}`
+    } catch (error) {
+      return periode
+    }
+  }
+  
+  return periode
 }
 
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    en_attente: 'info',
-    paye: 'success',
-    en_retard: 'danger',
-    partiellement_paye: 'warning'
+    'Payé': 'success',
+    'Non payé': 'danger',
+    'En attente': 'info',
+    'En retard': 'warning',
+    'Partiellement payé': 'warning'
   }
-  return colors[status] || ''
+  return colors[status] || 'info'
 }
 
 const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    en_attente: 'En attente',
-    paye: 'Payé',
-    en_retard: 'En retard',
-    partiellement_paye: 'Partiellement payé'
-  }
-  return labels[status] || status
+  return status || 'En attente'
 }
 
-onMounted(() => {
-  // Charger les données initiales
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 500)
+onMounted(async () => {
+  // Charger les données initiales depuis le backend
+  await Promise.all([
+    loadEcheanciers(),
+    loadPersonnels(),
+    loadPeriodes()
+  ])
 })
 </script>
 

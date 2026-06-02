@@ -3,6 +3,7 @@ package com.nectux.mizan.hyban.personnel.repository;
 
 import java.sql.Date;
 import java.util.List;
+import java.util.Optional;
 
 import com.nectux.mizan.hyban.parametrages.entity.TypeContrat;
 import com.nectux.mizan.hyban.personnel.entity.Categorie;
@@ -26,7 +27,8 @@ public interface ContratPersonnelRepository extends CrudRepository<ContratPerson
 	public ContratPersonnel findByPersonnelId(Long idPers);
     List<ContratPersonnel> findLastByStatutTrue();
 	//public List<ContratPersonnel> findByPersonnelId(Long idPers);
-	
+
+    Optional<ContratPersonnel> findTopByPersonnelIdAndStatutTrueOrderByIdDesc(Long personnelId);
 	public ContratPersonnel findByPersonnelMatricule(String mat);
 	
 	public ContratPersonnel findByPersonnelMatriculeAndStatut(String mat, Boolean val);
@@ -36,9 +38,18 @@ public interface ContratPersonnelRepository extends CrudRepository<ContratPerson
 	public Page<ContratPersonnel> findByStatutAndPersonnelMatriculeIgnoreCaseContainingOrPersonnelNomIgnoreCaseContaining(Pageable pageable,Boolean val, String matricule,String matricule1);
 
 	public ContratPersonnel findByPersonnelIdAndStatut(Long idlong, Boolean val);
+
+	public List<ContratPersonnel> findByPersonnelIdInAndStatut(List<Long> idsPers, Boolean statut);
 	public List<ContratPersonnel> findByStatut( Boolean val);
 
 	public List<ContratPersonnel> findByPersonnel(Personnel personnel);
+
+	@Query("SELECT cp FROM ContratPersonnel cp " +
+		   "LEFT JOIN FETCH cp.typeContrat " +
+		   "LEFT JOIN FETCH cp.categorie " +
+		   "LEFT JOIN FETCH cp.fonction " +
+		   "WHERE cp.personnel = :personnel")
+	public List<ContratPersonnel> findByPersonnelWithRelations(@Param("personnel") Personnel personnel);
 	
 	public List<ContratPersonnel> findByTypeContrat(TypeContrat typeContrat);
 	

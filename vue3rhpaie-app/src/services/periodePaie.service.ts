@@ -111,19 +111,23 @@ class PeriodePaieService {
   // Récupérer toutes les périodes de paie (sans pagination)
   async getAllPeriodesPaie(): Promise<PeriodePaieDto[]> {
     try {
-      // Essayer d'abord avec l'endpoint GET /list qui existe
-      const response = await this.api.get(`${API_BASE_URL}/list`, { 
-        params: { limit: 100, offset: 0 }
-      })
+      const response = await this.api.get(`${API_BASE_URL}/active`)
       const backendResponse = response.data as any
       
       console.log('Raw backend response for periodes paie:', backendResponse)
       
       // Parser les objets PowerShell formatés
       let processedRows: PeriodePaieDto[] = []
+      const rows = Array.isArray(backendResponse?.rows)
+        ? backendResponse.rows
+        : backendResponse?.row
+          ? [backendResponse.row]
+          : Array.isArray(backendResponse)
+            ? backendResponse
+            : []
       
-      if (backendResponse.rows && Array.isArray(backendResponse.rows)) {
-        processedRows = backendResponse.rows.map((item: any) => {
+      if (rows.length > 0) {
+        processedRows = rows.map((item: any) => {
           // Si c'est une chaîne de caractères (objet PowerShell), la parser
           if (typeof item === 'string') {
             return this.parsePowerShellObject(item)
@@ -206,7 +210,7 @@ class PeriodePaieService {
   // Récupérer la période active
   async getPeriodeActive(): Promise<PeriodePaieDto> {
     try {
-      const response = await this.api.get('/active')
+      const response = await this.api.get(`${API_BASE_URL}/active`)
       return response.data
     } catch (error) {
       console.error('Erreur lors de la récupération de la période active:', error)
@@ -216,3 +220,4 @@ class PeriodePaieService {
 }
 
 export default new PeriodePaieService()
+

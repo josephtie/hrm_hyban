@@ -34,7 +34,7 @@ public class PersonnelRequest {
     private String typeEmp;
     private String telephone;
     private Integer situationMedaille;
-    private Integer situationEmploie;
+    private String situationEmploie;
     private String dateRetourcg;
     private Double sursalaire;
     private Double indemniteTransport;
@@ -108,8 +108,8 @@ public class PersonnelRequest {
     public void setTelephone(String telephone) { this.telephone = telephone; }
     public Integer getSituationMedaille() { return situationMedaille; }
     public void setSituationMedaille(Integer situationMedaille) { this.situationMedaille = situationMedaille; }
-    public Integer getSituationEmploie() { return situationEmploie; }
-    public void setSituationEmploie(Integer situationEmploie) { this.situationEmploie = situationEmploie; }
+    public String getSituationEmploie() { return situationEmploie; }
+    public void setSituationEmploie(String situationEmploie) { this.situationEmploie = situationEmploie; }
     public String getDateRetourcg() { return dateRetourcg; }
     public void setDateRetourcg(String dateRetourcg) { this.dateRetourcg = dateRetourcg; }
     public Double getSursalaire() { return sursalaire; }

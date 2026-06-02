@@ -13,6 +13,7 @@ import com.nectux.mizan.hyban.paie.repository.TempEffectifRepository;
 import com.nectux.mizan.hyban.paie.service.BulletinPaieService;
 //import com.nectux.mizan.hyban.paie.service.CarboneService;
 //import com.nectux.mizan.hyban.paie.service.JasperReportService;
+import com.nectux.mizan.hyban.paie.service.CarboneService;
 import com.nectux.mizan.hyban.paie.service.PretService;
 import com.nectux.mizan.hyban.parametrages.entity.*;
 import com.nectux.mizan.hyban.parametrages.repository.PlanningCongeRepository;
@@ -41,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -49,6 +51,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -72,7 +75,7 @@ import java.math.RoundingMode;
 
 
 @Controller
-@RequestMapping("/paie")
+@RequestMapping("/api/paie/bulletin")
 public class BulletinPaieController {
 
 	
@@ -101,7 +104,7 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
     @Autowired private PretService pretService;
 	@Autowired	private ObjectMapper objectMapper;
 
-
+   @Autowired private CarboneService carboneService;
 		// Pour gérer correctement les dates
 
 
@@ -114,6 +117,30 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 
 	public BulletinPaieController(ResourceLoader resourceLoader) {
 		this.resourceLoader = resourceLoader;
+	}
+
+	@ResponseStatus(HttpStatus.OK)
+	@GetMapping("/masse-salariale-mois-anterieur")
+	public @ResponseBody Map<String, Object> getMasseSalarialeMoisAnterieur() {
+		Map<String, Object> response = new HashMap<>();
+		maperiode = periodePaieService.findPeriodeactive();
+
+		if (maperiode == null) {
+			response.put("result", "error");
+			response.put("message", "Aucune période active trouvée");
+			response.put("masseSalariale", BigDecimal.ZERO);
+			response.put("masseSalarialeFormatee", "0");
+			return response;
+		}
+    //  PeriodePaie  maperiodeant=periodePaieService.findPeriodePaie(maperiode.getId());
+		BigDecimal masseSalariale = bulletinPaieService.MasseSalarialMois(maperiode);
+		DecimalFormat formatter = new DecimalFormat("#,###");
+
+		response.put("result", "success");
+		response.put("periodeActiveId", maperiode.getId());
+		response.put("masseSalariale", masseSalariale);
+		response.put("masseSalarialeFormatee", formatter.format(Math.ceil(masseSalariale.doubleValue())));
+		return response;
 	}
 
 
@@ -274,7 +301,7 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 		if(limit == null) limit = 50;
 		
 		 //final PageRequest page = new PageRequest(offset/10, limit, Direction.DESC, "id");
-		PageRequest page = PageRequest.of(offset / 50, limit, Direction.DESC, "id");
+		PageRequest page = PageRequest.of(offset / limit, limit, Direction.DESC, "id");
 	     PeriodePaie	 maperiode=periodePaieService.findPeriodePaie(idperiod);
 		BulletinPaieDTO bulletinDTO = new BulletinPaieDTO();
 		if(search == null || search == "" )
@@ -372,7 +399,7 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 		}
         if(offset == null) offset = 0;
         if(limit == null) limit = 100;
-		PageRequest page = PageRequest.of(offset / 100, limit, Direction.DESC, "id");
+		PageRequest page = PageRequest.of(offset , limit, Direction.DESC, "id");
        // final PageRequest page = new PageRequest(offset/10, limit, Direction.ASC, "id");
 		 // List<LivreDePaie> bulletinList = new ArrayList<LivreDePaie>();
        // Pageable pageable;
@@ -380,13 +407,66 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 
 		  livredepaieList = new ArrayList<LivreDePaie>();
 		  livredepaieList=LivredePaieDTO.getRows();
+          generateBulletinApartirLivreDePaie(livredepaieList);
 		  System.out.println("ppppppppppppppppppppppppppppppppppppppppppppp"+rubriqueService.getRubriquesActives().toString());
 		modelMap.addAttribute("rubrique",rubriqueService.getRubriquesActives());
 		LivredePaieDTO.setResult("success");
 		 return LivredePaieDTO;
 	}
 
+    public BulletinPaieDTO generateBulletinApartirLivreDePaie(  List<LivreDePaie> livredepaieList) {
+        BulletinPaieDTO bulletinDTO = new BulletinPaieDTO();
+        List<BulletinPaie> bullList = new ArrayList<BulletinPaie>();
 
+        PeriodePaie periodePaie = periodePaieService.findPeriodeactive();
+       // if (idPeriode != null) {
+        //    Optional<PeriodePaie> periodeOpt = periodePaieRepository.findById(idPeriode);
+       //     if (periodeOpt.isPresent()) {
+       //         periodePaie = periodeOpt.get();
+       //     }
+       // }
+
+        if (periodePaie == null) {
+            bulletinDTO.setRows(Collections.emptyList());
+            bulletinDTO.setTotal(0L);
+            bulletinDTO.setResult("echec");
+            bulletinDTO.setMessage("Période introuvable");
+            return bulletinDTO;
+        }
+
+        if (livredepaieList != null) {
+            for (LivreDePaie livre : livredepaieList) {
+                if (livre == null || livre.getBullpaie() == null || livre.getPeriodePaie() == null) {
+                    continue;
+                }
+                if (!Objects.equals(livre.getPeriodePaie().getId(), periodePaie.getId())) {
+                    continue;
+                }
+                bullList.add(livre.getBullpaie());
+            }
+        }
+
+        if (bullList.isEmpty()) {
+            bulletinDTO.setRows(Collections.emptyList());
+            bulletinDTO.setTotal(0L);
+            bulletinDTO.setResult("echec");
+            bulletinDTO.setMessage("Aucune donnée générée à confirmer");
+            return bulletinDTO;
+        }
+
+        bulletinPaieRepository.deleteAll(bulletinPaieRepository.findByPeriodePaie(periodePaie));
+
+        bulletinPaieRepository.saveAll(bullList);
+
+      //  int start = (int) pageable.getOffset();
+        //int end = Math.min(start + pageable.getPageSize(), bullList.size());
+      //  List<BulletinPaie> pageRows = start >= bullList.size() ? Collections.emptyList() : bullList.subList(start, end);
+
+        bulletinDTO.setRows(bullList);
+        bulletinDTO.setTotal((long) bullList.size());
+        bulletinDTO.setResult("success");
+        return bulletinDTO;
+    }
 
     @ResponseStatus(HttpStatus.OK)
     @RequestMapping(value = "/savebullEmployee", method = RequestMethod.GET)
@@ -443,13 +523,13 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 
     @ResponseStatus(HttpStatus.OK)
     @RequestMapping(value = "/calculalenvers-liste", method = RequestMethod.POST)
-    public @ResponseBody List<LivreDePaie> calculalenversListe(
+    public @ResponseBody LivreDePaieDTO calculalenversListe(
             @RequestParam(value = "id", required = false) Long id,
             Principal principal,
             ModelMap modelMap) {
 
         Logger logger = LoggerFactory.getLogger(getClass());
-
+        LivreDePaieDTO livredePaieDTO = new LivreDePaieDTO();
         logger.info("🚀 Démarrage du calcul à l'envers");
 
         PeriodePaie periode = periodePaieService.findPeriodeactive();
@@ -605,8 +685,9 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
         }
 
         logger.info("🏁 Fin traitement - {} bulletins générés", resultats.size());
-
-        return resultats;
+        livredePaieDTO.setRows(resultats);
+        livredePaieDTO.setResult("success");
+        return livredePaieDTO;
     }
 
     private BigDecimal safe(BigDecimal val) {
@@ -781,7 +862,17 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 
         //final PageRequest page = new PageRequest(offset/10, limit, Direction.DESC, "id");
 		PageRequest page = PageRequest.of(offset / limit, limit, Direction.DESC, "id");
-		return bulletinPaieService.generateLivreDePaie(page);
+		
+		// Récupérer la période active pour la confirmation
+		PeriodePaie periodeActive = periodePaieService.findPeriodeactive();
+		if(periodeActive == null) {
+			BulletinPaieDTO err = new BulletinPaieDTO();
+			err.setResult("echec");
+			err.setMessage("Aucune période active trouvée");
+			return err;
+		}
+		
+		return bulletinPaieService.generateLivreDePaie(page,periodeActive.getId(),livredepaieList);
 	}
 
 
@@ -807,10 +898,10 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 			@RequestParam(value="offset", required=false) Integer offset, 
 			@RequestParam(value="search", required=false) String search) { 
 		if(offset == null) offset = 0;
-		if(limit == null) limit = 10;
-		PageRequest page = PageRequest.of(offset / limit, limit, Direction.DESC, "id");
+		if(limit == null) limit = 100;
+		PageRequest page = PageRequest.of(offset , limit, Direction.DESC, "id");
 		//final PageRequest page = new PageRequest(offset/10, limit, Direction.DESC, "id");
-		
+        maperiode = periodePaieService.findPeriodeactive();
 		
 		return bulletinPaieService.BulletinMoisCalculer(page, maperiode);
 		
@@ -1108,6 +1199,54 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 		}
 	}
 
+    public byte[] generatePayslipExcellPdf(BulletinPaie bulletinData,HttpServletRequest request) throws Exception {
+        logger.info("Début de la génération du PDF du bulletin de paie");
+
+        // Détection de l'environnement (local vs Linux)
+  ;
+
+            // Paramètres du rapport
+            //String reportsPathlogo = request.getSession().getServletContext().getRealPath( "/static/logo/");
+            List<Societe> malist=societeService.findtsmois();
+            String cheminComplet = malist.get(0).getUrlLogo();
+            String logoRep;
+            Path logoPath = null;
+            String cheminRelatif;
+
+            if (Files.exists(Paths.get("src/main/resources/static"))) {
+                // Mode développement : accès direct au répertoire des ressources
+                logoRep = "src/main/resources/";
+                cheminRelatif = cheminComplet.startsWith("/") ? cheminComplet.substring(1) : cheminComplet;
+                logger.info("Chemin relatif du logo : {}", cheminComplet);
+                logoPath = Paths.get(logoRep, cheminRelatif).toAbsolutePath();
+
+            } else {
+                logoRep = request.getSession().getServletContext().getRealPath( "/static");
+                cheminRelatif = cheminComplet.startsWith("/") ? cheminComplet.substring(6) : cheminComplet;
+                logger.info("Chemin relatif du logo : {}", cheminComplet);
+                logoPath = Paths.get(request.getSession().getServletContext().getRealPath(cheminRelatif)).toAbsolutePath();
+            }
+
+            if (!Files.exists(logoPath)) {
+                throw new FileNotFoundException("Le logo est introuvable : " + logoPath);
+            }
+
+            Map<String, Object> parameters = new HashMap<>();
+          //  parameters.put("SUBREPORT_DIR", subReportFile.getParent() + "/");
+            parameters.put("logo", logoPath.toString());
+
+            logger.info("Paramètres du rapport définis : {}", parameters);
+
+
+
+            // Génération du PDF
+            byte[] pdfData = "".getBytes();//JasperExportManager.exportReportToPdf(jasperPrint);
+            logger.info("PDF généré avec succès (taille : {} octets)", pdfData.length);
+
+            return pdfData;
+
+    }
+
 	public byte[] generateMoisBulllipPdf(List<BulletinPaie> bulletinData,HttpServletRequest request) throws Exception {
 		logger.info("Début de la génération du PDF du bulletin de paie");
 		logger.info("nombre de rapports utilisé : {}", bulletinData.size());
@@ -1276,6 +1415,20 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 					.contentLength(fileContent.length)
 					.body(fileContent);
 		}
+	}
+
+	@PostMapping("/save-excel-export")
+	public ResponseEntity<String> saveExcelExport(
+			@RequestParam("file") MultipartFile file,
+			@RequestParam("filename") String filename) throws IOException {
+
+		Path exportDir = Paths.get("exports");
+		Files.createDirectories(exportDir);
+		Path filePath = exportDir.resolve(filename);
+		try (OutputStream out = Files.newOutputStream(filePath)) {
+			out.write(file.getBytes());
+		}
+		return ResponseEntity.ok("Fichier sauvegardé : " + filePath.toAbsolutePath());
 	}
 
 
@@ -1830,11 +1983,11 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 				List<ImprimBulletinPaie> listImprimBulletinPaieEngt = new ArrayList<ImprimBulletinPaie>();
 				List<ImprimBulletinPaie> listImprimBulletinPaieIndem = new ArrayList<ImprimBulletinPaie>();
 	
-		if(bulletin.getId() != null) {
+		  if(bulletin.getId() != null) {
 
 			view = "bulletinpdf";
 			ImprimBulletinPaie imprimBulletinPaieSB = new ImprimBulletinPaie();
-			imprimBulletinPaieSB.setLibelle("SALAIRE DE BASE CATEGORIE");
+			imprimBulletinPaieSB.setLibelle("SALAIRE DE BASE CATEGORIEL");
 			imprimBulletinPaieSB.setTaux(bulletin.getJourTravail());
 			//calcul de la base
 			//	if(bulletin.getJourTravail() == 30){
@@ -2150,8 +2303,34 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 
         return null;
     }
-	
-	
+
+    @GetMapping("/rapport/{id}/pdf")
+    public ResponseEntity<byte[]> generateBulletinPdf(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+
+        try {
+
+            RapportBullDTO bulletinDto =
+                    bulletinPaieService.buildBulletinData(id);
+
+            byte[] pdf = carboneService.generateBulletinPdf(bulletinDto);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.setContentDispositionFormData(
+                    "filename",
+                    "Bulletin_Paie.pdf"
+            );
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(pdf);
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 	
 	@RequestMapping(value = "/bulletinMoisPersonnel", method = RequestMethod.GET)
 	public ResponseEntity<byte[]> postAfficherBulletin(ModelMap modelMap,@RequestParam(value="idbul", required=true) Long idCV, HttpServletRequest request) throws Exception {
@@ -2508,24 +2687,10 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 		
 		
 	}
-	
-//	@RequestMapping(value="/chargerbulletinparperiode", method = RequestMethod.GET)
-//	@ResponseStatus(HttpStatus.OK)
-//    public @ResponseBody BulletinPaieDTO chargerGratificationParPeriode(@RequestParam(value="id", required=true) Long id) {
-//		BulletinPaieDTO BulletinPaieDTO=new BulletinPaieDTO();
-//		List<BulletinPaie> bulletinPaieList = new ArrayList<BulletinPaie>();
-//		try {
-//			bulletinPaieList = bulletinPaieService.findBulletinByPeriodePaie(id);
-//			logger.info("success");
-//		} catch (Exception ex) {
-//			// TODO Auto-generated catch block
-//			ex.printStackTrace();
-//			logger.info("fail");
-//		}
-//		BulletinPaieDTO.setRows(bulletinPaieList);
-//		BulletinPaieDTO.setResult("succes");
-//		return BulletinPaieDTO ;
-//    }
+
+
+
+
 	@RequestMapping(value="/imprimerbulletinpaie", method = RequestMethod.GET)
     public ModelAndView imprimerBulletinGratification(@RequestParam(value="idbull", required=true) Long idbull, ModelAndView modelAndView){
  

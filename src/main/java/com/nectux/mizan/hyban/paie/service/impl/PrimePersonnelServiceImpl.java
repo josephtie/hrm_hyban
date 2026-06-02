@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 import com.nectux.mizan.hyban.paie.dto.PrimePersonnelDTO;
 import com.nectux.mizan.hyban.parametrages.repository.RubriqueRepository;
@@ -12,6 +13,8 @@ import com.nectux.mizan.hyban.paie.repository.PrimePersonnelRepository;
 import com.nectux.mizan.hyban.paie.service.EchelonnementService;
 import com.nectux.mizan.hyban.paie.service.PrimePersonnelService;
 import com.nectux.mizan.hyban.parametrages.repository.PeriodePaieRepository;
+import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
+import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.personnel.repository.ContratPersonnelRepository;
 import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
 import com.nectux.mizan.hyban.utils.Erreur;
@@ -83,7 +86,9 @@ public class PrimePersonnelServiceImpl implements PrimePersonnelService {
 //			if(idPers==null)
 //				primeperso.setContratPersonnel(null);
 //			else
-			primeperso.setContratPersonnel(contratPersonnelRepository.findByIdAndStatut(idCtrat, true));
+            Personnel currentPers= personnelRepository.findById(idCtrat).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + idPeriodDep));
+            Optional<ContratPersonnel> currentcontrat=contratPersonnelRepository.findTopByPersonnelIdAndStatutTrueOrderByIdDesc(idCtrat);
+            primeperso.setContratPersonnel(currentcontrat.get());
 
 			primeperso.setValeur(Math.toIntExact(valeur));
 
@@ -264,15 +269,175 @@ public class PrimePersonnelServiceImpl implements PrimePersonnelService {
 	
 	@Override
 	public PrimePersonnelDTO loadPrimePersonnel(Pageable pageable) {
-		// TODO Auto-generated method stub
-		return null;
+		PrimePersonnelDTO dto = new PrimePersonnelDTO();
+		try {
+			Page<PrimePersonnel> page = primePersonnelRepository.findAll(pageable);
+			dto.setRows(page.getContent());
+			dto.setTotal(page.getTotalElements());
+			dto.setResult("success");
+			dto.setStatus(true);
+		} catch (Exception ex) {
+			logger.error("Erreur loadPrimePersonnel", ex);
+			dto.setRows(new ArrayList<>());
+			dto.setTotal(0);
+			dto.setResult("error");
+			dto.setStatus(false);
+			dto.setMessage(ex.getMessage());
+		}
+		return dto;
 	}
+
 	@Override
 	public PrimePersonnelDTO loadPrimePersonnel(Pageable pageable, String search) {
-		// TODO Auto-generated method stub
-		return null;
+		PrimePersonnelDTO dto = new PrimePersonnelDTO();
+		try {
+			Page<PrimePersonnel> page;
+			if (search == null || search.trim().isEmpty()) {
+				page = primePersonnelRepository.findAll(pageable);
+			} else {
+				page = primePersonnelRepository.searchAll(search.trim(), pageable);
+			}
+			dto.setRows(page.getContent());
+			dto.setTotal(page.getTotalElements());
+			dto.setResult("success");
+			dto.setStatus(true);
+		} catch (Exception ex) {
+			logger.error("Erreur loadPrimePersonnel(search)", ex);
+			dto.setRows(new ArrayList<>());
+			dto.setTotal(0);
+			dto.setResult("error");
+			dto.setStatus(false);
+			dto.setMessage(ex.getMessage());
+		}
+		return dto;
 	}
-	@Override
+
+    @Override
+    public PrimePersonnelDTO savePrimeCollective(Long id, Double montantop, Long valeurop, Long idAbsence, Long idCtrat, Long id1, Long idPrime, Long idPersonnel) {
+        return null;
+    }
+
+    @Override
+    @Transactional
+    public PrimePersonnelDTO savePrimeCollectiveBatch(Long idPrime, Double montant, Long valeur,
+                                                       Long idPeriode, java.util.List<Long> idsPers) {
+        PrimePersonnelDTO dto = new PrimePersonnelDTO();
+        List<Erreur> erreurs = new ArrayList<>();
+
+        try {
+            // 1) Validations rapides
+            if (idPrime == null) {
+                Erreur e = new Erreur(); e.setCode(10);
+                e.setDescription("idPrime obligatoire"); e.setMessage("La rubrique (prime) est obligatoire");
+                erreurs.add(e);
+            }
+            if (idPeriode == null) {
+                Erreur e = new Erreur(); e.setCode(10);
+                e.setDescription("idPeriode obligatoire"); e.setMessage("La période est obligatoire");
+                erreurs.add(e);
+            }
+            if (montant == null) {
+                Erreur e = new Erreur(); e.setCode(10);
+                e.setDescription("montant obligatoire"); e.setMessage("Le montant est obligatoire");
+                erreurs.add(e);
+            }
+            if (idsPers == null || idsPers.isEmpty()) {
+                Erreur e = new Erreur(); e.setCode(10);
+                e.setDescription("idsPers vide"); e.setMessage("Aucun personnel ciblé");
+                erreurs.add(e);
+            }
+            if (!erreurs.isEmpty()) {
+                dto.setResult(false); dto.setStatus(false);
+                dto.setRows(new ArrayList<>()); dto.setTotal(0);
+                dto.setErrors(erreurs); dto.setMessage("Validation échouée");
+                return dto;
+            }
+
+            // 2) Charger UNE fois la prime et la période
+            var prime = primeRepository.findById(idPrime)
+                    .orElseThrow(() -> new EntityNotFoundException("Rubrique not found id=" + idPrime));
+            var periode = PeriodePaieRepository.findById(idPeriode)
+                    .orElseThrow(() -> new EntityNotFoundException("Periode not found id=" + idPeriode));
+
+            // 3) Charger TOUS les contrats actifs des personnels en UNE requête
+            var contrats = contratPersonnelRepository.findByPersonnelIdInAndStatut(idsPers, true);
+            if (contrats == null || contrats.isEmpty()) {
+                Erreur e = new Erreur(); e.setCode(11);
+                e.setDescription("Aucun contrat actif"); e.setMessage("Aucun contrat actif trouvé pour les personnels sélectionnés");
+                erreurs.add(e);
+                dto.setResult(false); dto.setStatus(false);
+                dto.setRows(new ArrayList<>()); dto.setTotal(0);
+                dto.setErrors(erreurs);
+                return dto;
+            }
+
+            // 4) Construire en mémoire la liste des PrimePersonnel
+            Date now = new Date();
+            BigDecimal montantBD = BigDecimal.valueOf(montant);
+            int valeurInt = valeur != null ? valeur.intValue() : 1;
+
+            List<PrimePersonnel> aSauver = new ArrayList<>(contrats.size());
+            for (var contrat : contrats) {
+                PrimePersonnel pp = new PrimePersonnel();
+                pp.setPrime(prime);
+                pp.setPeriode(periode);
+                pp.setContratPersonnel(contrat);
+                pp.setValeur(valeurInt);
+
+                // Calcul du montant comme dans saver()
+                if (prime.getTaux() != null && valeurInt > 0
+                        && contrat.getCategorie() != null
+                        && contrat.getCategorie().getSalaireDeBase() != null) {
+                    BigDecimal salaireHoraire = calculerTauxHoraire(contrat.getCategorie().getSalaireDeBase());
+                    pp.setMontant(BigDecimal.valueOf(valeurInt).multiply(
+                            salaireHoraire.add(salaireHoraire.multiply(prime.getTaux())
+                                    .divide(BigDecimal.valueOf(100)))));
+                } else if (valeurInt > 0) {
+                    pp.setMontant(BigDecimal.valueOf(valeurInt).multiply(montantBD));
+                } else {
+                    pp.setMontant(montantBD);
+                }
+                pp.setDateSaisie(now);
+                aSauver.add(pp);
+            }
+
+            // 5) UN SEUL appel saveAll → 1 seule transaction
+            Iterable<PrimePersonnel> saved = primePersonnelRepository.saveAll(aSauver);
+            List<PrimePersonnel> savedList = new ArrayList<>();
+            saved.forEach(savedList::add);
+
+            int demandes = idsPers.size();
+            int crees = savedList.size();
+            int ignores = demandes - crees;
+
+            dto.setResult(true);
+            dto.setStatus(true);
+            dto.setRows(savedList);
+            dto.setTotal(crees);
+            dto.setErrors(erreurs);
+            StringBuilder msg = new StringBuilder();
+            msg.append(crees).append(" prime(s) enregistrée(s) en lot");
+            if (ignores > 0) {
+                msg.append(" — ").append(ignores)
+                   .append(" personnel(s) ignoré(s) (pas de contrat actif)");
+            }
+            dto.setMessage(msg.toString());
+            logger.info(">>>>> PRIME COLLECTIVE BATCH OK: {}/{} créées", crees, demandes);
+            return dto;
+
+        } catch (Exception ex) {
+            logger.error("Erreur savePrimeCollectiveBatch", ex);
+            Erreur e = new Erreur(); e.setCode(20);
+            e.setDescription("exception capturee"); e.setMessage(ex.getMessage());
+            erreurs.add(e);
+            dto.setResult(false); dto.setStatus(false);
+            dto.setRows(new ArrayList<>()); dto.setTotal(0);
+            dto.setErrors(erreurs); dto.setMessage(ex.getMessage());
+            return dto;
+        }
+    }
+
+    @Override
 	public PrimePersonnelDTO listdesprimepersonnelMoisEnPrime(Pageable pageable,Long idPeriod,
 			Long idPers) {
 		PrimePersonnelDTO primepersonnelDTO = new PrimePersonnelDTO();

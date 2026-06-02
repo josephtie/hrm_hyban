@@ -16,7 +16,7 @@ public interface RubriqueService {
 	public RubriqueDTO saveRubriqueComplete(Long id, String code, String libelle, Integer etatImposition, 
 											String modeCalcul, Double valeurDef, Boolean cotisable, 
 											Boolean active, Boolean permanent, Boolean speciale, 
-											String description);
+											String description,String categorie,String typeRubrique);
 	
 	public RubriqueDTO delete(Long id);
 	

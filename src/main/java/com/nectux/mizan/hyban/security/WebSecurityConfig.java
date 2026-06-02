@@ -51,7 +51,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:*",
             "http://127.0.0.1:*",
-            "http://192.168.1.2:*",
+            "http://192.168.1.6:*",
             "http://frontend:*",
             "http://nginx:*"
         ));

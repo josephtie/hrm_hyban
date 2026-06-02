@@ -50,58 +50,55 @@ public class RubriqueRestController {
     @PostMapping("/enregistrer")
     public ResponseEntity<RubriqueDTO> saveRubrique(@RequestBody RubriqueRequest request) {
         try {
-            // Conversion du type (String) vers etatImposition (Integer)
-            Integer etatImposition = null;
-            if (request.getType() != null && !request.getType().isEmpty()) {
-                try {
-                    etatImposition = Integer.parseInt(request.getType());
-                } catch (NumberFormatException e) {
-                    // Si le type n'est pas un nombre, essayer de le convertir depuis le libellé
-                    String typeStr = request.getType().toUpperCase();
-                    switch (typeStr) {
-                        case "IMPOSABLE":
-                        case "1":
-                            etatImposition = 1;
-                            break;
-                        case "NON_IMPOSABLE":
-                        case "2":
-                            etatImposition = 2;
-                            break;
-                        case "IMPOSABLE_NON_IMPOSABLE":
-                        case "3":
-                            etatImposition = 3;
-                            break;
-                        case "RETENUE_MUTUELLE":
-                        case "4":
-                            etatImposition = 4;
-                            break;
-                        case "REGULARISATION":
-                        case "5":
-                            etatImposition = 5;
-                            break;
-                        case "RETENUE_SOCIALE":
-                        case "6":
-                            etatImposition = 6;
-                            break;
-                        default:
-                            etatImposition = 1; // Valeur par défaut
-                    }
+            logger.info("Enregistrement rubrique avec les nouvelles données: {}", request);
+            
+            // Conversion du typeImposition vers etatImposition (Integer)
+            Integer etatImposition = 1; // Valeur par défaut
+            if (request.getTypeImposition() != null && !request.getTypeImposition().isEmpty()) {
+                String typeImpos = request.getTypeImposition().toUpperCase();
+                switch (typeImpos) {
+                    case "IMPOSABLE":
+                    case "1":
+                        etatImposition = 1;
+                        break;
+                    case "NON_IMPOSABLE":
+                    case "2":
+                        etatImposition = 2;
+                        break;
+                    case "IMPOSABLE_NON_IMPOSABLE":
+                    case "3":
+                        etatImposition = 3;
+                        break;
+                    case "RETENUE_MUTUELLE":
+                    case "4":
+                        etatImposition = 4;
+                        break;
+                    case "REGULARISATION":
+                    case "5":
+                        etatImposition = 5;
+                        break;
+                    case "RETENUE_SOCIALE":
+                    case "6":
+                        etatImposition = 6;
+                        break;
+                    default:
+                        etatImposition = 1; // Valeur par défaut
                 }
             }
             
-            // Utilisation de la nouvelle méthode complète
+            // Utilisation de la méthode complète avec la signature correcte (10 paramètres)
             RubriqueDTO result = rubriqueService.saveRubriqueComplete(
                 request.getIdR(),
                 request.getCode(),
                 request.getLibelle(),
                 etatImposition,
-                request.getFormule(), // modeCalcul
-                request.getMontant() != null ? request.getMontant() : request.getValeurDef(), // valeurDef
+                request.getModeCalcul(),
+                request.getValeurDef(),
                 request.getCotisable(),
                 request.getActive(),
                 request.getPermanent(),
                 request.getSpeciale(),
-                request.getDescription()
+                request.getDescription(),request.getCategorie(),request.getTypeRubrique()
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -121,12 +118,12 @@ public class RubriqueRestController {
             
             // Conversion du type (String) vers etatImposition (Integer)
             Integer etatImposition = null;
-            if (request.getType() != null && !request.getType().isEmpty()) {
+            if (request.getTypeImposition() != null && !request.getTypeImposition().isEmpty()) {
                 try {
-                    etatImposition = Integer.parseInt(request.getType());
+                    etatImposition = Integer.parseInt(request.getTypeImposition());
                 } catch (NumberFormatException e) {
                     // Si le type n'est pas un nombre, essayer de le convertir depuis le libellé
-                    String typeStr = request.getType().toUpperCase();
+                    String typeStr = request.getTypeImposition().toUpperCase();
                     switch (typeStr) {
                         case "IMPOSABLE":
                         case "1":
@@ -164,13 +161,15 @@ public class RubriqueRestController {
                 request.getCode(),
                 request.getLibelle(),
                 etatImposition,
-                request.getFormule(), // modeCalcul
+                request.getModeCalcul(), // modeCalcul
                 request.getMontant() != null ? request.getMontant() : request.getValeurDef(), // valeurDef
                 request.getCotisable(),
                 request.getActive(),
                 request.getPermanent(),
                 request.getSpeciale(),
-                request.getDescription()
+                request.getDescription(),
+                    request.getCategorie(),
+                    request.getTypeRubrique()
             );
             
             logger.info("Rubrique modifiée avec succès: ID={}, Code={}, Libelle={}", 

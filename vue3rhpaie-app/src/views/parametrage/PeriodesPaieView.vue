@@ -222,13 +222,10 @@
           <el-table
             :data="filteredPeriodes"
             style="width: 100%"
-            @selection-change="handleSelectionChange"
             class="enhanced-table"
             :row-class-name="tableRowClassName"
           >
-            <el-table-column type="selection" width="55" />
-            
-            <el-table-column prop="periode" label="Période" width="200" sortable>
+            <el-table-column prop="periode" label="Période" min-width="260" sortable>
               <template #default="{ row }">
                 <div class="periode-info">
                   <el-icon class="periode-icon"><Calendar /></el-icon>
@@ -241,7 +238,7 @@
               </template>
             </el-table-column>
             
-            <el-table-column prop="dateDebut" label="Date d'ouverture" width="140" sortable>
+            <el-table-column prop="dateDebut" label="Date d'ouverture" min-width="170" sortable>
               <template #default="{ row }">
                 <div class="date-info">
                   <el-icon><Clock /></el-icon>
@@ -250,7 +247,7 @@
               </template>
             </el-table-column>
             
-            <el-table-column prop="dateFin" label="Date de fin" width="140" sortable>
+            <el-table-column prop="dateFin" label="Date de fin" min-width="160" sortable>
               <template #default="{ row }">
                 <div class="date-info">
                   <el-icon><Clock /></el-icon>
@@ -259,7 +256,7 @@
               </template>
             </el-table-column>
             
-            <el-table-column prop="duree" label="Durée" width="80" sortable>
+            <el-table-column prop="duree" label="Durée" min-width="110" sortable>
               <template #default="{ row }">
                 <el-tag type="info" size="small" class="enhanced-tag">
                   {{ calculateDuree(row.dateDebut, row.dateFin) }}j
@@ -267,7 +264,7 @@
               </template>
             </el-table-column>
             
-            <el-table-column prop="statut" label="Statut" width="120" sortable>
+            <el-table-column prop="statut" label="Statut" min-width="150" sortable>
               <template #default="{ row }">
                 <el-tag :type="row.statut === 'OUVERT' ? 'success' : 'danger'" size="large" class="enhanced-tag">
                   <el-icon style="margin-right: 4px;">
@@ -279,18 +276,9 @@
               </template>
             </el-table-column>
             
-            <el-table-column label="Actions" width="180" fixed="right">
+            <el-table-column label="Options" width="130" fixed="right" align="center">
               <template #default="{ row }">
                 <div class="action-buttons">
-                  <el-button
-                    size="small"
-                    @click="editPeriode(row)"
-                    type="primary"
-                    class="enhanced-button btn-action"
-                    :disabled="row.statut === 'CLOTURE'"
-                  >
-                    <el-icon><Edit /></el-icon>
-                  </el-button>
                   <el-button
                     size="small"
                     @click="cloturerPeriode(row)"
@@ -299,15 +287,7 @@
                     :disabled="row.statut === 'CLOTURE'"
                   >
                     <el-icon><Lock /></el-icon>
-                  </el-button>
-                  <el-button
-                    size="small"
-                    @click="deletePeriode(row)"
-                    type="danger"
-                    class="enhanced-button btn-action"
-                    :disabled="row.statut === 'CLOTURE'"
-                  >
-                    <el-icon><Delete /></el-icon>
+                    Clôturer
                   </el-button>
                 </div>
               </template>
@@ -380,7 +360,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Plus, Edit, Delete, Search, Refresh, Close, Calendar, Clock,
+  Plus, Search, Refresh, Close, Calendar, Clock,
   Lock, Unlock, WarningFilled
 } from '@element-plus/icons-vue'
 import EnhancedForm from '@/components/common/EnhancedForm.vue'

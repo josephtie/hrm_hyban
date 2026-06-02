@@ -1,5 +1,7 @@
 package com.nectux.mizan.hyban.paie.web;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -11,9 +13,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ContentDisposition;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
 import com.nectux.mizan.hyban.common.dto.EchelonnementRequest;
 import com.nectux.mizan.hyban.common.dto.EchelonnementResponse;
@@ -35,6 +44,7 @@ public class EchelonnementRestController {
 
     // @Autowired
     // private UtilisateurService userService;
+
     @Autowired
     private PeriodePaieService periodePaieService;
     @Autowired
@@ -52,13 +62,21 @@ public class EchelonnementRestController {
     public ResponseEntity<EchelonnementResponse<?>> getEchelonnementList(
             @RequestParam(defaultValue = "10") Integer limit,
             @RequestParam(defaultValue = "0") Integer offset,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String matricule,
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = false) Boolean statut,
+            @RequestParam(required = false) Long periodePaieId) {
         
         try {
-            PageRequest page = PageRequest.of(offset / 10, limit, Direction.DESC, "id");
+            PageRequest page = PageRequest.of(offset , limit, Direction.DESC, "id");
             EchelonnementDTO echelonnDTO;
             
-            if (search == null || search.trim().isEmpty()) {
+            // Utiliser les nouveaux filtres avancés
+            if (hasAdvancedFilters(matricule, nom, prenom, statut, periodePaieId)) {
+                echelonnDTO = echelonnementService.loadEchelonnementWithFilters(page, matricule, nom, prenom, statut, periodePaieId);
+            } else if (search == null || search.trim().isEmpty()) {
                 echelonnDTO = echelonnementService.loadEchelonnement(page);
             } else {
                 echelonnDTO = echelonnementService.loadEchelonnement(page, search);
@@ -77,6 +95,15 @@ public class EchelonnementRestController {
             response.setMessage(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    }
+    
+    // Méthode utilitaire pour vérifier si des filtres avancés sont appliqués
+    private boolean hasAdvancedFilters(String matricule, String nom, String prenom, Boolean statut, Long periodePaieId) {
+        return (matricule != null && !matricule.trim().isEmpty()) ||
+               (nom != null && !nom.trim().isEmpty()) ||
+               (prenom != null && !prenom.trim().isEmpty()) ||
+               statut != null ||
+               periodePaieId != null;
     }
 
     @PostMapping("/update")
@@ -127,6 +154,72 @@ public class EchelonnementRestController {
             return ResponseEntity.ok(listPeriodepaie);
         } catch (Exception e) {
             logger.error("Erreur lors de la récupération des périodes", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportEcheanciers(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String matricule,
+            @RequestParam(required = false) String nom,
+            @RequestParam(required = false) String prenom,
+            @RequestParam(required = false) Boolean statut,
+            @RequestParam(required = false) Long periodePaieId,
+            HttpServletResponse response) throws IOException {
+        try {
+            // Récupérer tous les échéanciers selon les critères de recherche avancés
+            List<Echelonnement> echelonnements;
+            if (hasAdvancedFilters(matricule, nom, prenom, statut, periodePaieId)) {
+                echelonnements = echelonnementService.findAllWithFilters(matricule, nom, prenom, statut, periodePaieId);
+            } else if (search == null || search.trim().isEmpty()) {
+                echelonnements = echelonnementRepository.findAll();
+            } else {
+                // Utiliser les nouvelles méthodes de recherche pour le paramètre search
+                echelonnements = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(search);
+            }
+
+            // Créer le contenu CSV
+            StringBuilder csvContent = new StringBuilder();
+            
+            // En-têtes CSV
+            csvContent.append("ID,Personnel,Matricule,Type Prêt,Montant Prêt,Montant Échéance,Période,Statut,Date Échéance,Montant Payé,Reste à Payer\n");
+            
+            // Données
+            for (Echelonnement ech : echelonnements) {
+                csvContent.append(ech.getId()).append(",");
+                csvContent.append(ech.getPretPersonnel() != null && ech.getPretPersonnel().getPersonnel() != null ? 
+                    ech.getPretPersonnel().getPersonnel().getNomComplet() : "").append(",");
+                csvContent.append(ech.getPretPersonnel() != null && ech.getPretPersonnel().getPersonnel() != null ? 
+                    ech.getPretPersonnel().getPersonnel().getMatricule() : "").append(",");
+                csvContent.append(ech.getPretPersonnel() != null && ech.getPretPersonnel().getPret() != null ? 
+                    ech.getPretPersonnel().getPret().getLibelle() : "").append(",");
+                csvContent.append(ech.getPretPersonnel() != null ? ech.getPretPersonnel().getMontantPret() : "").append(",");
+                csvContent.append(ech.getMontant()).append(",");
+                csvContent.append(ech.getPeriodePaie() != null ? ech.getPeriodePaie().getAffiche() : "").append(",");
+                csvContent.append(ech.getPaye() != null && ech.getPaye() ? "Payé" : "Non payé").append(",");
+                csvContent.append(ech.getDateRemboursement() != null ? ech.getDateRemboursement() : "").append(",");
+                csvContent.append(ech.getPaye() != null && ech.getPaye() ? ech.getMontant() : 0).append(",");
+                csvContent.append(ech.getPaye() != null && ech.getPaye() ? 0 : ech.getMontant()).append("\n");
+            }
+
+            // Convertir en bytes
+            byte[] csvBytes = csvContent.toString().getBytes("UTF-8");
+
+            // Configurer les headers HTTP pour le download
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDisposition(ContentDisposition.builder("attachment")
+                .filename("echeanciers_export_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".csv")
+                .build());
+            headers.setContentLength(csvBytes.length);
+
+            return ResponseEntity.ok()
+                .headers(headers)
+                .body(csvBytes);
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de l'export des échéanciers", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

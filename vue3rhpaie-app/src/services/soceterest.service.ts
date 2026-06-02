@@ -1,4 +1,4 @@
-import { api } from './api'
+﻿import { api } from './api'
 import type { ApiResponse } from '@/types/auth'
 
 // Interface basée sur SocieteVueDTO du backend
@@ -186,3 +186,4 @@ class SocieteRestService {
 
 export const soceterestService = new SocieteRestService()
 export default soceterestService
+

@@ -17,12 +17,19 @@ export interface UserRepresentationDTO {
 
 // Interface exacte basée sur CreateUserRequest du backend
 export interface CreateUserRequest {
+  id?: string | number
   username: string
   email: string
-  firstName: string
-  lastName: string
+  firstName?: string
+  lastName?: string
+  nomComplet?: string
   password?: string
-  roles: string[]
+  roles?: string[]
+  dateNaissance?: string
+  telephone?: string
+  adresse?: string
+  idRole?: number
+  actif?: boolean
 }
 
 export interface UtilisateurRestDto {

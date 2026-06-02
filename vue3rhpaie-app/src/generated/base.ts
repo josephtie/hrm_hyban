@@ -19,7 +19,8 @@ import type { Configuration } from './configuration';
 import type { AxiosPromise, AxiosInstance, RawAxiosRequestConfig } from 'axios';
 import globalAxios from 'axios';
 
-export const BASE_PATH = 'http://192.168.1.3:7200'.replace(/\/+$/, "");
+import { API_CONFIG } from '@/config/api'
+export const BASE_PATH = API_CONFIG.API_BASE_URL.replace(/\/+$/, "");
 
 export const COLLECTION_FORMATS = {
     csv: ",",

@@ -24,5 +24,10 @@ public interface EchelonnementService {
 	public EchelonnementDTO loadEchelonnement(Pageable pageable);
 	
 	public EchelonnementDTO loadEchelonnement(Pageable pageable, String search);
+	
+	// Nouvelles méthodes pour les filtres avancés
+	public EchelonnementDTO loadEchelonnementWithFilters(Pageable pageable, String matricule, String nom, String prenom, Boolean statut, Long periodePaieId);
+	
+	public java.util.List<Echelonnement> findAllWithFilters(String matricule, String nom, String prenom, Boolean statut, Long periodePaieId);
 
 }

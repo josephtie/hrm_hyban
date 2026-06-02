@@ -1,0 +1,124 @@
+version: '3.8'
+
+services:
+  postgres-hrm:
+    image: postgres:15-alpine
+    container_name: hrm-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_HRM_DB:-hyban_db_v1}
+      POSTGRES_USER: ${POSTGRES_HRM_USER:-directus}
+      POSTGRES_PASSWORD: ${POSTGRES_HRM_PASSWORD:-directus}
+    volumes:
+      - postgres_hrm_data:/var/lib/postgresql/data
+    networks:
+      - hrm_hyban_network
+    restart: unless-stopped
+
+  postgres-keycloak:
+    image: postgres:15-alpine
+    container_name: keycloak-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_KEYCLOAK_DB:-keycloak_db}
+      POSTGRES_USER: ${POSTGRES_KEYCLOAK_USER:-keycloak}
+      POSTGRES_PASSWORD: ${POSTGRES_KEYCLOAK_PASSWORD:-keycloak}
+    volumes:
+      - postgres_keycloak_data:/var/lib/postgresql/data
+    networks:
+      - hrm_hyban_network
+    restart: unless-stopped
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0.6
+    container_name: hyban-keycloak
+    command: start-dev
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/${POSTGRES_KEYCLOAK_DB:-keycloak_db}
+      KC_DB_USERNAME: ${POSTGRES_KEYCLOAK_USER:-keycloak}
+      KC_DB_PASSWORD: ${POSTGRES_KEYCLOAK_PASSWORD:-keycloak}
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_PROXY_HEADERS: xforwarded
+    ports:
+      - "${KEYCLOAK_PUBLIC_PORT:-8083}:8080"
+    depends_on:
+      - postgres-keycloak
+    networks:
+      - hrm_hyban_network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: hyban-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-hrm:5432/${POSTGRES_HRM_DB:-hyban_db_v1}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_HRM_USER:-directus}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_HRM_PASSWORD:-directus}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${BACKEND_KEYCLOAK_ISSUER_URI:-http://keycloak:8080/realms/hyban}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
+      SERVER_PORT: 7200
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx768m}
+    ports:
+      - "${BACKEND_PUBLIC_PORT:-7200}:7200"
+    depends_on:
+      - postgres-hrm
+      - keycloak
+    networks:
+      - hrm_hyban_network
+    volumes:
+      - uploads_data:/app/uploads
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./vue3rhpaie-app
+      dockerfile: Dockerfile.portainer
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:7200}
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8083}
+        VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-hyban}
+        VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-hrm_frontend}
+        VITE_API_TIMEOUT: ${VITE_API_TIMEOUT:-30000}
+    container_name: hyban-frontend
+    ports:
+      - "${FRONTEND_PUBLIC_PORT:-7153}:80"
+    depends_on:
+      - backend
+    networks:
+      - hrm_hyban_network
+    restart: unless-stopped
+
+  carbone:
+    image: carbone/carbone-ee:latest-fonts
+    container_name: carbone-server
+    environment:
+      CARBONE_EE_LICENSE: ${CARBONE_EE_LICENSE:-}
+      CARBONE_EE_STUDIO: ${CARBONE_EE_STUDIO:-true}
+      CARBONE_LOG_LEVEL: ${CARBONE_LOG_LEVEL:-info}
+      CARBONE_TEMPLATES_DIR: /app/templates
+      CARBONE_RENDER_TIMEOUT: ${CARBONE_RENDER_TIMEOUT:-60000}
+    ports:
+      - "${CARBONE_PUBLIC_PORT:-4000}:4000"
+    volumes:
+      - carbone_templates:/app/templates
+      - carbone_reports:/app/reports
+    networks:
+      - hrm_hyban_network
+    restart: unless-stopped
+
+volumes:
+  postgres_hrm_data:
+  postgres_keycloak_data:
+  uploads_data:
+  carbone_templates:
+  carbone_reports:
+
+networks:
+  hrm_hyban_network:
+    driver: bridge

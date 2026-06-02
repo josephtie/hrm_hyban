@@ -28,7 +28,7 @@
       <div class="filters-content">
         <el-form :model="filters" inline>
           <el-form-item label="Période">
-            <el-select v-model="filters.period" placeholder="Sélectionner la période" style="width: 200px" clearable>
+            <el-select v-model="filters.period" placeholder="Sélectionner la période" style="width: 200px" clearable @change="searchBulletins">
               <el-option
                 v-for="period in periods"
                 :key="period.value"
@@ -41,10 +41,12 @@
           <el-form-item label="Recherche">
             <el-input
               v-model="filters.search"
-              placeholder="Zone de recherche"
+              placeholder="Rechercher (matricule, nom, prénom)..."
               prefix-icon="Search"
               style="width: 250px"
               clearable
+              @keyup.enter="searchBulletins"
+              @clear="searchBulletins"
             />
           </el-form-item>
           
@@ -91,13 +93,8 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="Statut" prop="statut" width="100">
-            <template #default="{ row }">
-              <el-tag :type="getStatusColor(row.statut)" size="small">
-                {{ getStatusLabel(row.statut) }}
-              </el-tag>
-            </template>
-          </el-table-column>
+          <el-table-column label="Statut trvail" prop="statutTravail" width="120" align="center" />
+          <el-table-column label="Nb Jours Trv" prop="nbJoursTravail" width="120" align="center" sortable="custom" />
 
           <el-table-column label="Nb Parts" prop="nombrePart" width="100" align="right" sortable="custom" />
 
@@ -255,15 +252,21 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="Avance & Acompte" prop="avanceAcompte" width="140" align="right" sortable="custom">
+          <el-table-column label="Avance & Acompte" prop="avceAcpte" width="150" align="right" sortable="custom">
             <template #default="{ row }">
-              {{ formatCurrency(row.avanceAcompte) }}
+              {{ formatCurrency(row.avceAcpte) }}
             </template>
           </el-table-column>
 
-          <el-table-column label="Prêt" prop="pret" width="100" align="right" sortable="custom">
+          <el-table-column label="Pret" prop="pretAlios" width="120" align="right" sortable="custom">
             <template #default="{ row }">
-              {{ formatCurrency(row.pret) }}
+              {{ formatCurrency(row.pretAlios) }}
+            </template>
+          </el-table-column>
+
+          <el-table-column label="Net a reguler" prop="netRegulPayer" width="140" align="right" sortable="custom">
+            <template #default="{ row }">
+              {{ formatCurrency(row.netRegulPayer) }}
             </template>
           </el-table-column>
 
@@ -363,31 +366,9 @@
 
           <el-table-column label="Actions" width="120" fixed="right">
             <template #default="{ row }">
-              <el-button-group>
-                <el-button type="primary" size="small" @click="viewBulletin(row)">
-                  <el-icon><View /></el-icon>
-                </el-button>
-                <el-button type="success" size="small" @click="printBulletin(row)">
-                  <el-icon><Printer /></el-icon>
-                </el-button>
-                <el-dropdown trigger="click">
-                  <el-button type="info" size="small">
-                    <el-icon><MoreFilled /></el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click="exportBulletin(row)">
-                        <el-icon><Download /></el-icon>
-                        Exporter
-                      </el-dropdown-item>
-                      <el-dropdown-item divided @click="deleteBulletin(row)">
-                        <el-icon><Delete /></el-icon>
-                        Supprimer
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </el-button-group>
+              <el-button type="primary" size="small" @click="printBulletin(row)">
+                <el-icon><Printer /></el-icon>
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -398,7 +379,7 @@
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :page-sizes="[20, 50, 100, 200, 500, 2000]"
-            :total="filteredBulletins.length"
+            :total="totalBulletins"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -443,17 +424,20 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElLoading, ElMessage } from 'element-plus'
 import {
-  FolderOpened, Plus, Download, Search, View, Printer, 
-  MoreFilled, Delete
+  FolderOpened, Plus, Download, Search, Printer
 } from '@element-plus/icons-vue'
+import { createAuthenticatedApi } from '@/services/api'
+import livrePaieService from '@/services/livrepaie.service'
 
 interface Bulletin {
   id: number
   matricule: string
   nomComplet: string
   statut: string
+  statutTravail: string
+  nbJoursTravail: number
   nombrePart: number
   anciennete: string
   salaireBase: number
@@ -467,8 +451,10 @@ interface Bulletin {
   retenueFiscale: number
   baseCnps: number
   cnps: number
-  avanceAcompte: number
-  pret: number
+  avceAcpte: number
+  pretAlios: number
+  regularisation: number
+  netRegulPayer: number
   totalRetenue: number
   netAPayer: number
   totalBrut: number
@@ -500,125 +486,36 @@ interface Personnel {
 
 // Données réactives
 const loading = ref(false)
+const api = createAuthenticatedApi()
 const showNewModal = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(20)
 const sortBy = ref('')
 const sortOrder = ref<'asc' | 'desc'>('asc')
 const selectedBulletins = ref<Bulletin[]>([])
+const totalBulletins = ref(0)
 
 const filters = reactive({
-  period: '',
+  period: null as number | null,
   search: ''
 })
 
 const newForm = reactive({
-  period: '',
+  period: null as number | null,
   personnelId: 0
 })
 
-// Données mockées
-const bulletinsData = ref<Bulletin[]>([
-  {
-    id: 1,
-    matricule: 'EMP001',
-    nomComplet: 'Kouadio Jean',
-    statut: 'actif',
-    nombrePart: 2,
-    anciennete: '5 ans',
-    salaireBase: 500000,
-    sursalaire: 50000,
-    primeAnciennete: 25000,
-    indemniteLogement: 30000,
-    brutImposable: 575000,
-    its: 57500,
-    cn: 4500,
-    igr: 86000,
-    retenueFiscale: 86000,
-    baseCnps: 550000,
-    cnps: 45000,
-    avanceAcompte: 0,
-    pret: 10000,
-    totalRetenue: 188500,
-    netAPayer: 425000,
-    totalBrut: 605000,
-    is: 5000,
-    ta: 2000,
-    fpc: 1500,
-    prestationFamiliale: 8000,
-    accidentTravail: 3000,
-    retraite: 55000,
-    totalPatronal: 182500,
-    totalMasseSalariale: 787500,
-    indemniteTransportImp: 15000,
-    autreIndemImposable: 5000,
-    indemniteRepresentation: 10000,
-    indemniteTransport: 20000,
-    brutNonImposable: 35000
-  },
-  {
-    id: 2,
-    matricule: 'EMP002',
-    nomComplet: 'Touré Aminata',
-    statut: 'actif',
-    nombrePart: 1,
-    anciennete: '3 ans',
-    salaireBase: 350000,
-    sursalaire: 0,
-    primeAnciennete: 15000,
-    indemniteLogement: 25000,
-    brutImposable: 365000,
-    its: 36500,
-    cn: 3150,
-    igr: 55000,
-    retenueFiscale: 55000,
-    baseCnps: 385000,
-    cnps: 31500,
-    avanceAcompte: 5000,
-    pret: 0,
-    totalRetenue: 145000,
-    netAPayer: 245000,
-    totalBrut: 390000,
-    is: 3000,
-    ta: 1200,
-    fpc: 900,
-    prestationFamiliale: 4000,
-    accidentTravail: 2000,
-    retraite: 38500,
-    totalPatronal: 127500,
-    totalMasseSalariale: 517500,
-    indemniteTransportImp: 12000,
-    autreIndemImposable: 3000,
-    indemniteRepresentation: 8000,
-    indemniteTransport: 15000,
-    brutNonImposable: 23000
-  }
-])
+const bulletinsData = ref<Bulletin[]>([])
 
-const primesImposables = ref<Prime[]>([
-  { id: 1, libelle: 'Prime de risque' },
-  { id: 2, libelle: 'Prime de panier' }
-])
+const primesImposables = ref<Prime[]>([])
 
-const primesImposablesNon = ref<Prime[]>([
-  { id: 3, libelle: 'Prime de transport' },
-  { id: 4, libelle: 'Indemnité de fonction' }
-])
+const primesImposablesNon = ref<Prime[]>([])
 
-const primesNonImposables = ref<Prime[]>([
-  { id: 5, libelle: 'Prime de logement' },
-  { id: 6, libelle: 'Prime familiale' }
-])
+const primesNonImposables = ref<Prime[]>([])
 
-const primesMutuelles = ref<Prime[]>([
-  { id: 7, libelle: 'Mutuelle santé' },
-  { id: 8, libelle: 'Mutuelle retraite' }
-])
+const primesMutuelles = ref<Prime[]>([])
 
-const primesGains = ref<Prime[]>([
-  { id: 9, libelle: 'Prime exceptionnelle' },
-  { id: 10, libelle: 'Bonus performance' }
-])
+const primesGains = ref<Prime[]>([])
 
 const personnels = ref<Personnel[]>([
   { id: 1, nomComplet: 'Kouadio Jean' },
@@ -626,41 +523,122 @@ const personnels = ref<Personnel[]>([
   { id: 3, nomComplet: 'Soro Mohamed' }
 ])
 
-const periods = ref([
-  { value: '2024-01', label: 'Janvier 2024' },
-  { value: '2024-02', label: 'Février 2024' },
-  { value: '2024-03', label: 'Mars 2024' },
-  { value: '2024-04', label: 'Avril 2024' }
-])
+const periods = ref<Array<{ value: number; label: string }>>([])
 
 // Computed properties
 const filteredBulletins = computed(() => {
-  let filtered = bulletinsData.value
-
-  if (filters.period) {
-    filtered = filtered.filter(b => b.periode === filters.period)
-  }
-
-  if (filters.search) {
-    const query = filters.search.toLowerCase()
-    filtered = filtered.filter(b => 
-      b.nomComplet.toLowerCase().includes(query) ||
-      b.matricule.toLowerCase().includes(query)
-    )
-  }
-
-  return filtered
+  return bulletinsData.value
 })
 
-const paginatedBulletins = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return filteredBulletins.value.slice(start, end)
-})
+const paginatedBulletins = computed(() => filteredBulletins.value)
 
 const totalNet = computed(() => {
   return filteredBulletins.value.reduce((sum, b) => sum + b.netAPayer, 0)
 })
+
+const toNumber = (value: any, fallback = 0): number => {
+  const parsed = Number(value ?? fallback)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+const resolvePersonnel = (row: any) => row?.contratPersonnel?.personnel || row?.personnel || {}
+
+const extractPrimeMeta = (primeRow: any): Prime | null => {
+  const id = toNumber(primeRow?.prime?.id ?? primeRow?.rubrique?.id ?? primeRow?.idPrime ?? primeRow?.id)
+  if (!id) return null
+  return {
+    id,
+    libelle: String(primeRow?.prime?.libelle ?? primeRow?.rubrique?.libelle ?? primeRow?.libelle ?? `Prime ${id}`)
+  }
+}
+
+const applyPrimeValues = (target: Bulletin, primeRows: any, prefix: 'prime' | 'primeI' | 'rubriq' | 'primeM' | 'primeG') => {
+  if (!Array.isArray(primeRows)) return
+  for (const primeRow of primeRows) {
+    const meta = extractPrimeMeta(primeRow)
+    if (!meta) continue
+    target[`${prefix}${meta.id}`] = toNumber(primeRow?.montant ?? primeRow?.valeur ?? primeRow?.mtmontant)
+  }
+}
+
+const mergePrimeColumns = (target: typeof primesImposables, rows: any[], resolvers: Array<(row: any) => any[]>) => {
+  const map = new Map<number, Prime>()
+  for (const col of target.value) map.set(col.id, col)
+  for (const row of rows) {
+    for (const resolve of resolvers) {
+      const list = resolve(row)
+      if (!Array.isArray(list)) continue
+      for (const item of list) {
+        const meta = extractPrimeMeta(item)
+        if (meta && !map.has(meta.id)) map.set(meta.id, meta)
+      }
+    }
+  }
+  target.value = Array.from(map.values())
+}
+
+const mapBulletinRow = (row: any): Bulletin => {
+  const personnel = resolvePersonnel(row)
+  const matricule = personnel.matricule || row.matricule || ''
+  const nomComplet = personnel.nomComplet
+    || `${personnel.prenom || ''} ${personnel.nom || ''}`.trim()
+    || row.nomPrenom
+    || ''
+
+  const its = toNumber(row.its)
+  const retenueFiscale = toNumber(row.igr ?? row.retenueFiscale)
+  const cnps = toNumber(row.cnps ?? row.cn)
+
+  const mapped = {
+    id: toNumber(row.id ?? personnel.id),
+    matricule,
+    nomComplet,
+    statut: personnel.enSommeil === true ? 'sommeil' : 'actif',
+    statutTravail: personnel.statfonct ?? '',
+    nbJoursTravail: toNumber(row.jourTravail ?? row.jourtravail, 30),
+    nombrePart: toNumber(row.nbrepart ?? row.nombrePart ?? personnel.nombrePart),
+    anciennete: row.anciennete ?? '',
+    salaireBase: toNumber(row.salairbase ?? row.salaireBase),
+    sursalaire: toNumber(row.sursalaire),
+    primeAnciennete: toNumber(row.primeanciennete ?? row.primeAnciennete),
+    indemniteLogement: toNumber(row.indemnitelogement ?? row.indemniteLogement),
+    brutImposable: toNumber(row.brutimposable ?? row.brutImposable),
+    its,
+    cn: toNumber(row.cn),
+    igr: toNumber(row.igr),
+    retenueFiscale,
+    baseCnps: toNumber(row.basecnps ?? row.baseCnps),
+    cnps,
+    avceAcpte: toNumber(row.avceAcpte ?? row.avanceetacompte),
+    pretAlios: toNumber(row.pretAlios ?? row.pretaloes),
+    regularisation: toNumber(row.regularisation),
+    netRegulPayer: toNumber(row.netRegulPayer ?? row.netRegulpayer),
+    totalRetenue: toNumber(row.totalretenue ?? row.totalRetenue, its + retenueFiscale + cnps),
+    netAPayer: toNumber(row.netapayer ?? row.netAPayer),
+    totalBrut: toNumber(row.totalbrut ?? row.totalBrut),
+    is: toNumber(row.is ?? row.impotSalaire),
+    ta: toNumber(row.ta),
+    fpc: toNumber(row.fpc),
+    prestationFamiliale: toNumber(row.prestationFamiliale),
+    accidentTravail: toNumber(row.accidentTravail),
+    retraite: toNumber(row.retraite),
+    totalPatronal: toNumber(row.totalpatronal ?? row.totalPatronal),
+    totalMasseSalariale: toNumber(row.totalmassesalarial ?? row.totalMasseSalariale),
+    indemniteTransportImp: toNumber(row.indemnitetransportimp ?? row.indemniteTransportImp),
+    autreIndemImposable: toNumber(row.autreindemimposable ?? row.autreIndemImposable),
+    indemniteRepresentation: toNumber(row.indemniterepresentation ?? row.indemniteRepresentation),
+    indemniteTransport: toNumber(row.indemnitetransport ?? row.indemniteTransport),
+    brutNonImposable: toNumber(row.brutnonimposable ?? row.brutNonImposable)
+  } as Bulletin
+
+  applyPrimeValues(mapped, row?.listIndemniteBrut ?? row?.listIndemBrut, 'prime')
+  applyPrimeValues(mapped, row?.listIndemniteNonImp ?? row?.listIndemBrutNonImp, 'primeI')
+  applyPrimeValues(mapped, row?.listIndemniteNonImp ?? row?.listIndemBrutNonImp, 'rubriq')
+  applyPrimeValues(mapped, row?.listRetenueMutuellt ?? row?.listRetenueMutuelle, 'primeM')
+  applyPrimeValues(mapped, row?.listGainsNet ?? row?.listPrimeGains, 'primeG')
+
+  return mapped
+}
 
 // Méthodes
 const formatCurrency = (amount: number) => {
@@ -687,55 +665,141 @@ const handleSortChange = ({ prop, order }: { prop: string; order: string | null 
 const handleSizeChange = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
+  loadBulletins()
 }
 
 const handleCurrentChange = (page: number) => {
   currentPage.value = page
+  loadBulletins()
 }
 
-const searchBulletins = () => {
+const loadPeriodes = async () => {
+  try {
+    const res = await api.get('/parametrages/periodes/list', {
+      params: {
+        limit: 1000,
+        offset: 0,
+        search: ''
+      }
+    })
+    const rawRows = Array.isArray(res.data)
+      ? res.data
+      : Array.isArray(res.data?.rows)
+        ? res.data.rows
+        : []
+    const rows: any[] = rawRows.flatMap((row: any) => Array.isArray(row) ? row : [row])
+
+    periods.value = rows
+      .filter((period: any) => Number(period?.id))
+      .map((period: any) => ({
+        value: Number(period.id),
+        label: period.affiche || period.libelle || `${period.mois?.mois || period.mois || ''} ${period.annee?.annee || period.annee || ''}`.trim() || `Période ${period.id}`
+      }))
+  } catch (e: any) {
+    console.error('loadPeriodes error', e)
+    ElMessage.error(e?.response?.data?.message || e?.message || 'Erreur lors du chargement des périodes')
+    return
+  }
+
+  const active = await livrePaieService.getPeriodeActive()
+  const activeId = active.success && active.data?.id ? Number(active.data.id) : periods.value[0]?.value
+  if (activeId) {
+    filters.period = activeId
+    newForm.period = activeId
+  }
+}
+
+const loadBulletins = async () => {
+  if (!filters.period) {
+    bulletinsData.value = []
+    totalBulletins.value = 0
+    ElMessage.warning('Veuillez sélectionner une période de paie')
+    return
+  }
+
   loading.value = true
-  setTimeout(() => {
+  try {
+    const offset = (currentPage.value - 1) * pageSize.value
+    const response = await api.get('/paie/bulletin/chargerbulletinparperiode', {
+      params: {
+        id: filters.period,
+        limit: pageSize.value,
+        offset,
+        search: filters.search || ''
+      }
+    })
+
+    const dto = response.data || {}
+    const rows = Array.isArray(dto.rows) ? dto.rows : []
+    primesImposables.value = []
+    primesImposablesNon.value = []
+    primesNonImposables.value = []
+    primesMutuelles.value = []
+    primesGains.value = []
+    mergePrimeColumns(primesImposables, rows, [r => r?.listIndemniteBrut, r => r?.listIndemBrut])
+    mergePrimeColumns(primesImposablesNon, rows, [r => r?.listIndemniteNonImp, r => r?.listIndemBrutNonImp])
+    mergePrimeColumns(primesNonImposables, rows, [r => r?.listIndemniteNonImp, r => r?.listIndemBrutNonImp])
+    mergePrimeColumns(primesMutuelles, rows, [r => r?.listRetenueMutuellt, r => r?.listRetenueMutuelle])
+    mergePrimeColumns(primesGains, rows, [r => r?.listGainsNet, r => r?.listPrimeGains])
+    bulletinsData.value = rows.map(mapBulletinRow)
+    totalBulletins.value = Number(dto.total ?? rows.length)
+  } catch (e: any) {
+    console.error('loadBulletins error', e)
+    bulletinsData.value = []
+    totalBulletins.value = 0
+    ElMessage.error(e?.response?.data?.message || e?.message || 'Erreur lors du chargement des bulletins')
+  } finally {
     loading.value = false
-    ElMessage.success('Recherche effectuée')
-  }, 1000)
+  }
+}
+
+const searchBulletins = async () => {
+  currentPage.value = 1
+  await loadBulletins()
 }
 
 const exportAllData = () => {
   ElMessage.success('Export de tous les bulletins en cours...')
 }
 
-const viewBulletin = (bulletin: Bulletin) => {
-  ElMessage.info(`Visualisation du bulletin de ${bulletin.nomComplet}`)
+const downloadBlob = (blob: Blob, filename: string) => {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
-const printBulletin = (bulletin: Bulletin) => {
-  ElMessage.info(`Impression du bulletin de ${bulletin.nomComplet}`)
-}
+const printBulletin = async (bulletin: Bulletin) => {
+  if (!bulletin.id) {
+    ElMessage.warning('Identifiant du bulletin manquant')
+    return
+  }
 
-const exportBulletin = (bulletin: Bulletin) => {
-  ElMessage.success(`Export du bulletin de ${bulletin.nomComplet}`)
-}
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: 'Génération du PDF...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
 
-const deleteBulletin = async (bulletin: Bulletin) => {
   try {
-    await ElMessageBox.confirm(
-      `Êtes-vous sûr de vouloir supprimer le bulletin de ${bulletin.nomComplet} ?`,
-      'Confirmation de suppression',
-      {
-        confirmButtonText: 'Supprimer',
-        cancelButtonText: 'Annuler',
-        type: 'warning'
-      }
-    )
-    
-    const index = bulletinsData.value.findIndex(b => b.id === bulletin.id)
-    if (index !== -1) {
-      bulletinsData.value.splice(index, 1)
-      ElMessage.success('Bulletin supprimé')
+    const blob = await livrePaieService.printBulletinPdf(bulletin.id)
+    if (!blob) {
+      ElMessage.error('Erreur lors de la génération du bulletin')
+      return
     }
-  } catch {
-    // Annulé
+
+    const periodLabel = periods.value.find(period => period.value === filters.period)?.label || 'paie'
+    downloadBlob(blob, `Bulletin_${bulletin.matricule}_${periodLabel}.pdf`)
+    ElMessage.success(`Bulletin de ${bulletin.nomComplet} téléchargé`)
+  } catch (e: any) {
+    console.error('printBulletin error', e)
+    ElMessage.error(e?.message || 'Erreur lors de l\'impression du bulletin')
+  } finally {
+    loadingInstance.close()
   }
 }
 
@@ -745,7 +809,10 @@ const createBulletin = () => {
 }
 
 onMounted(() => {
-  searchBulletins()
+  ;(async () => {
+    await loadPeriodes()
+    await loadBulletins()
+  })()
 })
 </script>
 

@@ -33,6 +33,8 @@ public interface ContratPersonnelService {
 	public ContratPersonnelDTO findContratPersonnelk(Long id);
 	
 	public List<ContratPersonnel> findByPersonnel(Personnel personnel);
+
+	public List<ContratPersonnel> findByPersonnelWithRelations(Personnel personnel);
 	
 	public ContratPersonnel findByPersonnelContratActif(Long idPers);
 

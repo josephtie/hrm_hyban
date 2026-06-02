@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: directus
       POSTGRES_PASSWORD: directus
     ports:
-      - "5433:5432"
+      - "5438:5432"
     volumes:
       - postgres_hrm_data:/var/lib/postgresql/data
     networks:
@@ -27,7 +27,7 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloak
     ports:
-      - "5434:5432"
+      - "5437:5432"
     volumes:
       - postgres_keycloak_data:/var/lib/postgresql/data
     networks:
@@ -47,9 +47,11 @@ services:
       KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak_db
       KC_DB_USERNAME: keycloak
       KC_DB_PASSWORD: keycloak
-
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
     ports:
-      - "8080:8080"
+      - "8083:8080"
     depends_on:
       - postgres-keycloak
     networks:
@@ -100,6 +102,26 @@ services:
     networks:
       - hrm_hyban-network
     restart: unless-stopped
+
+  #Carbone io generation DOC
+
+  carbone:
+    image: carbone/carbone-ee:latest-fonts
+    container_name: carbone-server
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - CARBONE_EE_LICENSE==test_eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxMjc1NTkzNzU4MTEyNDA5NDUyIiwiYXVkIjoiY2FyYm9uZSIsImV4cCI6MjQyMzc3NzgyNiwiZGF0YSI6eyJ0eXBlIjoidGVzdCJ9fQ.AGHohf8qK1dRXZk6T1R_lkCOdt722zRxktwoX62w-DdjLxpXdIm81QwBYj725bH1q_SZroSIoxvLF-XaSfkEf-WeAJlwPSIHNnxaksSRQCx-dPjUDHphvN47PnKJE3E7dHPBHf36zxSPGhIvCsPG0eOQ-zElaxdbNccBbd1NkIgwWT2w
+      - CARBONE_EE_STUDIO=true                # active l'interface web
+      - CARBONE_LOG_LEVEL=info
+      - CARBONE_TEMPLATES_DIR=/app/templates
+      - CARBONE_RENDER_TIMEOUT=60000
+    volumes:
+      - ./templates:/app/templates
+      - ./report:/app/reports
+    networks:
+      - hrm_hyban-network
 
 volumes:
   postgres_hrm_data:

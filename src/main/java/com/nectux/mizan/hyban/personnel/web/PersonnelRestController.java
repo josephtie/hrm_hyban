@@ -28,6 +28,7 @@ import com.nectux.mizan.hyban.common.dto.PersonnelVueResponse;
 import com.nectux.mizan.hyban.common.dto.IdRequest;
 import com.nectux.mizan.hyban.personnel.dto.PersonnelDTO;
 import com.nectux.mizan.hyban.personnel.dto.ContratPersonnelDTO;
+import com.nectux.mizan.hyban.personnel.dto.EditerPersonnelRequest;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.personnel.service.PersonnelService;
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
@@ -36,9 +37,9 @@ import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 @RestController
 @RequestMapping("/api/personnels/personnel")
 
-@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.2:7153", "http://192.168.1.2:8080", "http://192.168.1.3:7156", "http://192.168.1.3:7157", "http://192.168.1.3:7158", "http://192.168.1.3:7159", "http://192.168.1.3:7160", "http://192.168.1.3:7161", "http://192.168.1.3:7162", "http://192.168.1.3:7163", "http://192.168.1.3:7164", "http://192.168.1.3:7165", "http://192.168.1.3:7166", "http://192.168.1.3:7167", "http://192.168.1.3:7168", "http://192.168.1.3:7169", "http://192.168.1.3:7170", "http://192.168.1.3:7171", "http://192.168.1.3:7172", "http://192.168.1.3:7173", "http://192.168.1.3:7174", "http://192.168.1.3:7175", "http://192.168.1.3:7176", "http://192.168.1.3:7177", "http://192.168.1.3:7178", "http://192.168.1.3:7179", "http://192.168.1.3:7180", "http://192.168.1.3:7181", "http://192.168.1.3:7182", "http://192.168.1.3:7183", "http://192.168.1.3:7184", "http://192.168.1.3:7185", "http://192.168.1.3:7186", "http://192.168.1.3:7187", "http://192.168.1.3:7188", "http://192.168.1.3:7189", "http://192.168.1.3:7190", "http://192.168.1.3:7191", "http://192.168.1.3:7192", "http://192.168.1.3:7193", "http://192.168.1.3:7194", "http://192.168.1.3:7195", "http://192.168.1.3:7196", "http://192.168.1.3:7197", "http://192.168.1.3:7198", "http://192.168.1.3:7199"},
-        allowCredentials = "true"
-)
+//@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.4:7153", "http://192.168.1.4:8080", "http://192.168.1.4:7156", "http://192.168.1.4:7157", "http://192.168.1.4:7158", "http://192.168.1.4:7159", "http://192.168.1.4:7160", "http://192.168.1.4:7161", "http://192.168.1.4:7162", "http://192.168.1.4:7163", "http://192.168.1.4:7164", "http://192.168.1.4:7165", "http://192.168.1.4:7166", "http://192.168.1.4:7167", "http://192.168.1.4:7168", "http://192.168.1.4:7169", "http://192.168.1.4:7170", "http://192.168.1.4:7171", "http://192.168.1.4:7172", "http://192.168.1.4:7173", "http://192.168.1.4:7174", "http://192.168.1.4:7175", "http://192.168.1.4:7176", "http://192.168.1.4:7177", "http://192.168.1.4:7178", "http://192.168.1.4:7179", "http://192.168.1.4:7180", "http://192.168.1.4:7181", "http://192.168.1.4:7182", "http://192.168.1.4:7183", "http://192.168.1.4:7184", "http://192.168.1.4:7185", "http://192.168.1.4:7186", "http://192.168.1.4:7187", "http://192.168.1.4:7188", "http://192.168.1.4:7189", "http://192.168.1.4:7190", "http://192.168.1.4:7191", "http://192.168.1.4:7192", "http://192.168.1.4:7193", "http://192.168.1.4:7194", "http://192.168.1.4:7195", "http://192.168.1.4:7196", "http://192.168.1.4:7197", "http://192.168.1.4:7198", "http://192.168.1.4:7199"},
+//        allowCredentials = "true"
+//)
 
 public class PersonnelRestController {
 
@@ -269,7 +270,7 @@ public class PersonnelRestController {
                 req.getAncienneteInitial() == null ? 0 : req.getAncienneteInitial(), 
                 req.getCarec(), req.getTypeEmp(), req.getTelephone(), 
                 req.getSituationMedaille() == null ? 0 : req.getSituationMedaille(), 
-                req.getSituationEmploie() == null ? 0 : req.getSituationEmploie(), 
+                req.getSituationEmploie(),
                 req.getDateRetourcg(), BigDecimal.valueOf(req.getIndemniteRespons()), BigDecimal.valueOf(req.getIndemniteRepresent()),
                     BigDecimal.valueOf(req.getIndemniteTransport()), BigDecimal.valueOf(req.getSursalaire())
             );
@@ -308,7 +309,7 @@ public class PersonnelRestController {
                 req.getModePaiement(), req.getIdBanque(), req.getNumeroCompte(), 
                 req.getNumeroGuichet(), req.getRib(), req.getCarec(), req.getTypeEmp(), 
                 req.getTelephone(), req.getSituationMedaille() == null ? 0 : req.getSituationMedaille(), 
-                req.getSituationEmploie() == null ? 0 : req.getSituationEmploie(), 
+                req.getSituationEmploie(),
                 req.getDateRetourcg()
             );
             
@@ -587,6 +588,48 @@ public class PersonnelRestController {
             return ResponseEntity.ok(personnelList);
         } catch (Exception e) {
             logger.error("Erreur lors de la récupération de tout le personnel", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Modification rapide d'un personnel : situation matrimoniale, nombre d'enfants, statut (actif / sommeil).
+     *
+     * REST Endpoint : PUT /api/personnels/personnel/editerpersonnel
+     *
+     * Body JSON attendu :
+     * {
+     *   "idPersonnel": 1,
+     *   "situationMatrimoniale": 1,   // 1=MARIE, 2=CELIBATAIRE, 3=DIVORCE, 4=VEUF
+     *   "nombreEnfant": 2,
+     *   "statut": true                  // true=actif, false=en sommeil
+     * }
+     */
+    @PutMapping(value = "/editerpersonnel", consumes = MediaType.APPLICATION_JSON_VALUE,
+                                            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<PersonnelDTO> updatePersonnel(@RequestBody EditerPersonnelRequest request) {
+        try {
+            if (request == null || request.getIdPersonnel() == null) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            int situationMatrimoniale = request.getSituationMatrimoniale() == null ? 0 : request.getSituationMatrimoniale();
+            int nombreEnfant = request.getNombreEnfant() == null ? 0 : request.getNombreEnfant();
+            Boolean statut = request.getStatut();
+
+            PersonnelDTO dto = personnelService.save(
+                    request.getIdPersonnel(),
+                    situationMatrimoniale,
+                    nombreEnfant,
+                    statut
+            );
+
+            if (dto == null || "echec".equals(dto.getResult())) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(dto);
+            }
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la modification du personnel", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

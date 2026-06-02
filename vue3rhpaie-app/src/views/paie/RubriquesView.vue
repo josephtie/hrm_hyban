@@ -45,15 +45,23 @@
           <div class="form-group">
             <label class="form-label">
               <el-icon class="label-icon"><Trophy /></el-icon>
-              Type de rubrique
+              Nature de la rubrique
             </label>
-            <el-select v-model="form.type" placeholder="Type de rubrique" size="large">
-              <el-option label="Imposable" value="1" />
-              <el-option label="Non Imposable" value="2" />
-              <el-option label="Imposable & Non Imposable" value="3" />
-              <el-option label="Retenue Mutuelle" value="4" />
-              <el-option label="Regularisation" value="5" />
-              <el-option label="Retenue Sociale" value="6" />
+            <el-select v-model="form.typeRubrique" placeholder="Nature" size="large">
+              <el-option label="Gain (Salaire, prime...)" value="GAIN" />
+              <el-option label="Retenue (CNPS, impôt...)" value="RETENUE" />
+              <el-option label="Charge (Part patronale)" value="CHARGE" />
+            </el-select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Catégorie</label>
+            <el-select v-model="form.categorie" size="large">
+              <el-option label="Salaire de base" value="BASE" />
+              <el-option label="Prime" value="PRIME" />
+              <el-option label="Indemnité" value="INDEMNITE" />
+              <el-option label="Cotisation sociale" value="COTISATION" />
+              <el-option label="Impôt" value="IMPOT" />
             </el-select>
           </div>
 
@@ -70,6 +78,21 @@
             </el-select>
           </div>
 
+          <div class="form-group" v-if="form.modeCalcul === 'MONTANT'">
+            <label class="form-label">Montant</label>
+            <el-input v-model="form.montant" type="number" />
+          </div>
+
+          <div class="form-group" v-if="form.modeCalcul === 'TAUX'">
+            <label class="form-label">Taux (%)</label>
+            <el-input v-model="form.taux" type="number" />
+          </div>
+
+          <div class="form-group" v-if="form.modeCalcul === 'FORMULE'">
+            <label class="form-label">Formule</label>
+            <el-input v-model="form.formule" placeholder="ex: BASE * 0.1" />
+          </div>
+
           <div class="form-group">
             <label class="form-label">
               <el-icon class="label-icon"><Money /></el-icon>
@@ -84,8 +107,45 @@
             />
           </div>
 
-          <!-- Champ MtExedent - visible uniquement si type = "3" (Imposable & Non Imposable) -->
-          <div class="form-group" v-if="form.type === '3'">
+          <div class="form-group">
+            <label class="form-label">Imposition</label>
+            <el-select v-model="form.typeImposition" size="large">
+              <el-option label="Totalement imposable" value="1" />
+              <el-option label="Non imposable" value="2" />
+              <el-option label="Partiellement imposable" value="3" />
+              <el-option label="Retenue Mutuelle" value="4" />
+              <el-option label="Regularisation" value="5" />
+              <el-option label="Retenue Patronale" value="6" />
+            </el-select>
+          </div>
+
+          <div class="form-group" v-if="form.modeCalcul === 'MONTANT'">
+            <label class="form-label">Montant</label>
+            <el-input v-model="form.montant" type="number" />
+          </div>
+
+          <div class="form-group" v-if="form.modeCalcul === 'TAUX'">
+            <label class="form-label">Taux (%)</label>
+            <el-input v-model="form.taux" type="number" />
+          </div>
+
+          <div class="form-group" v-if="form.modeCalcul === 'FORMULE'">
+            <label class="form-label">Formule</label>
+            <el-input v-model="form.formule" placeholder="ex: BASE * 0.1" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Afficher sur bulletin</label>
+            <el-switch v-model="form.afficherBulletin" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Actif</label>
+            <el-switch v-model="form.active" />
+          </div>
+
+          <!-- Champ MtExedent - visible uniquement si typeRubrique = "3" (Imposable & Non Imposable) -->
+          <div class="form-group" v-if="form.typeImposition === '3'">
             <label class="form-label">
               <el-icon class="label-icon"><Money /></el-icon>
               Montant excédent
@@ -99,38 +159,7 @@
             />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">
-              <el-icon class="label-icon"><SwitchButton /></el-icon>
-              Imposable
-            </label>
-            <el-radio-group v-model="form.imposable" size="large">
-              <el-radio :value="true">Oui</el-radio>
-              <el-radio :value="false">Non</el-radio>
-            </el-radio-group>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">
-              <el-icon class="label-icon"><SwitchButton /></el-icon>
-              Cotisable
-            </label>
-            <el-radio-group v-model="form.cotisable" size="large">
-              <el-radio :value="true">Oui</el-radio>
-              <el-radio :value="false">Non</el-radio>
-            </el-radio-group>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">
-              <el-icon class="label-icon"><SwitchButton /></el-icon>
-              Rubrique active
-            </label>
-            <el-radio-group v-model="form.active" size="large">
-              <el-radio :value="true">Oui</el-radio>
-              <el-radio :value="false">Non</el-radio>
-            </el-radio-group>
-          </div>
+  
 
           <div class="form-group">
             <label class="form-label">
@@ -191,12 +220,11 @@
               style="width: 150px"
               clearable
             >
-              <el-option label="Imposable" value="1" />
-              <el-option label="Non Imposable" value="2" />
-              <el-option label="Imposable & Non Imposable" value="3" />
-              <el-option label="Retenue Mutuelle" value="4" />
-              <el-option label="Regularisation" value="5" />
-              <el-option label="Retenue Sociale" value="6" />
+              <el-option label="Salaire base" value="SALAIRE_BASE" />
+              <el-option label="Prime" value="PRIME" />
+              <el-option label="Indemnité" value="INDEMNITE" />
+              <el-option label="Cotisation" value="COTISATION" />
+              <el-option label="Impôt" value="IMPOT" />
             </el-select>
             <el-select
               v-model="filterStatut"
@@ -206,6 +234,15 @@
             >
               <el-option label="Active" :value="true" />
               <el-option label="Inactive" :value="false" />
+            </el-select>
+            <el-select
+              v-model="filterImposable"
+              placeholder="Imposable"
+              style="width: 120px"
+              clearable
+            >
+              <el-option label="Oui" :value="true" />
+              <el-option label="Non" :value="false" />
             </el-select>
           </div>
         </div>
@@ -218,6 +255,11 @@
             @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" width="55" />
+               <el-table-column prop="id" label="Id" width="100" sortable>
+              <template #default="{ row }">
+                <el-tag type="primary" size="large">{{ row.id }}</el-tag>
+              </template>
+            </el-table-column>
             
             <el-table-column prop="code" label="Code" width="100" sortable>
               <template #default="{ row }">
@@ -234,10 +276,18 @@
               </template>
             </el-table-column>
             
-            <el-table-column prop="type" label="Type" width="120" sortable>
+            <el-table-column prop="typeRubrique" label="Type" width="120" sortable>
               <template #default="{ row }">
-                <el-tag :type="getTypeColor(row.type)" size="large">
-                  {{ getTypeLibelle(row.type) }}
+                <el-tag :type="getTypeColor(row.typeRubrique)" size="large">
+                  {{ getTypeLibelle(row.typeRubrique) }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            
+            <el-table-column prop="etatImposition" label="État Imposition" width="140" sortable>
+              <template #default="{ row }">
+                <el-tag :type="getEtatImpositionColor(row.etatImposition)" size="large">
+                  {{ getEtatImpositionLibelle(row.etatImposition) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -262,14 +312,6 @@
               <template #default="{ row }">
                 <el-tag :type="row.imposable ? 'success' : 'warning'" size="small">
                   {{ row.imposable ? 'Oui' : 'Non' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            
-            <el-table-column prop="cotisable" label="Cotisable" width="90" sortable>
-              <template #default="{ row }">
-                <el-tag :type="row.cotisable ? 'success' : 'warning'" size="small">
-                  {{ row.cotisable ? 'Oui' : 'Non' }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -311,104 +353,134 @@ import {
   Plus, Edit, Delete, Search, Refresh, Close, Document, Message,
   Trophy, Money, SwitchButton
 } from '@element-plus/icons-vue'
-import { rubriqvariablerestService, type RubriqueRestDto } from '@/services/rubriqvariablerest.service'
-
-interface Rubrique {
-  id: number
-  code: string
-  libelle: string
-  type: string
-  modeCalcul: string
-  valeur: number
-  mtExedent: number
-  imposable: boolean
-  cotisable: boolean
-  active: boolean
-  description: string
-  dateCreation: Date
-}
+import { rubriquerestService, type RubriqueRestDto } from '@/services/rubriquerest.service'
 
 const showForm = ref(false)
 const isEditing = ref(false)
 const searchText = ref('')
 const filterType = ref('')
 const filterStatut = ref<boolean | null>(null)
+const filterImposable = ref<boolean | null>(null)
 const selectedRubriques = ref<Rubrique[]>([])
 
 const form = reactive({
   id: 0,
   code: '',
   libelle: '',
-  type: '',
+  typeRubrique: '',
+  categorie: 'GAIN',
   modeCalcul: '',
   valeur: 0,
+  montant: undefined,
+  taux: undefined,
+  formule: '',
+  typeImposition: '',
+  afficherBulletin: true,
   mtExedent: 0,
   imposable: true,
   cotisable: true,
   active: true,
-  description: '',
-  categorie: 'GAIN',
-  afficherBulletin: true
+  description: ''
 })
 
 const rubriques = ref<Rubrique[]>([])
 const loading = ref(false)
 
 const filteredRubriques = computed(() => {
+  console.log('=== FILTER DEBUG ===')
+  console.log('rubriques.value:', rubriques.value)
+  console.log('searchText:', searchText.value)
+  console.log('filterType:', filterType.value)
+  console.log('filterStatut:', filterStatut.value)
+  
   let filtered = rubriques.value
 
+  // Filtre par texte de recherche
   if (searchText.value) {
+    const searchLower = searchText.value.toLowerCase()
     filtered = filtered.filter(rubrique => 
-      rubrique.code.toLowerCase().includes(searchText.value.toLowerCase()) ||
-      rubrique.libelle.toLowerCase().includes(searchText.value.toLowerCase())
+      (rubrique.code && rubrique.code.toLowerCase().includes(searchLower)) ||
+      (rubrique.libelle && rubrique.libelle.toLowerCase().includes(searchLower))
     )
+    console.log('Après filtre texte:', filtered.length)
   }
 
+  // Filtre par type de rubrique
   if (filterType.value) {
-    filtered = filtered.filter(rubrique => rubrique.type === filterType.value)
+    filtered = filtered.filter(rubrique => rubrique.typeRubrique === filterType.value)
+    console.log('Après filtre type:', filtered.length)
   }
 
+  // Filtre par statut (actif/inactif)
   if (filterStatut.value !== null) {
     filtered = filtered.filter(rubrique => rubrique.active === filterStatut.value)
+    console.log('Après filtre statut:', filtered.length)
   }
 
+  // Filtre par imposable (oui/non)
+  if (filterImposable.value !== null) {
+    filtered = filtered.filter((rubrique: any) => rubrique.imposable === filterImposable.value)
+    console.log('Après filtre imposable:', filtered.length)
+  }
+
+  console.log('Résultat final:', filtered.length)
+  console.log('=== FIN FILTER DEBUG ===')
   return filtered
 })
 
-const getTypeLibelle = (type: string) => {
+const getTypeLibelle = (typeRubrique: string) => {
   const types = {
     'SALAIRE_BASE': 'Salaire base',
     'PRIME': 'Prime',
     'INDEMNITE': 'Indemnité',
-    'AVANTAGE': 'Avantage',
-    'RETENUE': 'Retenue',
     'COTISATION': 'Cotisation',
     'IMPOT': 'Impôt'
   }
-  return types[type as keyof typeof types] || type
+  return types[typeRubrique as keyof typeof types] || typeRubrique
 }
 
-const getTypeColor = (type: string) => {
+const getTypeColor = (typeRubrique: string) => {
   const colors = {
     'SALAIRE_BASE': 'primary',
     'PRIME': 'success',
-    'INDEMNITE': 'info',
-    'AVANTAGE': 'warning',
-    'RETENUE': 'danger',
-    'COTISATION': 'warning',
+    'INDEMNITE': 'warning',
+    'COTISATION': 'info',
     'IMPOT': 'danger'
   }
-  return colors[type as keyof typeof colors] || 'info'
+  return colors[typeRubrique as keyof typeof colors] || 'primary'
 }
 
 const getModeCalculLibelle = (mode: string) => {
   const modes = {
     'FIXE': 'Fixe',
     'POURCENTAGE': '%',
-    'TAUX_VARIABLE': 'Variable',
-    'BAREME': 'Barème'
+    'FORMULE': 'Formule'
   }
   return modes[mode as keyof typeof modes] || mode
+}
+
+const getEtatImpositionLibelle = (etatImposition: number) => {
+  const etats = {
+    1: 'Totalement imposable',
+    2: 'Non imposable',
+    3: 'Partiellement imposable',
+    4: 'Retenue Mutuelle',
+    5: 'Regularisation',
+    6: 'Retenue Sociale'
+  }
+  return etats[etatImposition as keyof typeof etats] || 'Non défini'
+}
+
+const getEtatImpositionColor = (etatImposition: number) => {
+  const colors = {
+    1: 'danger',    // Totalement imposable - rouge
+    2: 'success',   // Non imposable - vert
+    3: 'warning',   // Partiellement imposable - orange
+    4: 'info',      // Retenue Mutuelle - bleu
+    5: 'primary',   // Regularisation - primaire
+    6: 'warning'    // Retenue Sociale - orange
+  }
+  return colors[etatImposition as keyof typeof colors] || 'info'
 }
 
 const formatCurrency = (value: number) => {
@@ -468,8 +540,8 @@ const refreshData = async () => {
 }
 
 const saveForm = async () => {
-  if (!form.code || !form.libelle || !form.type) {
-    ElMessage.error('Veuillez renseigner le code, le libellé et le type')
+  if (!form.code || !form.libelle || !form.typeRubrique || !form.categorie) {
+    ElMessage.error('Veuillez renseigner le code, le libellé, la nature et la catégorie')
     return
   }
 
@@ -479,10 +551,13 @@ const saveForm = async () => {
     const rubriqueData: RubriqueRestDto = {
       code: form.code,
       libelle: form.libelle,
-      type: form.type,
-      etatImposition: parseInt(form.type),
+      typeRubrique: form.typeRubrique,
+      typeImposition: form.typeImposition,
       modeCalcul: form.modeCalcul,
-      valeurDef: form.valeur,
+      valeur: form.valeur,
+      montant: form.montant,
+      taux: form.taux,
+      formule: form.formule,
       mtExedent: form.mtExedent,
       imposable: form.imposable,
       cotisable: form.cotisable,
@@ -493,14 +568,35 @@ const saveForm = async () => {
     }
 
     if (isEditing.value) {
-      // Pour la modification, ajouter l'ID
-      rubriqueData.idR = form.id
-      await rubriqvariablerestService.update(rubriqueData)
+      // POUR LA MODIFICATION - Vérification experte de l'ID
+      console.log('=== SAVE MODIFICATION DEBUG ===')
+      console.log('Form ID:', form.id)
+      console.log('Form complet:', JSON.stringify(form, null, 2))
+      
+      const rubriqueId = form.id
+      if (!rubriqueId || rubriqueId === 0) {
+        console.error('ERREUR CRITIQUE: ID invalide pour modification:', rubriqueId)
+        ElMessage.error('ID de la rubrique invalide pour la modification')
+        return
+      }
+      
+      // Forcer l'ID dans les données envoyées
+      rubriqueData.id = rubriqueId
+      
+      console.log('Données envoyées pour modification:', JSON.stringify(rubriqueData, null, 2))
+      console.log('ID utilisé pour modification:', rubriqueId)
+      
+      await rubriquerestService.update(rubriqueId, rubriqueData)
       ElMessage.success('Rubrique mise à jour avec succès')
+      console.log('=== FIN SAVE MODIFICATION ===')
     } else {
-      // Pour la création, pas d'ID
-      await rubriqvariablerestService.create(rubriqueData)
+      // POUR LA CRÉATION
+      console.log('=== SAVE CREATION DEBUG ===')
+      console.log('Données envoyées pour création:', JSON.stringify(rubriqueData, null, 2))
+      
+      await rubriquerestService.create(rubriqueData)
       ElMessage.success('Rubrique créée avec succès')
+      console.log('=== FIN SAVE CREATION ===')
     }
 
     await loadRubriques()
@@ -513,27 +609,57 @@ const saveForm = async () => {
   }
 }
 
-const editRubrique = (rubrique: Rubrique) => {
-  Object.assign(form, {
-    id: rubrique.id,
-    code: rubrique.code,
-    libelle: rubrique.libelle,
-    type: rubrique.type,
-    modeCalcul: rubrique.modeCalcul,
-    valeur: rubrique.valeur,
-    mtExedent: rubrique.mtExedent,
-    imposable: rubrique.imposable,
-    cotisable: rubrique.cotisable,
-    active: rubrique.active,
-    description: rubrique.description,
-    categorie: 'GAIN',
-    afficherBulletin: true
+const editRubrique = (rubrique: RubriqueRestDto) => {
+  console.log('=== EDIT RUBRIQUE DEBUG ===')
+  console.log('Rubrique reçue:', JSON.stringify(rubrique, null, 2))
+  
+  // Vérifier l'ID en premier
+  const rubriqueId = rubrique.id
+  console.log('ID extrait:', rubriqueId)
+  
+  if (!rubriqueId) {
+    console.error('ERREUR: ID manquant dans la rubrique à éditer')
+    ElMessage.error('ID de la rubrique manquant pour la modification')
+    return
+  }
+  
+  // Approche simple et directe - copie profonde avec ID forcé
+  const formCopy = {
+    id: rubriqueId, // Forcer l'ID
+    code: rubrique.code || '',
+    libelle: rubrique.libelle || '',
+    typeRubrique: rubrique.typeRubrique || 'GAIN',
+    categorie: rubrique.categorie || 'BASE',
+    modeCalcul: rubrique.modeCalcul || '',
+    valeur: rubrique.valeurDef || 0,
+    montant: rubrique.montant,
+    taux: rubrique.taux,
+    formule: rubrique.formule || '',
+    typeImposition: getEtatImpositionLibelle(rubrique.etatImposition) || '',
+    afficherBulletin: rubrique.afficherBulletin !== undefined ? rubrique.afficherBulletin : true,
+    mtExedent: rubrique.mtExedent || 0,
+    imposable: rubrique.imposable !== undefined ? rubrique.imposable : true,
+    cotisable: rubrique.cotisable !== undefined ? rubrique.cotisable : true,
+    active: rubrique.active !== undefined ? rubrique.active : true,
+    description: rubrique.description || ''
+  }
+  
+  // Remplacer complètement le formulaire
+  Object.keys(form).forEach(key => {
+    delete form[key]
   })
+  Object.assign(form, formCopy)
+  
+  console.log('Formulaire après édition:', JSON.stringify(form, null, 2))
+  console.log('ID final dans form:', form.id)
+  
   isEditing.value = true
   showForm.value = true
+  
+  console.log('=== FIN EDIT RUBRIQUE ===')
 }
 
-const deleteRubrique = async (rubrique: Rubrique) => {
+const deleteRubrique = async (rubrique: RubriqueRestDto) => {
   try {
     await ElMessageBox.confirm(
       `Êtes-vous sûr de vouloir supprimer la rubrique "${rubrique.libelle}" ?`,
@@ -541,7 +667,12 @@ const deleteRubrique = async (rubrique: Rubrique) => {
       { confirmButtonText: 'Oui', cancelButtonText: 'Non', type: 'warning' }
     )
     
-    await rubriqvariablerestService.delete(rubrique.id)
+    const rubriqueId = rubrique.id
+    if (!rubriqueId) {
+      ElMessage.error('ID de la rubrique manquant pour la suppression')
+      return
+    }
+    await rubriquerestService.delete(rubriqueId)
     ElMessage.success('Rubrique supprimée avec succès')
     await loadRubriques()
   } catch (error) {
@@ -552,18 +683,18 @@ const deleteRubrique = async (rubrique: Rubrique) => {
   }
 }
 
-const handleSelectionChange = (selection: Rubrique[]) => {
+const handleSelectionChange = (selection: RubriqueRestDto[]) => {
   selectedRubriques.value = selection
 }
 
-const toggleStatut = async (rubrique: Rubrique) => {
+const toggleStatut = async (rubrique: RubriqueRestDto) => {
   try {
     loading.value = true
     const updatedRubrique = {
       ...rubrique,
       active: !rubrique.active
     }
-    await rubriqvariablerestService.update(updatedRubrique)
+    await rubriquerestService.update(updatedRubrique.id, updatedRubrique)
     ElMessage.success(`Rubrique "${rubrique.libelle}" ${updatedRubrique.active ? 'activée' : 'désactivée'} avec succès`)
     await loadRubriques()
   } catch (error) {
@@ -582,7 +713,7 @@ onMounted(() => {
 const loadRubriques = async () => {
   try {
     loading.value = true
-    const response = await rubriqvariablerestService.getAll({
+    const response = await rubriquerestService.getAll({
       search: searchText.value || undefined,
       size: 50,
       page: 0
@@ -591,15 +722,52 @@ const loadRubriques = async () => {
     console.log('Response from rubrique service:', response)
     console.log('Response length:', response.data?.length || 0)
     
+    // DEBUG COMPLET - Analyser la structure du backend
+    console.log('=== BACKEND RESPONSE ANALYSIS ===')
+    console.log('Response complète:', JSON.stringify(response, null, 2))
+    console.log('Response.data:', response.data)
+    console.log('Type de response.data:', typeof response.data)
+    console.log('Est un tableau?', Array.isArray(response.data))
+    
     // Transformer les données du backend pour la vue
-    rubriques.value = response.data.map((r: any) => {
+    // Le backend renvoie row (objet unique) ou rows (tableau)
+    const rubriqueData = response.data.rows || response.data.row || response.data || []
+    console.log('RubriqueData brut:', JSON.stringify(rubriqueData, null, 2))
+    console.log('Type de rubriqueData:', typeof rubriqueData)
+    console.log('Est un tableau?', Array.isArray(rubriqueData))
+    
+    const rubriqueArray = Array.isArray(rubriqueData) ? rubriqueData : [rubriqueData]
+    console.log('RubriqueArray final:', JSON.stringify(rubriqueArray, null, 2))
+    
+    rubriques.value = rubriqueArray.map((r: any, index: number) => {
+      console.log(`--- Rubrique ${index} ---`)
+      console.log('Objet brut:', JSON.stringify(r, null, 2))
+      console.log('Clés disponibles:', Object.keys(r))
+      console.log('ID tests:')
+      console.log('  r.id:', r.id)
+      console.log('  r.idR:', r.idR)
+      console.log('  r.id_r:', r.id_r)
+      console.log('  r.rubriqueId:', r.rubriqueId)
+      console.log('  r.rubrique_id:', r.rubrique_id)
+      
+      // Trouver l'ID correct en testant plusieurs possibilités
+      const rubriqueId = r.id || r.idR || r.id_r || r.rubriqueId || r.rubrique_id || 0
+      console.log('ID final utilisé:', rubriqueId)
+      
       return {
-        id: r.idR || 0,
+        id: rubriqueId,
         code: r.code || '',
         libelle: r.libelle || '',
-        type: r.type || String(r.etatImposition || 1),
+        typeRubrique: r.typeRubrique || 'GAIN',
+        categorie: r.categorie || 'BASE',
         modeCalcul: r.modeCalcul || '',
         valeur: r.valeurDef || 0,
+        montant: r.montant,
+        taux: r.taux,
+        formule: r.formule,
+        typeImposition: r.typeImposition,
+        etatImposition: r.etatImposition,
+        afficherBulletin: r.afficherBulletin !== undefined ? r.afficherBulletin : true,
         mtExedent: r.mtExedent || 0,
         imposable: r.imposable !== undefined ? r.imposable : true,
         cotisable: r.cotisable !== undefined ? r.cotisable : true,
@@ -608,6 +776,9 @@ const loadRubriques = async () => {
         dateCreation: r.createdAt ? new Date(r.createdAt) : new Date()
       }
     })
+    
+    console.log('Rubriques finales:', JSON.stringify(rubriques.value, null, 2))
+    console.log('=== FIN BACKEND RESPONSE ANALYSIS ===')
     
     console.log('Rubriques loaded:', rubriques.value)
   } catch (error) {

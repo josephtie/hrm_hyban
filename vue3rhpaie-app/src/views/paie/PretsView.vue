@@ -33,11 +33,19 @@
         <div class="form-content">
           <el-form :model="loanForm" :rules="loanRules" ref="loanFormRef" label-width="140px" size="large">
             <el-form-item label="Personnel" prop="personnelId" required>
-              <el-select v-model="loanForm.personnelId" placeholder="Sélectionner le personnel" style="width: 100%" filterable>
+              <el-select 
+                v-model="loanForm.personnelId" 
+                placeholder="Sélectionner le personnel" 
+                style="width: 100%" 
+                filterable
+                clearable
+                :filter-method="filterPersonnels"
+                @clear="clearPersonnelFilter"
+              >
                 <el-option
-                  v-for="personnel in personnels"
+                  v-for="personnel in (filteredPersonnels.length > 0 ? filteredPersonnels : personnels)"
                   :key="personnel.id"
-                  :label="`${personnel.nomComplet} - ${personnel.matricule}`"
+                  :label="`${personnel.nomComplet || personnel.Nom || personnel.nom || 'Nom inconnu'} - ${personnel.matricule}`"
                   :value="personnel.id"
                 />
               </el-select>
@@ -45,12 +53,10 @@
 
             <el-form-item label="Type de Prêt" prop="type" required>
               <el-select v-model="loanForm.type" placeholder="Type de prêt" style="width: 100%">
-                <el-option label="Prêt Personnel" value="personnel" />
-                <el-option label="Prêt Logement" value="logement" />
-                <el-option label="Prêt Véhicule" value="vehicule" />
-                <el-option label="Prêt Études" value="etudes" />
-                <el-option label="Prêt Urgence" value="urgence" />
-                <el-option label="Autre" value="autre" />
+                <el-option label="Prêt " value="1" />
+                <el-option label="Avances & Acomptes" value="2" />
+                <el-option label="Prêt Alios" value="3" />
+              
               </el-select>
             </el-form-item>
 
@@ -79,9 +85,17 @@
             </el-form-item>
 
             <el-form-item label="Période Début Prélèvement" prop="periodeDebut" required>
-              <el-select v-model="loanForm.periodeDebut" placeholder="Période de début" style="width: 100%">
+              <el-select 
+                v-model="loanForm.periodeDebut" 
+                placeholder="Période de début" 
+                style="width: 100%"
+                filterable
+                clearable
+                :filter-method="filterPeriodes"
+                @clear="clearPeriodeFilter"
+              >
                 <el-option
-                  v-for="periode in periodes"
+                  v-for="periode in filteredPeriodes"
                   :key="periode.value"
                   :label="periode.label"
                   :value="periode.value"
@@ -99,28 +113,9 @@
               />
             </el-form-item>
 
-            <el-form-item label="Taux d'Intérêt (%)" prop="tauxInteret">
-              <el-input-number
-                v-model="loanForm.tauxInteret"
-                :min="0"
-                :max="20"
-                :precision="2"
-                :step="0.1"
-                style="width: 100%"
-                placeholder="Taux d'intérêt annuel"
-              />
-            </el-form-item>
+         
 
-            <el-form-item label="Mensualité" prop="mensualite">
-              <el-input-number
-                v-model="loanForm.mensualite"
-                :min="0"
-                :step="1000"
-                style="width: 100%"
-                placeholder="Mensualité calculée"
-                :disabled="true"
-              />
-            </el-form-item>
+          
 
             <el-form-item label="Motif" prop="motif">
               <el-input
@@ -171,19 +166,27 @@
 
         <div class="table-container">
           <el-table :data="filteredLoans" stripe v-loading="loading" @sort-change="handleSortChange">
-            <el-table-column label="Personnel" prop="personnelNom" min-width="200" sortable="custom">
+            <el-table-column label="Personnel" prop="personnelNom" min-width="250" sortable="custom">
               <template #default="{ row }">
                 <div class="personnel-info">
-                  <div class="personnel-name">{{ row.personnelNom }}</div>
-                  <div class="personnel-matricule">{{ row.matricule }}</div>
+                  <div class="personnel-avatar">
+                    <el-avatar :size="40" :src="row.personnel?.photo">
+                      {{ row.personnel?.nomComplet?.charAt(0) || 'P' }}
+                    </el-avatar>
+                  </div>
+                  <div class="personnel-details">
+                    <div class="personnel-name">{{ row.personnel?.nomComplet || row.personnel.Nom }}</div>
+                    <div class="personnel-matricule">{{ row.personnel?.matricule || row.matricule }}</div>
+                    <div class="personnel-id">ID: {{ row.personnel.id }}</div>
+                  </div>
                 </div>
               </template>
             </el-table-column>
 
             <el-table-column label="Type" prop="type" width="120" sortable="custom">
               <template #default="{ row }">
-                <el-tag :type="getTypeColor(row.type)">
-                  {{ getTypeLabel(row.type) }}
+                <el-tag :type="getTypeColor(row.pret?.libelle)">
+                  {{ getTypeLabel(row.pret?.libelle) }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -197,6 +200,12 @@
             <el-table-column label="Date Contraction" prop="dateContraction" width="140" sortable="custom">
               <template #default="{ row }">
                 {{ formatDate(row.dateContraction) }}
+              </template>
+            </el-table-column>
+
+            <el-table-column label="Période Départ" prop="periodeDebut" width="140" sortable="custom">
+              <template #default="{ row }">
+                {{ row.periodeDebut }}
               </template>
             </el-table-column>
 
@@ -309,6 +318,13 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   CreditCard, Plus, Close, Edit, View, Delete, Search 
 } from '@element-plus/icons-vue'
+import { 
+  pretspersonnelsService, 
+  type PretPersonnelResponse, 
+  type PretPersonnelRequest,
+  type Personnel,
+  type PeriodePaie
+} from '@/services/pretspersonnels.service'
 
 interface Loan {
   id: number
@@ -374,82 +390,42 @@ const loanRules = {
 
 const loanFormRef = ref()
 
-// Données mockées
-const loans = ref<Loan[]>([
-  {
-    id: 1,
-    personnelId: 1,
-    personnelNom: 'Kouadio Jean',
-    matricule: 'EMP001',
-    type: 'personnel',
-    montant: 500000,
-    dateContraction: '2024-01-15',
-    periodeDebut: '2024-02',
-    duree: 12,
-    tauxInteret: 5,
-    mensualite: 42800,
-    resteAPayer: 342400,
-    motif: 'Prêt pour frais de scolarité',
-    statut: 'en_cours'
-  },
-  {
-    id: 2,
-    personnelId: 2,
-    personnelNom: 'Touré Aminata',
-    matricule: 'EMP002',
-    type: 'logement',
-    montant: 2000000,
-    dateContraction: '2023-06-01',
-    periodeDebut: '2023-07',
-    duree: 36,
-    tauxInteret: 4.5,
-    mensualite: 59400,
-    resteAPayer: 1188000,
-    motif: 'Aide au logement',
-    statut: 'en_cours'
-  },
-  {
-    id: 3,
-    personnelId: 3,
-    personnelNom: 'Soro Mohamed',
-    matricule: 'EMP003',
-    type: 'vehicule',
-    montant: 1500000,
-    dateContraction: '2023-03-10',
-    periodeDebut: '2023-04',
-    duree: 24,
-    tauxInteret: 6,
-    mensualite: 66400,
-    resteAPayer: 0,
-    motif: 'Achat véhicule',
-    statut: 'termine'
-  }
-])
+// Données depuis le backend
+const loans = ref<Loan[]>([])
+const personnels = ref<Personnel[]>([])
+const periodes = ref<{ id: number; value: string; label: string }[]>([])
+const totalLoans = ref(0)
+const testing = ref(false)
 
-const personnels = ref<Personnel[]>([
-  { id: 1, nomComplet: 'Kouadio Jean', matricule: 'EMP001' },
-  { id: 2, nomComplet: 'Touré Aminata', matricule: 'EMP002' },
-  { id: 3, nomComplet: 'Soro Mohamed', matricule: 'EMP003' },
-  { id: 4, nomComplet: 'Koné Fatoumata', matricule: 'EMP004' },
-  { id: 5, nomComplet: 'Bamba Yves', matricule: 'EMP005' }
-])
+// Variables pour le filtrage des sélects
+const personnelSearchQuery = ref('')
+const periodeSearchQuery = ref('')
 
-const periodes = ref([
-  { value: '2024-01', label: 'Janvier 2024' },
-  { value: '2024-02', label: 'Février 2024' },
-  { value: '2024-03', label: 'Mars 2024' },
-  { value: '2024-04', label: 'Avril 2024' },
-  { value: '2024-05', label: 'Mai 2024' },
-  { value: '2024-06', label: 'Juin 2024' },
-  { value: '2024-07', label: 'Juillet 2024' },
-  { value: '2024-08', label: 'Août 2024' },
-  { value: '2024-09', label: 'Septembre 2024' },
-  { value: '2024-10', label: 'Octobre 2024' },
-  { value: '2024-11', label: 'Novembre 2024' },
-  { value: '2024-12', label: 'Décembre 2024' }
-])
+// Données filtrées pour les sélects
+const filteredPersonnels = computed(() => {
+  if (!personnelSearchQuery.value) return personnels.value
+  
+  const query = personnelSearchQuery.value.toLowerCase()
+  return personnels.value.filter(personnel => {
+    // Gérer différentes structures de données pour le nom
+    const nomComplet = personnel.nomComplet || personnel.Nom || personnel.nom || ''
+    const matricule = personnel.matricule || ''
+    
+    return nomComplet.toLowerCase().includes(query) ||
+           matricule.toLowerCase().includes(query)
+  })
+})
 
-// Computed properties
+const filteredPeriodes = computed(() => {
+  if (!periodeSearchQuery.value) return periodes.value
+  
+  const query = periodeSearchQuery.value.toLowerCase()
+  return periodes.value.filter(periode => 
+    String(periode.label).toLowerCase().includes(query) ||
+    String(periode.value).toLowerCase().includes(query)
+  )
+})
+
 const filteredLoans = computed(() => {
   let filtered = loans.value
 
@@ -502,7 +478,26 @@ const calculateMensualite = () => {
     } else {
       loanForm.mensualite = principal * (monthlyRate * Math.pow(1 + monthlyRate, months)) / (Math.pow(1 + monthlyRate, months) - 1)
     }
+    
+    // Arrondir la mensualité
+    loanForm.mensualite = Math.round(loanForm.mensualite)
   }
+}
+
+// Fonction pour calculer le reste à payer en fonction des paiements effectués
+const calculateResteAPayer = (montant: number, mensualite: number, duree: number, moisPayes: number = 0) => {
+  const totalPaiement = mensualite * duree
+  const montantDejaPaye = mensualite * moisPayes
+  const reste = Math.max(0, totalPaiement - montantDejaPaye)
+  
+  // S'assurer que le reste à payer ne dépasse pas le montant initial
+  return Math.min(reste, montant)
+}
+
+const openAddModal = () => {
+  showAddModal.value = true
+  editingLoan.value = false
+  resetForm()
 }
 
 const closeModal = () => {
@@ -535,46 +530,273 @@ const saveLoan = async () => {
     await loanFormRef.value.validate()
     formLoading.value = true
 
-    // Simulation d'un appel API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
     const personnel = personnels.value.find(p => p.id === loanForm.personnelId)
+    const periodeId = parseInt(String(loanForm.periodeDebut), 10)
+
+    if (Number.isNaN(periodeId)) {
+      ElMessage.error('Période de début invalide')
+      return
+    }
     
-    if (editingLoan.value) {
+    // Préparation de la requête pour le backend
+    const request: PretPersonnelRequest = {
+      montant: loanForm.montant,
+      echelonage: loanForm.duree,
+      pret: parseInt(loanForm.type), // Type de prêt depuis le formulaire
+      idPret: loanForm.id, // ID du prêt pour la modification
+      idpers: loanForm.personnelId,
+      dEmprunt: loanForm.dateContraction,
+      periodepaie: periodeId, // Utiliser l'ID de la période
+      statut: loanForm.statut // Ajout du statut du prêt
+    }
+
+    let result: PretPersonnelResponse
+    
+    if (editingLoan.value && loanForm.id) {
       // Modification
+      result = await pretspersonnelsService.updatePretPersonnel(loanForm.id, request)
+      
+      // Mise à jour locale
       const index = loans.value.findIndex(l => l.id === loanForm.id)
       if (index !== -1) {
         loans.value[index] = {
-          ...loanForm,
+          id: loanForm.id,
+          personnelId: loanForm.personnelId,
           personnelNom: personnel?.nomComplet || '',
           matricule: personnel?.matricule || '',
-          resteAPayer: loanForm.mensualite * loanForm.duree
+          type: loanForm.type,
+          pret: { id: parseInt(loanForm.type), libelle: getTypeLabel(loanForm.type) },
+          personnel: personnel,
+          montant: loanForm.montant,
+          dateContraction: loanForm.dateContraction,
+          periodeDebut: loanForm.periodeDebut,
+          duree: loanForm.duree,
+          tauxInteret: loanForm.tauxInteret,
+          mensualite: loanForm.mensualite,
+          resteAPayer: loanForm.mensualite * loanForm.duree,
+          motif: loanForm.motif,
+          statut: loanForm.statut
         }
-        ElMessage.success('Prêt modifié avec succès')
       }
+      ElMessage.success('Prêt modifié avec succès')
     } else {
       // Ajout
-      const newLoan: Loan = {
-        ...loanForm,
-        id: Date.now(),
-        personnelNom: personnel?.nomComplet || '',
-        matricule: personnel?.matricule || '',
-        resteAPayer: loanForm.mensualite * loanForm.duree
-      }
-      loans.value.unshift(newLoan)
+      result = await pretspersonnelsService.savePretPersonnel(request)
       ElMessage.success('Prêt ajouté avec succès')
     }
 
+    // Recharger la liste des prêts depuis le backend
+    await loadLoans()
     closeModal()
   } catch (error) {
     console.error('Erreur lors de la sauvegarde:', error)
+    ElMessage.error('Erreur lors de la sauvegarde du prêt')
   } finally {
     formLoading.value = false
   }
 }
 
+// Fonctions de chargement depuis le backend
+const loadLoans = async () => {
+  try {
+    loading.value = true
+    const response = await pretspersonnelsService.getPretsPersonnels(20, 0, searchQuery.value || undefined)
+    
+    // Transformation des données backend vers le format frontend
+    console.log('=== DÉBOGAGE LOAD LOANS ===')
+    console.log('Response brute:', response)
+    console.log('Response rows:', response.rows)
+    
+    // Le backend renvoie response.rows[0] qui est un tableau de prêts
+    const allLoans = response.rows[0] || []
+    
+    loans.value = allLoans.map((pretData: any, index) => {
+      console.log(`Mapping prêt ${index}:`, pretData)
+      
+      // Gérer la période - utiliser l'objet periode du backend
+      let periodeDebut = '2024-01' // Valeur par défaut
+      if (pretData.periode?.affiche) {
+        periodeDebut = pretData.periode.affiche
+      }
+      
+      // Gérer les valeurs nulles du backend
+      const personnelNom = pretData.personnel?.nomComplet || `Personnel ${pretData.idpers}`
+      const matricule = pretData.personnel?.matricule || `EMP${pretData.idpers}`
+      const dateContraction = pretData.dEmprunt || pretData.dateEmprunt || new Date().toISOString().split('T')[0]
+      
+      const mappedLoan = {
+        id: pretData.id,
+        personnelId: pretData.idpers,
+        personnelNom: personnelNom,
+        matricule: matricule,
+        type: 'personnel', // Type par défaut
+        pret: pretData.pret, // Objet pret du backend pour le tableau
+        personnel: pretData.personnel, // Objet personnel du backend pour le tableau
+        montant: pretData.montant,
+        dateContraction: dateContraction,
+        periodeDebut: periodeDebut,
+        duree: pretData.echelonage,
+        tauxInteret: 5, // Taux par défaut
+        mensualite: Math.round(pretData.montant / pretData.echelonage), // Calcul simple
+        resteAPayer: pretData.montant, // Simplifié
+        motif: pretData.libelle || '',
+        statut: 'en_cours' // Statut par défaut
+      }
+      
+      console.log(`Prêt mappé ${index}:`, mappedLoan)
+      return mappedLoan
+    })
+    
+    console.log('Loans après mapping:', loans.value)
+    console.log('=== FIN DÉBOGAGE LOAD LOANS ===')
+    
+    totalLoans.value = response.total
+  } catch (error) {
+    console.error('Erreur lors du chargement des prêts:', error)
+    ElMessage.error('Erreur lors du chargement des prêts')
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadPersonnels = async () => {
+  try {
+    ElMessage.info('Chargement des personnels en cours...')
+    const response = await pretspersonnelsService.getPersonnels()
+    
+    // Charger tout le personnel sans limitation
+    personnels.value = response.map((p: Personnel) => ({
+      id: p.id,
+      matricule: p.matricule,
+      nomComplet: p.nomComplet || `${p.prenom || ''} ${p.nom || ''}`.trim()
+    }))
+    
+    ElMessage.success(`${personnels.value.length} personnels chargés`)
+  } catch (error) {
+    console.error('Erreur lors du chargement des personnels:', error)
+    if (error.message?.includes('timeout')) {
+      ElMessage.error('Le chargement des personnels prend trop de temps. Veuillez réessayer.')
+    } else {
+      ElMessage.error('Erreur lors du chargement des personnels')
+    }
+  }
+}
+
+const loadPeriodes = async () => {
+  try {
+    ElMessage.info('Chargement des périodes de paie...')
+    const response = await pretspersonnelsService.getPeriodesPaie()
+    
+    if (response && response.length > 0) {
+      periodes.value = response.map((p: any) => {
+        const label = p.affiche || p.mois || p.libelle || 'Période inconnue'
+        
+        return {
+          id: p.id,
+          value: String(p.id),
+          label: label
+        }
+      })
+      ElMessage.success(`${periodes.value.length} périodes chargées`)
+    } else {
+      // Données par défaut si le backend ne renvoie rien
+      const currentYear = new Date().getFullYear()
+      periodes.value = [
+        { id: 1, value: `${currentYear}01`, label: 'Janvier 2024' },
+        { id: 2, value: `${currentYear}02`, label: 'Février 2024' },
+        { id: 3, value: `${currentYear}03`, label: 'Mars 2024' },
+        { id: 4, value: `${currentYear}04`, label: 'Avril 2024' },
+        { id: 5, value: `${currentYear}05`, label: 'Mai 2024' },
+        { id: 6, value: `${currentYear}06`, label: 'Juin 2024' },
+        { id: 7, value: `${currentYear}07`, label: 'Juillet 2024' },
+        { id: 8, value: `${currentYear}08`, label: 'Août 2024' },
+        { id: 9, value: `${currentYear}09`, label: 'Septembre 2024' },
+        { id: 10, value: `${currentYear}10`, label: 'Octobre 2024' },
+        { id: 11, value: `${currentYear}11`, label: 'Novembre 2024' },
+        { id: 12, value: `${currentYear}12`, label: 'Décembre 2024' }
+      ]
+      ElMessage.warning('Utilisation des périodes par défaut')
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des périodes:', error)
+    
+    // Données par défaut en cas d'erreur
+    const currentYear = new Date().getFullYear()
+    periodes.value = [
+      { id: 1, value: `${currentYear}01`, label: 'Janvier 2024' },
+      { id: 2, value: `${currentYear}02`, label: 'Février 2024' },
+      { id: 3, value: `${currentYear}03`, label: 'Mars 2024' },
+      { id: 4, value: `${currentYear}04`, label: 'Avril 2024' },
+      { id: 5, value: `${currentYear}05`, label: 'Mai 2024' },
+      { id: 6, value: `${currentYear}06`, label: 'Juin 2024' },
+      { id: 7, value: `${currentYear}07`, label: 'Juillet 2024' },
+      { id: 8, value: `${currentYear}08`, label: 'Août 2024' },
+      { id: 9, value: `${currentYear}09`, label: 'Septembre 2024' },
+      { id: 10, value: `${currentYear}10`, label: 'Octobre 2024' },
+      { id: 11, value: `${currentYear}11`, label: 'Novembre 2024' },
+      { id: 12, value: `${currentYear}12`, label: 'Décembre 2024' }
+    ]
+    
+    if (error.message?.includes('timeout')) {
+      ElMessage.error('Le chargement des périodes prend trop de temps. Utilisation des données par défaut.')
+    } else {
+      ElMessage.error('Erreur lors du chargement des périodes. Utilisation des données par défaut.')
+    }
+  }
+}
+
+// Fonction utilitaire pour convertir le nom du mois en numéro
+const getMoisNumero = (moisNom: string): number => {
+  const moisMap: Record<string, number> = {
+    'JANVIER': 1, 'JANVARY': 1,
+    'FEVRIER': 2, 'FEBRUARY': 2,
+    'MARS': 3, 'MARCH': 3,
+    'AVRIL': 4, 'APRIL': 4,
+    'MAI': 5, 'MAY': 5,
+    'JUIN': 6, 'JUNE': 6,
+    'JUILLET': 7, 'JULY': 7,
+    'AOUT': 8, 'AUGUST': 8,
+    'SEPTEMBRE': 9, 'SEPTEMBER': 9,
+    'OCTOBRE': 10, 'OCTOBER': 10,
+    'NOVEMBRE': 11, 'NOVEMBER': 11,
+    'DECEMBRE': 12, 'DECEMBER': 12
+  }
+  return moisMap[moisNom.toUpperCase()] || 1
+}
+
 const editLoan = (loan: Loan) => {
-  Object.assign(loanForm, loan)
+  console.log('=== DÉBOGAGE EDIT LOAN ===')
+  console.log('Prêt à modifier:', loan)
+  console.log('loan.pret:', loan.pret)
+  console.log('loan.personnel:', loan.personnel)
+  console.log('personnels.value (list):', personnels.value)
+  console.log('filteredPersonnels.value:', filteredPersonnels.value)
+  console.log('personnels.value.length:', personnels.value.length)
+  
+  // Mapper les données du prêt vers le formulaire
+  loanForm.id = loan.id
+  loanForm.personnelId = loan.personnel?.id || loan.personnelId
+  loanForm.type = loan.pret?.id?.toString() || loan.type
+  loanForm.montant = loan.montant
+  loanForm.dateContraction = loan.dateContraction
+  const matchedPeriode = periodes.value.find(
+    p => p.value === loan.periodeDebut || p.label === loan.periodeDebut
+  )
+  loanForm.periodeDebut = matchedPeriode ? matchedPeriode.value : loan.periodeDebut
+  loanForm.duree = loan.duree
+  loanForm.tauxInteret = loan.tauxInteret || 5
+  loanForm.mensualite = loan.mensualite
+  loanForm.motif = loan.motif || ''
+  loanForm.statut = loan.statut || 'en_cours'
+  
+  console.log('loanForm après mapping:', loanForm)
+  console.log('loanForm.personnelId:', loanForm.personnelId)
+  console.log('loanForm.type:', loanForm.type)
+  console.log('loanForm.montant:', loanForm.montant)
+  console.log('loanForm.dateContraction:', loanForm.dateContraction)
+  console.log('loanForm.periodeDebut:', loanForm.periodeDebut)
+  console.log('=== FIN DÉBOGAGE EDIT LOAN ===')
+  
   editingLoan.value = true
   showAddModal.value = true
 }
@@ -591,13 +813,16 @@ const deleteLoan = async (loan: Loan) => {
       }
     )
 
+    await pretspersonnelsService.deletePretPersonnel(loan.id)
+    
     const index = loans.value.findIndex(l => l.id === loan.id)
     if (index !== -1) {
       loans.value.splice(index, 1)
       ElMessage.success('Prêt supprimé avec succès')
     }
-  } catch {
-    // L'utilisateur a annulé
+  } catch (error) {
+    console.error('Erreur lors de la suppression:', error)
+    ElMessage.error('Erreur lors de la suppression du prêt')
   }
 }
 
@@ -630,27 +855,35 @@ const formatDate = (date: string) => {
 }
 
 const getTypeColor = (type: string) => {
+  if (!type) return 'info' // Valeur par défaut si type est vide ou undefined
+  
   const colors: Record<string, string> = {
     personnel: 'primary',
     logement: 'success',
     vehicule: 'warning',
     etudes: 'info',
     urgence: 'danger',
-    autre: ''
+    PRET: 'primary', // Ajout pour le type de prêt réel
+    'AVANCES & ACOMPTES': 'primary', // Type réel du backend
+    autre: 'info'
   }
-  return colors[type] || ''
+  return colors[type] || 'info'
 }
 
 const getTypeLabel = (type: string) => {
+  if (!type) return 'Non spécifié' // Valeur par défaut si type est vide ou undefined
+  
   const labels: Record<string, string> = {
     personnel: 'Personnel',
     logement: 'Logement',
     vehicule: 'Véhicule',
     etudes: 'Études',
     urgence: 'Urgence',
+    PRET: 'Prêt Personnel', // Ajout pour le type de prêt réel
+    'AVANCES & ACOMPTES': 'Avances & Comptes', // Type réel du backend
     autre: 'Autre'
   }
-  return labels[type] || type
+  return labels[type] || 'Autre'
 }
 
 const getStatusColor = (status: string) => {
@@ -671,12 +904,30 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status
 }
 
-onMounted(() => {
-  // Charger les données initiales
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 500)
+// Fonctions de filtrage pour les sélects
+const filterPersonnels = (query: string) => {
+  personnelSearchQuery.value = query
+}
+
+const clearPersonnelFilter = () => {
+  personnelSearchQuery.value = ''
+}
+
+const filterPeriodes = (query: string) => {
+  periodeSearchQuery.value = query
+}
+
+const clearPeriodeFilter = () => {
+  periodeSearchQuery.value = ''
+}
+
+onMounted(async () => {
+  // Charger les données depuis le backend
+  await Promise.all([
+    loadLoans(),
+    loadPersonnels(),
+    loadPeriodes()
+  ])
 })
 </script>
 
@@ -772,17 +1023,50 @@ onMounted(() => {
 
 .personnel-info {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.personnel-avatar {
+  flex-shrink: 0;
+}
+
+.personnel-details {
+  flex: 1;
+  min-width: 0;
 }
 
 .personnel-name {
   font-weight: 600;
-  color: #303133;
+  color: #2c3e50;
+  font-size: 14px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .personnel-matricule {
   font-size: 12px;
-  color: #909399;
+  color: #7f8c8d;
+  margin-bottom: 2px;
+  font-weight: 500;
+}
+
+.personnel-id {
+  font-size: 11px;
+  color: #95a5a6;
+  font-family: 'Courier New', monospace;
+}
+
+/* Styles pour l'avatar */
+.el-avatar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .amount {

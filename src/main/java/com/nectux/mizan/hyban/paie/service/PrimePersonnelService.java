@@ -33,4 +33,17 @@ public interface PrimePersonnelService {
 	
 	public PrimePersonnelDTO loadPrimePersonnel(Pageable pageable, String search);
 
+    PrimePersonnelDTO savePrimeCollective(Long id, Double montantop, Long valeurop, Long idAbsence, Long idCtrat, Long id1, Long idPrime, Long idPersonnel);
+
+    /**
+     * Enregistre N primes en UNE seule transaction (saveAll).
+     * @param idPrime    rubrique/prime à attribuer
+     * @param montant    montant unitaire (par personne)
+     * @param valeur     valeur (qte) — si null, défaut 1
+     * @param idPeriode  période de paie cible
+     * @param idsPers    liste des ids Personnel (pas Contrat)
+     * @return DTO résumant le résultat (rows = primes créées, total = nb créées)
+     */
+    PrimePersonnelDTO savePrimeCollectiveBatch(Long idPrime, Double montant, Long valeur,
+                                                Long idPeriode, java.util.List<Long> idsPers);
 }

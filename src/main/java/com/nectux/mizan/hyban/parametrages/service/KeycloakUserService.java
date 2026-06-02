@@ -5,6 +5,8 @@ import com.nectux.mizan.hyban.parametrages.dto.CreateUserRequest;
 import com.nectux.mizan.hyban.parametrages.dto.UserRepresentationDTO;
 import com.nectux.mizan.hyban.parametrages.dto.UserWithRolesDto;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ import java.util.stream.Collectors;
 public class KeycloakUserService {
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakUserService.class);
+    private static final String DEFAULT_TEMPORARY_PASSWORD = "1234567ml@";
 
     private final Keycloak keycloak;
     private final KeycloakProperties properties;
@@ -49,7 +52,9 @@ public class KeycloakUserService {
     public String registerUser(String username, String email, String firstName, String lastName, String password, List<String> roles) {
         UserRepresentation user = new UserRepresentation();
         user.setUsername(username);
-        user.setEmail(email);
+        if (email != null && !email.isBlank()) {
+            user.setEmail(email);
+        }
         user.setFirstName(firstName);
         user.setLastName(lastName);
         user.setEnabled(true); // activate later
@@ -58,7 +63,7 @@ public class KeycloakUserService {
         CredentialRepresentation credential = new CredentialRepresentation();
         credential.setTemporary(false);
         credential.setType(CredentialRepresentation.PASSWORD);
-        credential.setValue(password);
+        credential.setValue(password == null || password.isBlank() ? DEFAULT_TEMPORARY_PASSWORD : password);
         user.setCredentials(List.of(credential));
 
         Response response = realm().users().create(user);
@@ -536,27 +541,37 @@ public class KeycloakUserService {
 
     // 🔹 Méthode pour récupérer la dernière connexion
     private LocalDateTime getLastLogin(String userId) {
+        try {
+            List<EventRepresentation> events = realm()
+                    .getEvents(
+                            List.of("LOGIN"), // types d'événements
+                            null,             // client
+                            userId,           // user
+                            null,             // ipAddress
+                            null,             // realmId
+                            null,             // dateFrom
+                            0,                // firstResult
+                            1                 // maxResults
+                    );
 
-        List<EventRepresentation> events = realm()
-                .getEvents(
-                        List.of("LOGIN"), // types d'événements
-                        null,             // client
-                        userId,           // user
-                        null,             // ipAddress
-                        null,             // realmId
-                        null,             // dateFrom
-                        0,                // firstResult
-                        1                 // maxResults
-                );
+            if (events == null || events.isEmpty()) {
+                return null;
+            }
 
-        if (events == null || events.isEmpty()) {
+            Long time = events.get(0).getTime();
+            return Instant.ofEpochMilli(time)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+        } catch (NotAuthorizedException e) {
+            log.warn("Accès non autorisé aux événements Keycloak pour l'utilisateur {}. Dernière connexion ignorée.", userId);
             return null;
+        } catch (ProcessingException e) {
+            if (e.getCause() instanceof NotAuthorizedException) {
+                log.warn("Accès non autorisé aux événements Keycloak pour l'utilisateur {}. Dernière connexion ignorée.", userId);
+                return null;
+            }
+            throw e;
         }
-
-        Long time = events.get(0).getTime();
-        return Instant.ofEpochMilli(time)
-                .atZone(ZoneId.systemDefault())
-                .toLocalDateTime();
     }
 
     // 9. Get user by ID with roles and last login

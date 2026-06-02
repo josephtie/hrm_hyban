@@ -179,15 +179,13 @@
 
               <el-form-item label="Qualité d'emploi" required>
                 <el-select v-model="wizardForm.qualiteEmploi" placeholder="Qualité d'emploi" size="large">
-                  <el-option label="Aucun" value="AUCUN" />
-                  <el-option label="Directeur" value="1" />
-                  <el-option label="Cadre Supérieur" value="2" />
-                  <el-option label="Cadre Moyen" value="3" />
-                  <el-option label="Employé Qualifié" value="4" />
-                  <el-option label="Employé Non Qualifié" value="5" />
-                  <el-option label="Ouvrier Qualifié" value="6" />
-                  <el-option label="Ouvrier Non Qualifié" value="7" />
-                  <el-option label="Autre" value="8" />
+                  <el-option label="Aucun" value="0" />
+                  <el-option label="Niveau1 - Exécutant" value="Exécutant" />
+                  <el-option label="Niveau2 - Opérationnel" value="Opérationnel" />
+                  <el-option label="Niveau3 - Technique" value="Technique" />
+                  <el-option label="Niveau4 - Manager" value="Manager" />
+                  <el-option label="Niveau4 - Directeur" value="Directeur" />
+              
                 </el-select>
               </el-form-item>
 

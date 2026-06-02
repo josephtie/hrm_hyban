@@ -6,6 +6,7 @@ public class PrimePersonnelRequest extends PaginationRequest {
     private Long valeurop;
     private Long idAbsence;
     private Long idPersonnel;
+    private Long idPeriode;
     private Long idCtrat;
     private Long ctrat;
     private Long idPrime;
@@ -26,4 +27,12 @@ public class PrimePersonnelRequest extends PaginationRequest {
     public void setCtrat(Long ctrat) { this.ctrat = ctrat; }
     public Long getIdPrime() { return idPrime; }
     public void setIdPrime(Long idPrime) { this.idPrime = idPrime; }
+
+    public Long getIdPeriode() {
+        return idPeriode;
+    }
+
+    public void setIdPeriode(Long idPeriode) {
+        this.idPeriode = idPeriode;
+    }
 }

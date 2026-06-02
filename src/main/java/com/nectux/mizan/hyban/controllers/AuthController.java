@@ -24,7 +24,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestParam String username, @RequestParam String password) {
-        String keycloakHost = System.getenv().getOrDefault("KEYCLOAK_ADMIN_HOST", "http://192.168.1.2:8080");
+        String keycloakHost = System.getenv().getOrDefault("KEYCLOAK_ADMIN_HOST", "http://192.168.1.6:8080");
         String tokenUrl = keycloakHost + "/realms/hyban/protocol/openid-connect/token";
 
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();

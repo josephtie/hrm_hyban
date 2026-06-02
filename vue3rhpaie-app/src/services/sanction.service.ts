@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { API_URLS } from '@/config/api'
 
-const API_BASE_URL = 'http://192.168.1.8:7200/api/rh/carriere/sanctions'
+const API_BASE_URL = API_URLS.SANCTIONS
 
 export interface SanctionDto {
   id: number

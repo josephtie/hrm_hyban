@@ -1,6 +1,7 @@
 package com.nectux.mizan.hyban.paie.service.impl;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import com.nectux.mizan.hyban.paie.service.PretPersonnelService;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
+import com.nectux.mizan.hyban.personnel.specifque.repository.EmployeeRepository;
 import com.nectux.mizan.hyban.utils.DateManager;
 
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +38,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 	
 	//@Autowired private EchelonnementRepository pretPersonnelRepository;
 	@Autowired private PretPersonnelRepository pretPersonnelRepository;
-	
+    @Autowired private EmployeeRepository employeeRepository;
 	@Autowired private PretRepository pretRepository;
 	@Autowired private PersonnelRepository personnelRepository;
 	@Autowired private com.nectux.mizan.hyban.parametrages.repository.PeriodePaieRepository PeriodePaieRepository;
@@ -128,7 +130,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 	}
 
 	@Override
-	public PretPersonnelDTO saver(Double montant, Long echelonage,Long idPret, Long idPers, String dEmprunt,Long idPeriodDep) {
+	public PretPersonnelDTO saver(Double montant, Long echelonage,Long idPret, Long idPers, String dEmprunt,Long idPeriodDep,String statut) {
 		// TODO Auto-generated method stub
 		PretPersonnelDTO pretpersoDTO = new PretPersonnelDTO();
 		try{
@@ -136,6 +138,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 			PretPersonnel pretperso = new PretPersonnel();
 		
 			pretperso.setMontant(BigDecimal.valueOf(montant));
+			pretperso.setStatut(statut);
 			pretperso.setDateEmprunt(DateManager.stringToDate(dEmprunt,"dd/MM/yyyy"));
 			pretperso.setEchelonage(echelonage);
 			pretperso.setPeriode(PeriodePaieRepository.findById(idPeriodDep) .orElseThrow(() -> new EntityNotFoundException("PeriodePaie not found for id " + idPeriodDep)));
@@ -210,6 +213,89 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 		return pretpersoDTO;
 	}
 
+    public PretPersonnelDTO saverEmp(BigDecimal montant, Long echelonage, Long idPret, String idPers, String dEmprunt, Long idPeriodDep) {
+        // TODO Auto-generated method stub
+        PretPersonnelDTO pretpersoDTO = new PretPersonnelDTO();
+        try{
+            List<PretPersonnel> personnelpretList = new ArrayList<PretPersonnel>();
+            PretPersonnel pretperso = new PretPersonnel();
+
+            pretperso.setMontant(montant);
+            pretperso.setDateEmprunt(DateManager.stringToDate(dEmprunt,"dd/MM/yyyy"));
+            pretperso.setEchelonage(echelonage);
+            pretperso.setPeriode(PeriodePaieRepository.findById(idPeriodDep) .orElseThrow(() -> new EntityNotFoundException("PeriodePaie not found for id " + idPeriodDep)));
+            pretperso.setEmployee(employeeRepository.findById(Long.valueOf(idPers))
+                    .orElseThrow(() -> new EntityNotFoundException("Personnel not found for id " + idPers)));
+
+            pretperso.setPret(pretRepository.findById(idPret)
+                    .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + idPret)));
+            personnelpretList.add(pretperso);
+            pretperso=pretPersonnelRepository.save(pretperso);
+            pretpersoDTO.setRow(pretperso);
+            pretpersoDTO.setRows(personnelpretList);
+            pretpersoDTO.setResult("success");
+
+            if(pretperso.getId() != null){
+
+                //Calcul du montant en fonction de l'echellonnage
+                //Calcul du montant en fonction de l'echellonnage
+                BigDecimal montEchell = BigDecimal.ZERO;
+                try {
+                    montEchell = (pretperso.getMontant()).divide(BigDecimal.valueOf(pretperso.getEchelonage()));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                PeriodePaie periodePaieDepart = new PeriodePaie();
+                try {
+
+                    periodePaieDepart = PeriodePaieRepository.findById(idPeriodDep).orElseThrow(() -> new EntityNotFoundException("Personnel not found for id " + idPeriodDep));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                //listDoc.add(docu);
+
+                Echelonnement pretEchelle = new Echelonnement();
+                pretEchelle.setPeriodePaie(periodePaieDepart);
+                pretEchelle.setPretPersonnel(pretperso);
+                pretEchelle.setPaye(false);
+                pretEchelle.setMontant(montEchell);
+
+                //Enregistrement
+                pretEchelle= echelonnementService.save(pretEchelle);
+                for(int i = 1; i < pretperso.getEchelonage(); i++){
+
+                    PeriodePaie periodePaieRech = new PeriodePaie();
+                    periodePaieRech = PeriodePaieRepository.findById(periodePaieDepart.getId()+i).orElseThrow(() -> new EntityNotFoundException("Personnel not found for id " + idPers));
+                    //listDoc.add(docu);
+
+                    Echelonnement pretEcheller = new Echelonnement();
+                    pretEcheller.setPeriodePaie(periodePaieRech);
+                    pretEcheller.setPretPersonnel(pretperso);
+                    pretEcheller.setPaye(false);
+                    pretEcheller.setMontant(montEchell);
+
+                    //Enregistrement
+                    pretEcheller= echelonnementService.save(pretEcheller);
+
+
+
+
+                }
+
+            }
+
+
+            logger.info(new StringBuilder().append(">>>>> ").append(pretperso.toString()).append(" ENREGISTRE AVEC SUCCES").toString());
+        } catch(Exception ex){
+            pretpersoDTO.setResult("failed");
+            logger.error(ex.getMessage());
+            logger.error(new StringBuilder().append(">>>>>  ERREUR SUR ENREGISTREMENT PRETPERSONNEL [NOM : ").append(montant).toString());
+            ex.getStackTrace();
+        }
+        return pretpersoDTO;
+    }
+
 	@Override
 	public PretPersonnelDTO PretPersonneldupersonnel(Long Idpers) {
 		// TODO Auto-generated method stub
@@ -236,7 +322,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 	}
 
 	@Override
-	public PretPersonnelDTO update(Long idPretpers,Double montant, Long echelonage,Long idPret, Long idPers, String dEmprunt, Long idPeriodDep) {
+	public PretPersonnelDTO update(Long idPretpers,Double montant, Long echelonage,Long idPret, Long idPers, String dEmprunt, Long idPeriodDep,String statut) {
 		// TODO Auto-generated method stub
 		PretPersonnelDTO pretpersoDTO = new PretPersonnelDTO();
 		try {
@@ -251,6 +337,7 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 				pretperso.setMontant(BigDecimal.valueOf(montant));
 				pretperso.setDateEmprunt(DateManager.stringToDate(dEmprunt,"dd/MM/yyyy"));
 				pretperso.setEchelonage(echelonage);
+                 pretperso.setStatut(statut);
 				 pretperso.setPeriode(PeriodePaieRepository.findById(idPeriodDep)
 						 .orElseThrow(() -> new EntityNotFoundException("PeriodePaie not found for id " + idPeriodDep)));
 
@@ -270,11 +357,11 @@ public class PretPersonnelServiceImpl implements PretPersonnelService {
 					
 					//Calcul du montant en fonction de l'echellonnage
                     BigDecimal montEchell =  BigDecimal.ZERO;
-					try {
-					montEchell = (pretperso.getMontant()).divide(BigDecimal.valueOf(pretperso.getEchelonage()));
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+
+                    if (pretperso.getEchelonage() != 0) {
+                        montEchell = pretperso.getMontant()
+                                .divide(BigDecimal.valueOf(pretperso.getEchelonage()), 2, RoundingMode.HALF_UP);
+                    }
 				
 					PeriodePaie periodePaieDepart = new PeriodePaie();
 					try {

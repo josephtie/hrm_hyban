@@ -18,7 +18,7 @@ import com.nectux.mizan.hyban.parametrages.service.TypeContratService;
 
 @RestController
 @RequestMapping("/api/parametrages/types-contrats")
-@CrossOrigin(origins = {"http://localhost:7153", "http://localhost:7200", "http://localhost:4200", "http://127.0.0.1:3000"}, 
+@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.6:7153", "http://localhost:7200", "http://192.168.1.6:7200", "http://localhost:4200", "http://127.0.0.1:3000"}, 
              allowedHeaders = "*", 
              methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS, RequestMethod.PATCH},
              allowCredentials = "true")

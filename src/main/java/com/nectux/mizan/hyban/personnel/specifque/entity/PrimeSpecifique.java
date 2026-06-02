@@ -68,16 +68,17 @@ public class PrimeSpecifique extends Auditable {
 		this.id = id;
 	}
 
+	public BigDecimal getMontant() {
+		return montant;
+	}
 
-    public BigDecimal getMontant() {
-        return montant;
-    }
+	public void setMontant(BigDecimal montant) {
+		this.montant = montant;
+	}
 
-    public void setMontant(BigDecimal montant) {
-        this.montant = montant;
-    }
 
-    public PeriodePaie getPeriode() {
+	
+	public PeriodePaie getPeriode() {
 		return periodePaie;
 	}
 

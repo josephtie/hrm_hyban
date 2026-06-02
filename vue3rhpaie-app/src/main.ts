@@ -10,6 +10,11 @@ import '@/styles/design-system.scss'
 // Import de l'initialisation Keycloak
 import initializeKeycloak from '@/plugins/keycloak'
 
+// Import du diagnostic de configuration
+// import '@/utils/debug-config'
+// Import du test d'authentification
+// import '@/utils/test-auth'
+
 import App from './App.vue'
 import router from './router'
 

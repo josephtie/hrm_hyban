@@ -19,8 +19,8 @@ public interface TempEffectifRepository extends CrudRepository<TempEffectif, Lon
 	public Page<TempEffectif> findAll(Pageable pageable);
 	
 	public java.util.List<TempEffectif> findByPeriodePaieId(Long idptret);
-	
 
+    Optional<TempEffectif> findFirstByEmployeeIdAndPeriodePaieId(Long employeeId, Long periodeId);
 	
 	public java.util.List<TempEffectif> findByPersonnelIdAndPeriodePaieId(Long idpers,Long idperiode);
 	

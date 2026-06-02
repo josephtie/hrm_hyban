@@ -62,6 +62,9 @@ public class PretPersonnel extends Auditable {
     @Transient
     private String dEmprunt;
 
+
+    private String statut;
+
     public PretPersonnel() {
         super();
     }
@@ -148,6 +151,14 @@ public class PretPersonnel extends Auditable {
         this.employee = employee;
     }
 
+    public String getStatut() {
+        return statut;
+    }
+
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
+
     @Override
     public String toString() {
         return "PretPersonnel{" +
@@ -161,6 +172,7 @@ public class PretPersonnel extends Auditable {
                 ", dateEmprunt=" + dateEmprunt +
                 ", periode=" + periode +
                 ", dEmprunt='" + dEmprunt + '\'' +
+                ", statut='" + statut + '\'' +
                 '}';
     }
 }

@@ -3,7 +3,7 @@ package com.nectux.mizan.hyban.personnel.specifque.web;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.parametrages.service.PeriodePaieService;
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
-
+//import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
 import com.nectux.mizan.hyban.personnel.specifque.dto.SpecialContractDTO;
 import com.nectux.mizan.hyban.personnel.specifque.entity.SpecialContract;
 import com.nectux.mizan.hyban.personnel.specifque.services.SpecialContractService;
@@ -18,12 +18,12 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 
 @RestController
-@RequestMapping("/personnels/specifique/special-contracts")
+@RequestMapping("/api/personnels/specifique/special-contracts")
 public class SpecialContractController {
     private static final Logger logger = LoggerFactory.getLogger(SpecialContractController.class);
     private final SpecialContractService service;
-    //@Autowired
-    //private UtilisateurService userService;
+   // @Autowired
+  //  private UtilisateurService userService;
     @Autowired private SocieteService societeService;
     @Autowired private PeriodePaieService periodePaieService;
     private PeriodePaie maperiode;

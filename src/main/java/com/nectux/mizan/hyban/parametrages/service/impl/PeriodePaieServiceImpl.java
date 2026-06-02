@@ -494,6 +494,7 @@ public class PeriodePaieServiceImpl implements PeriodePaieService {
 				  malistretour.add(p)  ;
 			  }
 		   }
+        malistretour.add(periodeactif);
 		return malistretour;
 	}
 	

@@ -81,7 +81,7 @@ public class PersonnelServiceImpl implements PersonnelService {
                                     Long typeContrat, String matricule, String sexe, String dateNaissance, String lieuNaissance, String email,
                                     String residence, int situationMatrimoniale, int nombreEnfant, String dateArrivee, String numeroCNPS,
                                     String adresse, String dateDebut, String dateFin, BigDecimal salaireNet, BigDecimal indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib,
-                                    int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg, BigDecimal indemniteRespons, BigDecimal indemniteRepresent, BigDecimal indemniteTransport, BigDecimal sursalaire) {
+                                    int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, String situationEmploie, String dateRetourcg, BigDecimal indemniteRespons, BigDecimal indemniteRepresent, BigDecimal indemniteTransport, BigDecimal sursalaire) {
 		// TODO Auto-generated method stub
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
 		Personnel personnel = new Personnel();Personnel personnelmat = new Personnel();Personnel personnelcnps = new Personnel();
@@ -237,7 +237,7 @@ public class PersonnelServiceImpl implements PersonnelService {
 	@Transactional(rollbackFor = Exception.class)
 	public PersonnelDTO save(Long id, String nom, String prenom, Long nationalite, Long service, String matricule, String sexe, String dateNaissance,
                              String lieuNaissance, String email, String residence, int situationMatrimoniale, int nombreEnfant,
-                             String dateArrivee, String numeroCNPS, String adresse, Boolean statut, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg) {
+                             String dateArrivee, String numeroCNPS, String adresse, Boolean statut, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, Boolean carec, String typemp, String telephone, int situationMedaill, String situationEmploie, String dateRetourcg) {
 		// TODO Auto-generated method stub
 		PersonnelDTO personnelDTO = new PersonnelDTO();
 		Personnel personnel = new Personnel();

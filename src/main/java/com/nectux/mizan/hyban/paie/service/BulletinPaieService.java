@@ -2,9 +2,9 @@ package com.nectux.mizan.hyban.paie.service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 import com.nectux.mizan.hyban.paie.dto.*;
+import com.nectux.mizan.hyban.paie.entity.LivreDePaie;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.paie.entity.BulletinPaie;
 import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
@@ -14,7 +14,9 @@ import com.nectux.mizan.hyban.utils.PrintLs;
 import org.springframework.data.domain.Pageable;
 
 public interface BulletinPaieService {
-	
+
+
+    public RapportBullDTO buildBulletinData(Long idPeriode);
 	public BulletinPaie save(BulletinPaie bulletinPaie);
 
     //@SuppressWarnings({ "unused", "null" })
@@ -22,12 +24,13 @@ public interface BulletinPaieService {
 
     //	public LivreDePaieDTO   genererMois1(Pageable pageable,Long idPeriode);
 	public LivreDePaieDTO   genererOptimiseMois1(Pageable pageable,Long idPeriode);
-	public BulletinPaieDTO generateLivreDePaie(Pageable pageable);
+	public BulletinPaieDTO generateLivreDePaie(Pageable pageable, Long idPeriode, List<LivreDePaie> livredepaieList);
 	
 //	public BulletinPaieDTO generateBulletinDePaie(List<LivreDePaie> monlivre);
 //	public List<BulletinPaie>   genererMois1Personnel(Long idPeriode,Long idPersonnel);
 	public List<BulletinPaie>   rechercherBulletinMois(PeriodePaie periodePaie);
 	public List<BulletinPaie>   rechercherBulletinMoisCalculer(PeriodePaie periodePaie,boolean etat);
+	//public List<BulletinPaie>   rechercherBulletinMoisCalculer(PeriodePaie periodePaie,boolean etat);
    // public LivreDePaieDTOV2 genererOptimiseMoisVersion2(Pageable pageable, Long idPeriode);
 	public List<BulletinPaie>   rechercherBulletinAnneeCalculer(Long idanne,boolean etat);
 	public List<BulletinPaie>   rechercherBulletinAnnuel(Long anneeId,Long Idpers);
@@ -104,7 +107,7 @@ public interface BulletinPaieService {
 	public List<PrintLs> calculerMasseSalarialeParSite(PeriodePaie periode);
 	public List<PrintLs> calculerEffectifParSiteAlaPaie(PeriodePaie periode);
 	public BulletinPaieDTO getCurrentYearBulletins(Long personnelId,String annee) ;
-
+   //  BulletinSpecialeDTO generateEmployeLivreDePaie(Pageable pageable);
 	BulletinPaieDTO findbulletin(Long payrollId);
 
 	BulletinPaieDTO loadBulletinPaieSearch(Pageable page, String criteria);

@@ -1,4 +1,4 @@
-import { api } from './api'
+﻿import { api } from './api'
 
 const API_BASE_URL = '/parametrages/banques'
 
@@ -192,3 +192,4 @@ class BanqueService {
 }
 
 export default new BanqueService()
+

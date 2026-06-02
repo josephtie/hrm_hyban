@@ -223,7 +223,7 @@ public class BulletinPaie extends Auditable {
 	private String montantCnps;
 	
 	
-private BigDecimal basecnps;
+    private BigDecimal basecnps;
 	
 	@Transient
 	private String montantbaseCnps;
@@ -319,6 +319,21 @@ private BigDecimal basecnps;
 	
 	@Transient
 	private List<ImprimBulletinPaie> listImprimBulletinPaieIndemniteNonImp;
+
+	@Transient
+	private List<PrimePersonnel> listIndemniteBrut;
+
+	@Transient
+	private List<PrimePersonnel> listIndemniteNonImp;
+
+	@Transient
+	private List<PrimePersonnel> listRetenueSociale;
+
+	@Transient
+	private List<PrimePersonnel> listRetenueMutuellt;
+
+	@Transient
+	private List<PrimePersonnel> listGainsNet;
 	
 	@ManyToOne
 	@JoinColumn(nullable=false)
@@ -866,6 +881,46 @@ private BigDecimal basecnps;
 	public void setListImprimBulletinPaieIndemniteNonImp(
 			List<ImprimBulletinPaie> listImprimBulletinPaieIndemniteNonImp) {
 		this.listImprimBulletinPaieIndemniteNonImp = listImprimBulletinPaieIndemniteNonImp;
+	}
+
+	public List<PrimePersonnel> getListIndemniteBrut() {
+		return listIndemniteBrut;
+	}
+
+	public void setListIndemniteBrut(List<PrimePersonnel> listIndemniteBrut) {
+		this.listIndemniteBrut = listIndemniteBrut;
+	}
+
+	public List<PrimePersonnel> getListIndemniteNonImp() {
+		return listIndemniteNonImp;
+	}
+
+	public void setListIndemniteNonImp(List<PrimePersonnel> listIndemniteNonImp) {
+		this.listIndemniteNonImp = listIndemniteNonImp;
+	}
+
+	public List<PrimePersonnel> getListRetenueSociale() {
+		return listRetenueSociale;
+	}
+
+	public void setListRetenueSociale(List<PrimePersonnel> listRetenueSociale) {
+		this.listRetenueSociale = listRetenueSociale;
+	}
+
+	public List<PrimePersonnel> getListRetenueMutuellt() {
+		return listRetenueMutuellt;
+	}
+
+	public void setListRetenueMutuellt(List<PrimePersonnel> listRetenueMutuellt) {
+		this.listRetenueMutuellt = listRetenueMutuellt;
+	}
+
+	public List<PrimePersonnel> getListGainsNet() {
+		return listGainsNet;
+	}
+
+	public void setListGainsNet(List<PrimePersonnel> listGainsNet) {
+		this.listGainsNet = listGainsNet;
 	}
 
 

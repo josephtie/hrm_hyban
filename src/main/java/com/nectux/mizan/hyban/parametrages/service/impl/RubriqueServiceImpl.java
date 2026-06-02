@@ -149,8 +149,88 @@ public class RubriqueServiceImpl implements RubriqueService {
 	}
 
     @Override
-    public RubriqueDTO saveRubriqueComplete(Long id, String code, String libelle, Integer etatImposition, String modeCalcul, Double valeurDef, Boolean cotisable, Boolean active, Boolean permanent, Boolean speciale, String description) {
-        return null;
+    @Transactional(rollbackFor = Exception.class)
+    public RubriqueDTO saveRubriqueComplete(Long id, String code, String libelle, Integer etatImposition, String modeCalcul, Double valeurDef, Boolean cotisable, Boolean active, Boolean permanent, Boolean speciale, String description,String categorie,String typeRubrique) {
+        RubriqueDTO rubriqueDTO = new RubriqueDTO();
+        Erreur erreur = new Erreur();
+        List<Erreur> listErreur = new ArrayList<>();
+        
+        try {
+            // Validation des champs obligatoires
+            if (code == null || code.trim().isEmpty()) {
+                erreur.setCode(1);
+                erreur.setDescription("Le code est obligatoire");
+                listErreur.add(erreur);
+                rubriqueDTO.setErrors(listErreur);
+                return rubriqueDTO;
+            }
+            
+            if (libelle == null || libelle.trim().isEmpty()) {
+                erreur.setCode(2);
+                erreur.setDescription("Le libellé est obligatoire");
+                listErreur.add(erreur);
+                rubriqueDTO.setErrors(listErreur);
+                return rubriqueDTO;
+            }
+            
+            // Vérification si la rubrique existe déjà (pour la création)
+            if (id == null || id == 0) {
+                Rubrique existingRubrique = rubriqueRepository.findByCode(code);
+                if (existingRubrique != null) {
+                    erreur.setCode(3);
+                    erreur.setDescription("Une rubrique avec ce code existe déjà");
+                    listErreur.add(erreur);
+                    rubriqueDTO.setErrors(listErreur);
+                    return rubriqueDTO;
+                }
+            }
+            
+            // Création ou mise à jour de la rubrique
+            Rubrique rubrique;
+            if (id != null && id != 0) {
+                rubrique = rubriqueRepository.findById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Rubrique not found for id " + id));
+            } else {
+                rubrique = new Rubrique();
+            }
+            
+            // Mise à jour des champs
+            rubrique.setCode(code);
+            rubrique.setLibelle(libelle);
+            rubrique.setEtatImposition(etatImposition);
+            rubrique.setModeCalcul(modeCalcul);
+            rubrique.setValeurDef(BigDecimal.valueOf(valeurDef != null ? valeurDef : 0.0));
+            rubrique.setCotisable(cotisable != null ? cotisable : true);
+            rubrique.setActive(active != null ? active : true);
+            rubrique.setPermanent(permanent != null ? permanent : false);
+            rubrique.setSpeciale(speciale != null ? speciale : false);
+            rubrique.setDescription(description);
+            rubrique.setCategorie(categorie);
+            rubrique.setTypeRubrique(typeRubrique);
+
+            // Sauvegarde
+            Rubrique savedRubrique = rubriqueRepository.save(rubrique);
+            
+            // Conversion en DTO
+
+            rubriqueDTO.setRow(savedRubrique);
+            rubriqueDTO.setResult("success");
+            rubriqueDTO.setStatus(true);
+
+            // Succès
+            erreur.setCode(0);
+            erreur.setDescription("Rubrique enregistrée avec succès");
+            listErreur.add(erreur);
+            rubriqueDTO.setErrors(listErreur);
+            
+        } catch (Exception e) {
+            erreur.setCode(999);
+            erreur.setDescription("Erreur lors de l'enregistrement: " + e.getMessage());
+            listErreur.add(erreur);
+            rubriqueDTO.setErrors(listErreur);
+        }
+        
+        return rubriqueDTO;
     }
 
 
@@ -184,7 +264,7 @@ public class RubriqueServiceImpl implements RubriqueService {
 				rubriqueRepository.delete(rubrique);
 				sb = new StringBuilder();
 				sb.append(rubrique.getLibelle()).append(" supprime avec succes");
-				rubriqueDTO.setResult(true);
+				rubriqueDTO.setResult("success");
 				rubriqueDTO.setStatus(true);
 				rubriqueDTO.setRow(rubrique);
 				rubriqueDTO.setRows(null);

@@ -7,12 +7,18 @@ import java.util.Map;
 
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.parametrages.entity.Societe;
+import com.nectux.mizan.hyban.paie.entity.BulletinPaie;
+import com.nectux.mizan.hyban.paie.repository.BulletinPaieRepository;
 // import com.nectux.mizan.hyban.parametrages.entity.Utilisateur;
 import com.nectux.mizan.hyban.parametrages.service.PeriodePaieService;
 import com.nectux.mizan.hyban.personnel.dto.OrganisationServiceDto;
 import com.nectux.mizan.hyban.personnel.dto.OrganisationServiceResponse;
 import com.nectux.mizan.hyban.personnel.dto.ServiceDTO;
+import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
+import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.personnel.entity.Service;
+import com.nectux.mizan.hyban.personnel.repository.ContratPersonnelRepository;
+import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +46,9 @@ public class ServiceController {
 
 	private static final Logger logger = LogManager.getLogger(ServiceController.class);
 	@Autowired private ServiceService serviceService;
+	@Autowired private PersonnelRepository personnelRepository;
+	@Autowired private ContratPersonnelRepository contratPersonnelRepository;
+	@Autowired private BulletinPaieRepository bulletinPaieRepository;
 	// @Autowired private UtilisateurService userService;
 	@Autowired private PeriodePaieService periodePaieService;
 	@Autowired private SocieteService societeService;
@@ -156,5 +165,166 @@ public class ServiceController {
 			response.setMessage(e.getMessage());
 			return ResponseEntity.status(500).body(response);
 		}
+	}
+
+	@GetMapping("/effectifs-par-direction")
+	public ResponseEntity<List<Map<String, Object>>> getEffectifsParDirection() {
+		try {
+			List<Service> allServices = serviceService.findServices();
+			List<String> directionsOfficielles = java.util.Arrays.asList(
+				"RESSOURCES HUMAINES",
+				"PROJET",
+				"MECANIQUE",
+				"LOGISTIQUE",
+				"LABO",
+				"TOPOGRAPHIQUE"
+			);
+			Map<Long, Map<String, Object>> effectifs = new java.util.LinkedHashMap<>();
+
+			for (Service service : allServices) {
+				if (isDirection(service) && isDirectionOfficielle(service, directionsOfficielles)) {
+					Map<String, Object> row = new java.util.HashMap<>();
+					row.put("id", service.getId());
+					row.put("libelle", formatDirectionLibelle(service.getLibelle()));
+					row.put("effectif", 0);
+					effectifs.put(service.getId(), row);
+				}
+			}
+
+			List<Personnel> personnels = personnelRepository.findByRetraitEffectFalse();
+			for (Personnel personnel : personnels) {
+				if (!Boolean.TRUE.equals(personnel.getStatut())) {
+					continue;
+				}
+
+				Service direction = getDirection(personnel.getService());
+				if (direction == null) {
+					continue;
+				}
+				if (!isDirectionOfficielle(direction, directionsOfficielles)) {
+					continue;
+				}
+
+				Map<String, Object> row = effectifs.get(direction.getId());
+				if (row == null) {
+					continue;
+				}
+				row.put("effectif", ((Number) row.get("effectif")).intValue() + 1);
+			}
+
+			return ResponseEntity.ok(new java.util.ArrayList<>(effectifs.values()));
+		} catch (Exception e) {
+			logger.error("Erreur lors du calcul des effectifs par direction", e);
+			return ResponseEntity.status(500).body(java.util.Collections.emptyList());
+		}
+	}
+
+	@GetMapping("/dashboard/activites-recentes")
+	public ResponseEntity<List<Map<String, Object>>> getActivitesRecentes() {
+		try {
+			List<Map<String, Object>> activites = new java.util.ArrayList<>();
+			PageRequest pageRequest = PageRequest.of(0, 5, Direction.DESC, "createdAt");
+
+			for (Personnel personnel : personnelRepository.findAll(pageRequest)) {
+				if (personnel.getCreatedAt() == null) {
+					continue;
+				}
+				Map<String, Object> activity = new java.util.HashMap<>();
+				activity.put("id", "personnel-" + personnel.getId());
+				activity.put("type", "create");
+				activity.put("title", "Nouvel employé ajouté: " + getNomComplet(personnel));
+				activity.put("createdAt", personnel.getCreatedAt());
+				activites.add(activity);
+			}
+
+			for (ContratPersonnel contrat : contratPersonnelRepository.findAll(pageRequest)) {
+				if (contrat.getCreatedAt() == null) {
+					continue;
+				}
+				Map<String, Object> activity = new java.util.HashMap<>();
+				activity.put("id", "contrat-" + contrat.getId());
+				activity.put("type", "edit");
+				activity.put("title", "Contrat enregistré: " + getNomComplet(contrat.getPersonnel()));
+				activity.put("createdAt", contrat.getCreatedAt());
+				activites.add(activity);
+			}
+
+			for (BulletinPaie bulletin : bulletinPaieRepository.findAll(pageRequest)) {
+				if (bulletin.getCreatedAt() == null) {
+					continue;
+				}
+				Map<String, Object> activity = new java.util.HashMap<>();
+				activity.put("id", "bulletin-" + bulletin.getId());
+				activity.put("type", "payroll");
+				activity.put("title", "Bulletin généré: " + getNomCompletFromBulletin(bulletin));
+				activity.put("createdAt", bulletin.getCreatedAt());
+				activites.add(activity);
+			}
+
+			activites.sort((a, b) -> ((java.time.LocalDateTime) b.get("createdAt")).compareTo((java.time.LocalDateTime) a.get("createdAt")));
+			return ResponseEntity.ok(activites.stream().limit(5).collect(java.util.stream.Collectors.toList()));
+		} catch (Exception e) {
+			logger.error("Erreur lors de la récupération des activités récentes", e);
+			return ResponseEntity.status(500).body(java.util.Collections.emptyList());
+		}
+	}
+
+	private Service getDirection(Service service) {
+		Service current = service;
+		while (current != null && !isDirection(current)) {
+			current = current.getServiceParent();
+		}
+		return current;
+	}
+
+	private boolean isDirection(Service service) {
+		return service != null
+			&& service.getTypeService() != null
+			&& service.getTypeService().getLibelle() != null
+			&& "DIRECTION".equalsIgnoreCase(service.getTypeService().getLibelle().trim());
+	}
+
+	private boolean isDirectionOfficielle(Service service, List<String> directionsOfficielles) {
+		return directionsOfficielles.contains(normalizeDirectionLibelle(service.getLibelle()));
+	}
+
+	private String formatDirectionLibelle(String libelle) {
+		if (libelle == null) {
+			return "Non renseigné";
+		}
+		String formatted = libelle
+			.replaceFirst("(?i)^\\s*DIRECTION\\s+", "")
+			.replace("-", "")
+			.trim()
+			.replaceAll("\\s+", " ");
+		return formatted.isEmpty() ? libelle : formatted;
+	}
+
+	private String normalizeDirectionLibelle(String libelle) {
+		if (libelle == null) {
+			return "";
+		}
+		return java.text.Normalizer.normalize(formatDirectionLibelle(libelle), java.text.Normalizer.Form.NFD)
+			.replaceAll("\\p{M}", "")
+			.trim()
+			.replaceAll("\\s+", " ")
+			.toUpperCase();
+	}
+
+	private String getNomComplet(Personnel personnel) {
+		if (personnel == null) {
+			return "Non renseigné";
+		}
+		String nom = personnel.getNom() == null ? "" : personnel.getNom();
+		String prenom = personnel.getPrenom() == null ? "" : personnel.getPrenom();
+		String nomComplet = (nom + " " + prenom).trim();
+		return nomComplet.isEmpty() ? "Non renseigné" : nomComplet;
+	}
+
+	private String getNomCompletFromBulletin(BulletinPaie bulletin) {
+		if (bulletin == null || bulletin.getContratPersonnel() == null) {
+			return "Non renseigné";
+		}
+		return getNomComplet(bulletin.getContratPersonnel().getPersonnel());
 	}
 }

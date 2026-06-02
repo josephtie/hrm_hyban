@@ -1,12 +1,17 @@
 import axios from 'axios'
+import type { AxiosResponse } from 'axios'
+import type { ApiResponse } from '@/types/auth'
+import { API_URLS, API_CONFIG } from '@/config/api'
 import router from '@/router'
 
 export interface UserInfo {
-  username: string
+  sub: string
   email: string
-  nom: string
-  prenom: string
-  role: string
+  name: string
+  preferred_username: string
+  given_name: string
+  family_name: string
+  roles: string[]
 }
 
 export interface LoginResponse {
@@ -15,12 +20,12 @@ export interface LoginResponse {
   error?: string
 }
 
-// Configuration Keycloak
+// Configuration Keycloak centralisée
 const keycloakConfig = {
-  tokenUrl: '/realms/hyban/protocol/openid-connect/token', // Utiliser le proxy Vite
-  clientId: 'hrm_frontend',
-  grantType: 'password',
-  scope: 'openid profile email'
+  tokenUrl: API_URLS.KEYCLOAK_TOKEN,
+  clientId: API_CONFIG.KEYCLOAK.CLIENT_ID,
+  grantType: API_CONFIG.KEYCLOAK.GRANT_TYPE,
+  scope: API_CONFIG.KEYCLOAK.SCOPE
 }
 
 export const keycloakAuthService = {

@@ -626,6 +626,13 @@ const editFonction = (fonction: FonctionRestDto) => {
   showForm.value = true
 }
 
+const duplicateFonction = (fonction: FonctionRestDto) => {
+  console.log('📋 Dupliquer la fonction:', fonction)
+  Object.assign(form, { ...fonction, id: undefined, libelle: `${fonction.libelle} (copie)` })
+  isEditing.value = false
+  showForm.value = true
+}
+
 const deleteFonction = async (fonction: FonctionRestDto) => {
   try {
     await ElMessageBox.confirm(

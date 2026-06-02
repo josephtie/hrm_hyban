@@ -3,6 +3,7 @@ package com.nectux.mizan.hyban.paie.entity;
 import com.nectux.mizan.hyban.parametrages.entity.Auditable;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.personnel.specifque.entity.SpecialContract;
+import jakarta.persistence.Table;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 

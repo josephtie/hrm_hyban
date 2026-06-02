@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { API_URLS } from '@/config/api'
 
-const API_BASE_URL = 'http://192.168.1.8:7200/api/parametrages/rubriques'
+const API_BASE_URL = API_URLS.RUBRIQUES
 
 export interface RubriqueDto {
   id: number

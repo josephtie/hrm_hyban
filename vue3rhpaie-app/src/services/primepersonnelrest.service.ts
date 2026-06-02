@@ -1,136 +1,250 @@
-import { PrimePersonnelRestControllerApi } from '@/generated/api'
-import type { ApiResponse } from '@/types/auth'
-import type * as GeneratedTypes from '@/generated/api'
 
-// Interface pour compatibilité avec le code existant
+import { createAuthenticatedApi } from './api'
+import type { ApiResponse } from '@/types/auth'
+
 export interface PrimePersonnelRestDto {
-  // TODO: Adapter selon les champs réels de l'entité
   id?: number
-  // Ajouter les autres champs selon la documentation
+  montantop?: number
+  valeurop?: number
+  idPeriode?: number
+  periodePaie?: {
+    id: number
+    libelle?: string
+  }
+  pretPersonnel?: {
+    personnel?: {
+      nomComplet: string
+      matricule: string
+    }
+    pret?: {
+      libelle: string
+    }
+  }
+  message?: string
 }
 
 export interface PrimePersonnelRestFilter {
   page?: number
   size?: number
   search?: string
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
+}
+
+export interface PrimeIndividuelRequest {
+  id?: number
+  montantop?: number
+  valeurop?: number
+  idPeriode?: number
+  idCtrat?: number
+  ctrat?: number
+  idAbsence?: number
+  idPrime?: number
+  idPersonnel?: number
+}
+
+export interface PrimeCollectiveRequest {
+  montant?: number
+  idPeriode?: number
+  typeElementId?: number
+  categorieId?: number
+  personnelIds?: number[]
+  commentaire?: string
+}
+
+export interface PrimeCollectiveBatchRequest {
+  idPrime: number
+  montantop: number
+  valeurop?: number
+  idPeriode?: number
+  idPersonnels: number[]
+  commentaire?: string
+}
+
+export interface RubriquePrimeMontantDto {
+  rubriqueId?: number
+  primePersonnelId?: number
+  code?: string
+  libelle?: string
+  etatImposition?: number
+  montant?: number
+  valeur?: number
+  mtExedent?: number
+}
+
+export interface RubriquesContratPeriodeDto {
+  idPeriode?: number
+  idCtrat?: number
+  listePrimesImp?: RubriquePrimeMontantDto[]
+  listePrimesNonImpos?: RubriquePrimeMontantDto[]
+  listePrimesImposetNon?: RubriquePrimeMontantDto[]
+  listePrimesMutuelle?: RubriquePrimeMontantDto[]
+  listePrimesSociale?: RubriquePrimeMontantDto[]
+  listePrimesGains?: RubriquePrimeMontantDto[]
 }
 
 class PrimePersonnelRestService {
-  private generatedApi: PrimePersonnelRestControllerApi
+  private api = createAuthenticatedApi()
 
-  constructor() {
-    this.generatedApi = new PrimePersonnelRestControllerApi()
-  }
-
-  // TODO: Implémenter les méthodes selon les endpoints disponibles
-  // Consultez src/generated/docs/PrimePersonnelRestControllerApi.md pour la documentation complète
-  
-  async getAll(filter?: PrimePersonnelRestFilter): Promise<ApiResponse<PrimePersonnelRestDto[]>> {
+  // ✅ LIST - retourne les rows mappés au format ElementPaie attendu par la vue
+  async getAll(filter?: PrimePersonnelRestFilter): Promise<ApiResponse<any[]>> {
     try {
-      // Adapter au endpoint réel (exemple avec pagination)
-      const paginationRequest: GeneratedTypes.PaginationRequest = {
-        limit: filter?.size ?? 10,
-        offset: filter?.page ?? 0,
-        search: filter?.search
+      const params = {
+        limit: filter?.size || 10,
+        offset: ((filter?.page || 1) - 1) * (filter?.size || 10),
+        search: filter?.search || ''
       }
-      
-      // Adapter à la méthode réelle du contrôleur
-      // const response = await this.generatedApi.getPrimePersonnelRestList(paginationRequest)
-      
-      // Template à adapter:
+
+      const res = await this.api.get('/paie/prime-personnel/list', { params })
+      const rawRows: any[] = res.data.rows || []
+
+      const mapped = rawRows.map((row: any) => {
+        const prime = row.prime || {}
+        const contrat = row.contratPersonnel || {}
+        const personnel = contrat.personnel || {}
+        const periode = row.periode || row.periodePaie || {}
+
+        const nomComplet = personnel.nomComplet
+          || `${personnel.prenom || ''} ${personnel.nom || ''}`.trim()
+          || personnel.matricule
+          || ''
+
+        // Déterminer le type Gain/Retenue
+        const rawType = (prime.typeRubrique || prime.categorie || '').toString().toLowerCase()
+        const type = rawType.includes('reten') || rawType.includes('charge')
+          ? 'Retenue'
+          : 'Gain'
+
+        const montant = typeof row.montant === 'string'
+          ? parseFloat(row.montant)
+          : (row.montant || 0)
+
+        return {
+          id: row.id,
+          personnelId: personnel.id,
+          personnelNom: nomComplet,
+          matricule: personnel.matricule || '',
+          typeElementId: prime.id,
+          libelleElement: prime.libelle || '',
+          codeElement: prime.code || '',
+          type,
+          quantite: row.valeur || 0,
+          quantiteAffichee: row.valeur != null ? String(row.valeur) : '1',
+          montant: type === 'Retenue' ? -Math.abs(montant) : montant,
+          periode: periode.affiche || periode.libelle || (periode.id != null ? String(periode.id) : ''),
+          periodeId: periode.id,
+          statut: 'actif',
+          commentaire: ''
+        }
+      })
+
       return {
         success: true,
+        data: mapped,
+        total: res.data.total || 0,
+        message: 'OK'
+      }
+    } catch (e: any) {
+      return {
+        success: false,
         data: [],
         total: 0,
-        message: 'PrimePersonnelRest retrieved successfully'
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        data: [],
-        message: error.response?.data?.message || 'Failed to retrieve primepersonnelrest'
+        message: e.response?.data?.message || 'Erreur chargement'
       }
     }
   }
 
-  async getById(id: number): Promise<ApiResponse<PrimePersonnelRestDto>> {
+  // ✅ SAVE INDIVIDUEL
+  async savePrime(req: PrimeIndividuelRequest): Promise<ApiResponse<any>> {
     try {
-      // Adapter au endpoint réel
-      // const response = await this.generatedApi.getPrimePersonnelRestById({ id })
-      
-      return {
-        success: true,
-        data: {} as PrimePersonnelRestDto,
-        message: 'PrimePersonnelRest retrieved successfully'
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        data: {} as PrimePersonnelRestDto,
-        message: error.response?.data?.message || 'Failed to retrieve primepersonnelrest'
-      }
+      const res = await this.api.post('/paie/prime-personnel/enregistrer', req)
+
+      return { success: true, data: res.data, message: 'OK' }
+    } catch (e: any) {
+      return { success: false, data: null, message: e.response?.data?.message }
     }
   }
 
-  async create(data: any): Promise<ApiResponse<PrimePersonnelRestDto>> {
+  // ✅ SAVE COLLECTIF
+  async savePrimeCollective(req: PrimeCollectiveRequest): Promise<ApiResponse<any>> {
     try {
-      // Adapter au endpoint réel
-      // const response = await this.generatedApi.savePrimePersonnelRest(data)
-      
-      return {
-        success: true,
-        data: {} as PrimePersonnelRestDto,
-        message: 'PrimePersonnelRest created successfully'
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        data: {} as PrimePersonnelRestDto,
-        message: error.response?.data?.message || 'Failed to create primepersonnelrest'
-      }
+      const res = await this.api.post('/paie/prime-personnel/enregistrer-collective', req)
+
+      return { success: true, data: res.data, message: 'OK' }
+    } catch (e: any) {
+      return { success: false, data: null, message: e.response?.data?.message }
     }
   }
 
-  async update(id: number, data: any): Promise<ApiResponse<PrimePersonnelRestDto>> {
+  // ✅ SAVE COLLECTIF EN LOT (1 seul appel, 1 seule transaction côté backend)
+  async savePrimeCollectiveBatch(req: PrimeCollectiveBatchRequest): Promise<ApiResponse<any>> {
     try {
-      // Adapter au endpoint réel
-      // const response = await this.generatedApi.updatePrimePersonnelRest({ id, ...data })
-      
+      const res = await this.api.post('/paie/prime-personnel/enregistrer-collective-batch', req)
+      const dto = res.data || {}
+      const success = dto.result === true || dto.status === true
       return {
-        success: true,
-        data: {} as PrimePersonnelRestDto,
-        message: 'PrimePersonnelRest updated successfully'
+        success,
+        data: dto,
+        total: dto.total || 0,
+        message: dto.message || (success ? 'OK' : 'Erreur')
       }
-    } catch (error: any) {
-      return {
-        success: false,
-        data: {} as PrimePersonnelRestDto,
-        message: error.response?.data?.message || 'Failed to update primepersonnelrest'
-      }
+    } catch (e: any) {
+      return { success: false, data: null, message: e.response?.data?.message || e.message }
     }
   }
 
-  async delete(id: number): Promise<ApiResponse<void>> {
+  // ✅ DELETE
+  async deletePrime(id: number): Promise<ApiResponse<any>> {
     try {
-      // Adapter au endpoint réel
-      // await this.generatedApi.deletePrimePersonnelRest({ id })
-      
+      const res = await this.api.delete(`/paie/prime-personnel/supprimer/${id}`)
+
+      return { success: true, data: res.data, message: 'OK' }
+    } catch (e: any) {
+      return { success: false, data: null, message: e.response?.data?.message }
+    }
+  }
+
+  // ✅ TYPES ELEMENTS
+  async getTypesElements(): Promise<ApiResponse<any[]>> {
+    try {
+      const res = await this.api.get('/paie/prime-personnel/types-elements')
+
+      return { success: true, data: res.data || [], message: 'OK' }
+    } catch (e: any) {
+      return { success: false, data: [], message: e.response?.data?.message }
+    }
+  }
+
+  // ✅ CATEGORIES
+  async getCategories(): Promise<ApiResponse<any[]>> {
+    try {
+      const res = await this.api.get('/paie/prime-personnel/categories')
+
+      return { success: true, data: res.data || [], message: 'OK' }
+    } catch (e: any) {
+      return { success: false, data: [], message: e.response?.data?.message }
+    }
+  }
+
+  async getRubriquesContratPeriode(idPeriode: number, idCtrat: number): Promise<ApiResponse<RubriquesContratPeriodeDto | null>> {
+    try {
+      const res = await this.api.get('/paie/prime-personnel/rubriques-contrat-periode', {
+        params: { idPeriode, idCtrat }
+      })
+
       return {
         success: true,
-        data: undefined,
-        message: 'PrimePersonnelRest deleted successfully'
+        data: (res.data || null) as RubriquesContratPeriodeDto | null,
+        message: 'OK'
       }
-    } catch (error: any) {
+    } catch (e: any) {
       return {
         success: false,
-        data: undefined,
-        message: error.response?.data?.message || 'Failed to delete primepersonnelrest'
+        data: null,
+        message: e.response?.data?.message || e.message || 'Erreur chargement rubriques contrat/période'
       }
     }
   }
 }
 
+// ✅ UN SEUL EXPORT
 export const primepersonnelrestService = new PrimePersonnelRestService()
 export default primepersonnelrestService

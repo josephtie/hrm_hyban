@@ -162,6 +162,12 @@ const router = createRouter({
               meta: { title: 'Contrats de travail' }
             },
             {
+              path: 'agents-specifiques',
+              name: 'personnel-agents-specifiques',
+              component: () => import('@/views/personnel/AgentsSpecifiquesView.vue'),
+              meta: { title: 'Agents spécifiques' }
+            },
+            {
               path: 'wizard',
               name: 'personnel-wizard',
               component: () => import('@/views/personnel/PersonnelWizardView.vue'),
@@ -192,6 +198,12 @@ const router = createRouter({
               name: 'paie-livre-paie',
               component: () => import('@/views/paie/LivrepaieView.vue'),
               meta: { title: 'Livre de paie' }
+            },
+            {
+              path: 'livre-paie-special',
+              name: 'paie-livre-paie-special',
+              component: () => import('@/views/paie/LivrepaieSpecialeView.vue'),
+              meta: { title: 'Livre de paie Special', specialAgents: true }
             },
             {
               path: 'historique-bulletins',

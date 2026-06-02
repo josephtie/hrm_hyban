@@ -7,6 +7,8 @@ import com.nectux.mizan.hyban.personnel.entity.Nationnalite;
 import com.nectux.mizan.hyban.personnel.specifque.enums.PieceType;
 import com.nectux.mizan.hyban.personnel.specifque.enums.SpecialCategory;
 import com.nectux.mizan.hyban.utils.CustomDateDeserializer;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import jakarta.persistence.*;

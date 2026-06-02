@@ -96,12 +96,28 @@ public class EchelonnementServiceImpl implements EchelonnementService {
 
 	@Override
 	public EchelonnementDTO loadEchelonnement(Pageable pageable, String search) {
-		// TODO Auto-generated method stub
 		EchelonnementDTO echelonnementDTO = new EchelonnementDTO();
-		Page<Echelonnement> page = echelonnementRepository.findByPretPersonnelPersonnelNomLike(pageable, "%"+search+"%");
-		echelonnementDTO.setRows(page.getContent());
-		echelonnementDTO.setTotal(page.getTotalElements());
-		logger.info(new StringBuilder().append(">>>>> UTILISATEURS CHARGES AVEC SUCCES").toString());
+		Page<Echelonnement> page;
+		
+		try {
+			// Utiliser les nouvelles méthodes de recherche pour le paramètre search
+			if (search != null && !search.trim().isEmpty()) {
+				// Essayer d'abord par nom, puis par matricule, puis par prénom
+				page = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(pageable, search);
+			} else {
+				page = echelonnementRepository.findAll(pageable);
+			}
+			
+			echelonnementDTO.setRows(page.getContent());
+			echelonnementDTO.setTotal(page.getTotalElements());
+			logger.info("Échéanciers chargés avec succès avec recherche");
+			
+		} catch (Exception ex) {
+			logger.error("Erreur lors du chargement des échéanciers avec recherche", ex);
+			echelonnementDTO.setRows(java.util.Collections.emptyList());
+			echelonnementDTO.setTotal(0);
+		}
+		
 		return echelonnementDTO;
 	}
 
@@ -235,7 +251,166 @@ public class EchelonnementServiceImpl implements EchelonnementService {
 		return null;
 	}
 
+	// Nouvelles méthodes pour les filtres avancés
+	@Override
+	public EchelonnementDTO loadEchelonnementWithFilters(Pageable pageable, String matricule, String nom, String prenom, Boolean statut, Long periodePaieId) {
+		EchelonnementDTO echelonnementDTO = new EchelonnementDTO();
+		Page<Echelonnement> page;
+		
+		try {
+			// Appliquer les filtres en fonction des paramètres fournis
+			if (matricule != null && !matricule.trim().isEmpty()) {
+				if (statut != null && periodePaieId != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContainingAndPayeAndPeriodePaieId(pageable, matricule, statut, periodePaieId);
+				} else if (statut != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(pageable, matricule);
+				} else if (periodePaieId != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContainingAndPeriodePaieId(pageable, matricule, periodePaieId);
+				} else {
+					page = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(pageable, matricule);
+				}
+			} else if (nom != null && !nom.trim().isEmpty()) {
+				if (statut != null && periodePaieId != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContainingAndPayeAndPeriodePaieId(pageable, nom, statut, periodePaieId);
+				} else if (statut != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(pageable, nom);
+				} else if (periodePaieId != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContainingAndPeriodePaieId(pageable, nom, periodePaieId);
+				} else {
+					page = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(pageable, nom);
+				}
+			} else if (prenom != null && !prenom.trim().isEmpty()) {
+				if (statut != null && periodePaieId != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContainingAndPayeAndPeriodePaieId(pageable, prenom, statut, periodePaieId);
+				} else if (statut != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(pageable, prenom);
+				} else if (periodePaieId != null) {
+					page = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContainingAndPeriodePaieId(pageable, prenom, periodePaieId);
+				} else {
+					page = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(pageable, prenom);
+				}
+			} else if (statut != null && periodePaieId != null) {
+				// Filtre par statut et période uniquement
+				List<Echelonnement> filteredList = echelonnementRepository.findByPeriodePaieId(periodePaieId);
+				List<Echelonnement> statutFiltered = filteredList.stream()
+					.filter(e -> statut.equals(e.getPaye()))
+					.collect(java.util.stream.Collectors.toList());
+				page = new org.springframework.data.domain.PageImpl<>(statutFiltered, pageable, statutFiltered.size());
+			} else if (statut != null) {
+				page = echelonnementRepository.findByPaye(pageable, statut);
+			} else if (periodePaieId != null) {
+				page = echelonnementRepository.findByPeriodePaieId(pageable, periodePaieId);
+			} else {
+				page = echelonnementRepository.findAll(pageable);
+			}
+			
+			echelonnementDTO.setRows(page.getContent());
+			echelonnementDTO.setTotal(page.getTotalElements());
+			logger.info("Échéanciers chargés avec succès avec filtres avancés");
+			
+		} catch (Exception ex) {
+			logger.error("Erreur lors du chargement des échéanciers avec filtres avancés", ex);
+			echelonnementDTO.setRows(java.util.Collections.emptyList());
+			echelonnementDTO.setTotal(0);
+		}
+		
+		return echelonnementDTO;
+	}
 
-
-	
+	@Override
+	public List<Echelonnement> findAllWithFilters(String matricule, String nom, String prenom, Boolean statut, Long periodePaieId) {
+		List<Echelonnement> result;
+		
+		try {
+			// Appliquer les filtres similaires à la méthode paginée mais sans pagination
+			if (matricule != null && !matricule.trim().isEmpty()) {
+				if (statut != null && periodePaieId != null) {
+					List<Echelonnement> matriculeFiltered = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(matricule);
+					result = matriculeFiltered.stream()
+						.filter(e -> statut.equals(e.getPaye()) && periodePaieId.equals(e.getPeriodePaie().getId()))
+						.collect(java.util.stream.Collectors.toList());
+				} else if (statut != null) {
+					List<Echelonnement> matriculeFiltered = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(matricule);
+					result = matriculeFiltered.stream()
+						.filter(e -> statut.equals(e.getPaye()))
+						.collect(java.util.stream.Collectors.toList());
+				} else if (periodePaieId != null) {
+					List<Echelonnement> matriculeFiltered = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(matricule);
+					result = matriculeFiltered.stream()
+						.filter(e -> periodePaieId.equals(e.getPeriodePaie().getId()))
+						.collect(java.util.stream.Collectors.toList());
+				} else {
+					result = echelonnementRepository.findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(matricule);
+				}
+			} else if (nom != null && !nom.trim().isEmpty()) {
+				if (statut != null && periodePaieId != null) {
+					List<Echelonnement> nomFiltered = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(nom);
+					result = nomFiltered.stream()
+						.filter(e -> statut.equals(e.getPaye()) && periodePaieId.equals(e.getPeriodePaie().getId()))
+						.collect(java.util.stream.Collectors.toList());
+				} else if (statut != null) {
+					List<Echelonnement> nomFiltered = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(nom);
+					result = nomFiltered.stream()
+						.filter(e -> statut.equals(e.getPaye()))
+						.collect(java.util.stream.Collectors.toList());
+				} else if (periodePaieId != null) {
+					List<Echelonnement> nomFiltered = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(nom);
+					result = nomFiltered.stream()
+						.filter(e -> periodePaieId.equals(e.getPeriodePaie().getId()))
+						.collect(java.util.stream.Collectors.toList());
+				} else {
+					result = echelonnementRepository.findByPretPersonnelPersonnelNomIgnoreCaseContaining(nom);
+				}
+			} else if (prenom != null && !prenom.trim().isEmpty()) {
+				if (statut != null && periodePaieId != null) {
+					List<Echelonnement> prenomFiltered = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(prenom);
+					result = prenomFiltered.stream()
+						.filter(e -> statut.equals(e.getPaye()) && periodePaieId.equals(e.getPeriodePaie().getId()))
+						.collect(java.util.stream.Collectors.toList());
+				} else if (statut != null) {
+					List<Echelonnement> prenomFiltered = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(prenom);
+					result = prenomFiltered.stream()
+						.filter(e -> statut.equals(e.getPaye()))
+						.collect(java.util.stream.Collectors.toList());
+				} else if (periodePaieId != null) {
+					List<Echelonnement> prenomFiltered = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(prenom);
+					result = prenomFiltered.stream()
+						.filter(e -> periodePaieId.equals(e.getPeriodePaie().getId()))
+						.collect(java.util.stream.Collectors.toList());
+				} else {
+					result = echelonnementRepository.findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(prenom);
+				}
+			} else if (statut != null && periodePaieId != null) {
+				List<Echelonnement> periodeFiltered = echelonnementRepository.findByPeriodePaieId(periodePaieId);
+				result = periodeFiltered.stream()
+					.filter(e -> statut.equals(e.getPaye()))
+					.collect(java.util.stream.Collectors.toList());
+			} else if (statut != null) {
+				result = echelonnementRepository.findByPaye(statut);
+			} else if (periodePaieId != null) {
+				result = echelonnementRepository.findByPeriodePaieId(periodePaieId);
+			} else {
+				result = echelonnementRepository.findAll();
+			}
+			
+			// Appliquer les filtres additionnels si nécessaire
+			if (statut != null && (matricule != null || nom != null || prenom != null)) {
+				result = result.stream()
+					.filter(e -> statut.equals(e.getPaye()))
+					.collect(java.util.stream.Collectors.toList());
+			}
+			
+			if (periodePaieId != null && (matricule != null || nom != null || prenom != null)) {
+				result = result.stream()
+					.filter(e -> periodePaieId.equals(e.getPeriodePaie().getId()))
+					.collect(java.util.stream.Collectors.toList());
+			}
+			
+		} catch (Exception ex) {
+			logger.error("Erreur lors de la recherche des échéanciers avec filtres avancés", ex);
+			result = java.util.Collections.emptyList();
+		}
+		
+		return result;
+	}
 }

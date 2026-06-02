@@ -1,5 +1,6 @@
 package com.nectux.mizan.hyban.paie.web;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -115,6 +116,18 @@ public class TempEffectifRestController {
             logger.error("Erreur lors de la recherche de l'effectif temporaire", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping(value = "/savetempeffectifEmp", method = RequestMethod.POST)
+    public @ResponseBody TempEffectifDTO savetempeffectifEmp(@RequestParam(value="temptravail", required=true) Double temptravail,
+                                                             @RequestParam(value="jourtravail", required=true) Double jourtravail,
+                                                             @RequestParam(value="idPers", required=true) String idPers,
+                                                             @RequestParam(value="idPeriodDep", required=true) Long idPeriodDep,
+                                                             Principal principal) {
+
+        return tempEffectifService.saverEmp(temptravail,jourtravail,idPers,idPeriodDep);
     }
 
     @GetMapping("/periodes")

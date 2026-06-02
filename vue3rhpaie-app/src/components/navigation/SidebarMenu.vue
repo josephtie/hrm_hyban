@@ -65,6 +65,11 @@
           <el-icon><Document /></el-icon>
           <template #title>Contrat</template>
         </el-menu-item>
+
+        <el-menu-item index="/personnel/agents-specifiques">
+          <el-icon><UserFilled /></el-icon>
+          <template #title>Agents spécifiques</template>
+        </el-menu-item>
         
         <el-menu-item index="/personnel/categories">
           <el-icon><Collection /></el-icon>
@@ -142,6 +147,11 @@
           <el-menu-item index="/paie/livre-paie">
             <el-icon><Document /></el-icon>
             <template #title>Livre de paie</template>
+          </el-menu-item>
+
+          <el-menu-item index="/paie/livre-paie-special">
+            <el-icon><Document /></el-icon>
+            <template #title>Livre de paie Special</template>
           </el-menu-item>
           
           <el-menu-item index="/paie/historique-bulletins">
@@ -269,6 +279,7 @@ import {
   Monitor,
   OfficeBuilding,
   Grid,
+  Collection,
   User,
   UserFilled,
   Document,

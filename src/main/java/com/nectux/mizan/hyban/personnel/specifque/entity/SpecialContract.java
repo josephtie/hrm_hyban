@@ -15,10 +15,11 @@ import java.util.Date;
 
 @Entity
 @Table(name = "special_contracts")
+@SequenceGenerator(name="CGECI_RHPAIE_SPECIALCONTRACT_SEQUENCE", sequenceName="CGECI_RHPAIE_SPECIALCONTRACT_SEQ", initialValue=1, allocationSize=1)
 public class SpecialContract extends Auditable {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="CGECI_RHPAIE_SPECIALCONTRACT_SEQUENCE")
     private Long id;
 
     @ManyToOne(optional = false)
@@ -57,7 +58,7 @@ public class SpecialContract extends Auditable {
     @Transient
     private String dFin;
 
-  //  @Column(precision = 15, scale = 2)
+    @Column(precision = 15, scale = 2)
     private BigDecimal remunerationForfaitaire;
 
     private Boolean actif = true;

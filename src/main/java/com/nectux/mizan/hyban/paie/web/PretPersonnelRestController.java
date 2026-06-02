@@ -1,5 +1,7 @@
 package com.nectux.mizan.hyban.paie.web;
 
+import java.math.BigDecimal;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -66,7 +68,7 @@ public class PretPersonnelRestController {
             @RequestParam(required = false) String search) {
         
         try {
-            PageRequest pageRequest = PageRequest.of(offset / 10, limit, Direction.DESC, "id");
+            PageRequest pageRequest = PageRequest.of(offset , limit, Direction.DESC, "id");
             PretPersonnelDTO pretPersonnelDTO;
             
             if (search == null || search.trim().isEmpty()) {
@@ -99,7 +101,7 @@ public class PretPersonnelRestController {
                 request.getPret(),
                 request.getIdpers(),
                 request.getDEmprunt(),
-                request.getPeriodepaie()
+                request.getPeriodepaie(),request.getStatut()
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -108,19 +110,13 @@ public class PretPersonnelRestController {
         }
     }
 
-    @GetMapping("/modifier")
+    @PostMapping("/modifier")
     public ResponseEntity<PretPersonnelDTO> updatePretPersonnel(
-            @RequestParam Long idpret,
-            @RequestParam Double montant1,
-            @RequestParam Long echelonage1,
-            @RequestParam Long pret1,
-            @RequestParam Long idpers1,
-            @RequestParam String dEmprunt1,
-            @RequestParam Long periodepaie1) {
+            @RequestBody PretPersonnelRequest request) {
         
         try {
             PretPersonnelDTO result = pretPersonnelService.update(
-                idpret, montant1, echelonage1, pret1, idpers1, dEmprunt1, periodepaie1
+                    request.getIdPret(), request.getMontant(), request.getEchelonage(), request.getIdPret(),request.getIdpers() , request.getDEmprunt(), request.getPeriodepaie(),request.getStatut()
             );
             return ResponseEntity.ok(result);
         } catch (Exception e) {
@@ -200,6 +196,20 @@ public class PretPersonnelRestController {
             logger.error("Erreur lors de la recherche du prêt individuel", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @RequestMapping(value = "/savepretEmployee", method = RequestMethod.POST)
+    public @ResponseBody PretPersonnelDTO savepretEmployee(@RequestParam(value="montant1", required=true) BigDecimal montant,
+                                                           @RequestParam(value="echelonage1", required=true) Long echelonage,
+                                                           @RequestParam(value="pret1", required=true) Long idPret,
+                                                           @RequestParam(value="idpers1", required=true) Long idPers,
+                                                           @RequestParam(value="dEmprunt1", required=true) String dEmprunt,
+                                                           @RequestParam(value="periodepaie1", required=true) Long idPeriodDep,
+                                                           Principal principal) {
+
+
+        return pretPersonnelService.saverEmp(montant,echelonage,idPret, idPers.toString(), dEmprunt,idPeriodDep);
     }
 
 //    @GetMapping("/simulation-calcul")

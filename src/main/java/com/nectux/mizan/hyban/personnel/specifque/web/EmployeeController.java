@@ -14,7 +14,7 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/personnels/specifique")
+@RequestMapping("/api/personnels/specifique")
 public class EmployeeController {
 
     private final EmployeeService service;

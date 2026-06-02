@@ -10,6 +10,7 @@ import com.nectux.mizan.hyban.utils.Utils;
 import jakarta.persistence.Transient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Date;
 
 
@@ -60,12 +61,12 @@ public class LivreDePaieSpeciale {
 		// TODO Auto-generated constructor stub
 	}
 
-	public LivreDePaieSpeciale(String mat, String nomPre, BigDecimal avanceEtAccompte, BigDecimal pretALIOS, SpecialContract ctratperso, TempEffectif tempeffect, PeriodePaie plconge) {
+	public LivreDePaieSpeciale(String mat, String nomPre,  BigDecimal avanceEtAccompte, BigDecimal pretALIOS, SpecialContract ctratperso, TempEffectif tempeffect, PeriodePaie plconge) {
 		super();
 		this.matricule = mat;
 		this.nomPrenom = nomPre;
-        final int JOURS_OUVRABLES_MOIS = 30;
-        this.regularisation= BigDecimal.ZERO;
+        final BigDecimal JOURS_OUVRABLES_MOIS = BigDecimal.valueOf(30);
+        this.regularisation= BigDecimal.valueOf(0D);
        this.contratPersonnel=ctratperso;
 		if(ctratperso.getEmployee().getActif()==true){
 
@@ -73,8 +74,8 @@ public class LivreDePaieSpeciale {
 
 
 
-							 this.jourTravail= BigDecimal.valueOf(30);
-							 this.temptravail=BigDecimal.valueOf(173.33);
+							 this.jourTravail= BigDecimal.valueOf(30d);
+							 this.temptravail= BigDecimal.valueOf(173.33d);
                              this.netPayer= contratPersonnel.getRemunerationForfaitaire();
 						}
 					   else
@@ -83,7 +84,19 @@ public class LivreDePaieSpeciale {
 							   this.jourTravail= BigDecimal.valueOf(tempeffect.getJourspresence());
 							   this.temptravail= BigDecimal.valueOf(tempeffect.getHeurspresence());
 
-                           this.netPayer= (contratPersonnel.getRemunerationForfaitaire().multiply(BigDecimal.valueOf(tempeffect.getJourspresence())).divide(BigDecimal.valueOf(JOURS_OUVRABLES_MOIS)));
+                    //       this.netPayer= (contratPersonnel.getRemunerationForfaitaire().multiply(BigDecimal.valueOf(tempeffect.getJourspresence())).divide(BigDecimal.valueOf(JOURS_OUVRABLES_MOIS)));
+                           this.netPayer =
+                                   contratPersonnel.getRemunerationForfaitaire()
+                                           .multiply(
+                                                   BigDecimal.valueOf(
+                                                           tempeffect.getJourspresence()
+                                                   )
+                                           )
+                                           .divide(
+                                                   JOURS_OUVRABLES_MOIS,
+                                                   2,
+                                                   RoundingMode.HALF_UP
+                                           );
 					   }
 		
 

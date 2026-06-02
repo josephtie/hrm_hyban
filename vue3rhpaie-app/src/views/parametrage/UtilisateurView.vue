@@ -23,10 +23,10 @@
               Rôle
             </label>
             <el-select v-model="form.idRole" placeholder="Rôle de l'utilisateur" size="large">
-              <el-option label="Administrateur" :value="1" />
-              <el-option label="DAF" :value="2" />
-              <el-option label="RH" :value="3" />
-              <el-option label="Pointage" :value="4" />
+              <el-option label="Administrateur" value="ADMIN" />
+              <el-option label="DAF" value="PAIE" />
+              <el-option label="RH" value="RH" />
+              <el-option label="Pointage" value="POINTAGE" />
             </el-select>
           </div>
 
@@ -149,8 +149,8 @@
               style="width: 150px"
               clearable
             >
-              <el-option label="Administrateur" value="ADMINISTRATEUR" />
-              <el-option label="DAF" value="DAF" />
+              <el-option label="Administrateur" value="ADMIN" />
+              <el-option label="DAF" value="PAIE" />
               <el-option label="RH" value="RH" />
               <el-option label="Pointage" value="POINTAGE" />
             </el-select>
@@ -264,7 +264,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, Edit, Delete, Search, Refresh, Close, User, UserFilled, Key,
-  Message, Phone, House, SwitchButton
+  Message, Phone, House, SwitchButton, Clock
 } from '@element-plus/icons-vue'
 import { utilisateurrestService, type UtilisateurRestDto, type CreateUserRequest } from '@/services/utilisateurrest.service'
 
@@ -327,7 +327,7 @@ const form = reactive<CreateUserRequest>({
   dateNaissance: '',
   telephone: '',
   adresse: '',
-  idRole: undefined,
+  idRole: '',
   actif: true
 })
 
@@ -374,11 +374,23 @@ const formatDate = (dateString: string | null) => {
 const getRoleColor = (role: string) => {
   const colors = {
     'ADMIN': 'danger',
-    'DAF': 'warning',
+    'PAIE': 'warning',
     'RH': 'primary',
     'POINTAGE': 'info'
   }
   return colors[role as keyof typeof colors] || 'info'
+}
+
+const getRoleName = (idRole?: string | number) => {
+  return idRole ? String(idRole) : undefined
+}
+
+const splitNomComplet = (nomComplet: string) => {
+  const parts = nomComplet.trim().split(/\s+/)
+  return {
+    firstName: parts[0] || '',
+    lastName: parts.slice(1).join(' ')
+  }
 }
 
 const toggleForm = () => {
@@ -403,31 +415,46 @@ const resetForm = () => {
     dateNaissance: '',
     telephone: '',
     adresse: '',
-    idRole: undefined,
+    idRole: '',
     actif: true
   })
   isEditing.value = false
 }
 
 const saveForm = async () => {
-  if (!form.nomComplet || !form.username || !form.email || !form.idRole) {
-    ElMessage.error('Veuillez renseigner tous les champs obligatoires')
+  if (!form.nomComplet?.trim() || !form.username?.trim() || !form.idRole) {
+    ElMessage.error('Veuillez renseigner le nom complet, le username et le rôle')
     return
   }
 
   try {
     loading.value = true
     let response
+    const nameParts = splitNomComplet(form.nomComplet)
+    if (!nameParts.firstName || !nameParts.lastName) {
+      ElMessage.error('Veuillez renseigner le nom complet avec au moins deux mots')
+      return
+    }
+    const roleName = getRoleName(form.idRole)
+    const payload = {
+      ...form,
+      username: form.username.trim(),
+      email: form.email?.trim() || undefined,
+      firstName: nameParts.firstName,
+      lastName: nameParts.lastName,
+      password: form.password?.trim() || undefined,
+      roles: roleName ? [roleName] : []
+    }
     
     if (isEditing.value) {
-      response = await utilisateurrestService.update(form)
-      if (response.result === 'success') {
+      response = await utilisateurrestService.update(payload)
+      if (response.success) {
         ElMessage.success('Utilisateur mis à jour avec succès')
         await loadUtilisateurs()
       }
     } else {
-      response = await utilisateurrestService.create(form)
-      if (response.result === 'success') {
+      response = await utilisateurrestService.create(payload)
+      if (response.success) {
         ElMessage.success('Utilisateur créé avec succès')
         await loadUtilisateurs()
       }
@@ -447,9 +474,11 @@ const editUtilisateur = (utilisateur: Utilisateur) => {
     id: utilisateur.id,
     username: utilisateur.username,
     email: utilisateur.email,
-    firstName: utilisateur.firstName,
-    lastName: utilisateur.lastName,
-    roles: utilisateur.roles || []
+    nomComplet: `${utilisateur.firstName || ''} ${utilisateur.lastName || ''}`.trim(),
+    password: '',
+    roles: utilisateur.roles || [],
+    idRole: (utilisateur.roles || []).find(role => role !== 'default-roles-hyban') || '',
+    actif: utilisateur.enabled ?? true
   })
   isEditing.value = true
   showForm.value = true

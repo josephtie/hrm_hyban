@@ -1,4 +1,4 @@
-import { api } from './api'
+﻿import { api } from './api'
 import type { ApiResponse } from '@/types/auth'
 
 // Interface basée sur RubriqueRequest du backend
@@ -212,3 +212,4 @@ class RubriqueRestService {
 
 export const rubriqvariablerestService = new RubriqueRestService()
 export default rubriqvariablerestService
+

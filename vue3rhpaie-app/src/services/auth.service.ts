@@ -1,12 +1,16 @@
 import axios from 'axios'
-import router from '@/router'
+import type { AxiosResponse } from 'axios'
+import type { ApiResponse } from '@/types/auth'
+import { API_URLS, API_CONFIG } from '@/config/api'
 
 export interface UserInfo {
-  username: string
+  sub: string
   email: string
-  nom: string
-  prenom: string
-  role: string
+  name: string
+  preferred_username: string
+  given_name: string
+  family_name: string
+  roles: string[]
 }
 
 export interface LoginResponse {
@@ -16,9 +20,9 @@ export interface LoginResponse {
 }
 
 export const keycloakAuthService = {
-  // URL de Keycloak via proxy Vite
-  keycloakUrl: '/keycloak/realms/hyban/protocol/openid-connect/token',
-  clientId: 'hrm_frontend',
+  // URL de Keycloak centralisée
+  keycloakUrl: API_URLS.KEYCLOAK_TOKEN,
+  clientId: API_CONFIG.KEYCLOAK.CLIENT_ID,
 
   // Connexion directe à Keycloak
   async login(username: string, password: string): Promise<LoginResponse> {

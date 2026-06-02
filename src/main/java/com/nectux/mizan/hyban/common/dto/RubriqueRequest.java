@@ -4,7 +4,7 @@ public class RubriqueRequest extends PaginationRequest {
     private Long idR;
     private String code;
     private String libelle;
-    private String type; // Pour recevoir le type du frontend (1-6)
+    private String typeRubrique; // Pour recevoir le type du frontend (1-6)
     private Integer etatImposition;
     private String modeCalcul;
     private Double valeurDef;
@@ -19,6 +19,7 @@ public class RubriqueRequest extends PaginationRequest {
     private Double taux;
     private Double mtExedent;
     private Boolean imposable;
+    private String typeImposition; // TOTAL, NONE, PARTIEL
     private Boolean afficherBulletin;
 
     // Getters et setters existants
@@ -31,8 +32,7 @@ public class RubriqueRequest extends PaginationRequest {
     public String getLibelle() { return libelle; }
     public void setLibelle(String libelle) { this.libelle = libelle; }
     
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+
     
     public Integer getEtatImposition() { return etatImposition; }
     public void setEtatImposition(Integer etatImposition) { this.etatImposition = etatImposition; }
@@ -76,6 +76,17 @@ public class RubriqueRequest extends PaginationRequest {
     public Boolean getImposable() { return imposable; }
     public void setImposable(Boolean imposable) { this.imposable = imposable; }
     
+    public String getTypeImposition() { return typeImposition; }
+    public void setTypeImposition(String typeImposition) { this.typeImposition = typeImposition; }
+    
     public Boolean getAfficherBulletin() { return afficherBulletin; }
     public void setAfficherBulletin(Boolean afficherBulletin) { this.afficherBulletin = afficherBulletin; }
+
+    public String getTypeRubrique() {
+        return typeRubrique;
+    }
+
+    public void setTypeRubrique(String typeRubrique) {
+        this.typeRubrique = typeRubrique;
+    }
 }

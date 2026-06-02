@@ -1,6 +1,6 @@
-import axios from 'axios'
+import { api } from './api'
 
-const API_BASE_URL = 'http://192.168.1.8:7200/api/rh/carriere/types-sanctions'
+const API_BASE_URL = '/rh/carriere/types-sanctions'
 
 export interface TypeSanctionDto {
   id: number
@@ -52,12 +52,10 @@ export interface TypeSanctionBackendResponse {
 }
 
 class TypeSanctionViewService {
-  private api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  })
+  private api = {
+    get: (path: string, config?: any) => api.get(`${API_BASE_URL}${path}`, config),
+    post: (path: string, data?: any, config?: any) => api.post(`${API_BASE_URL}${path}`, data, config)
+  }
 
   // Récupérer la liste paginée des types de sanctions
   async getAll(request: PaginationRequest = {}): Promise<TypeSanctionResponse<TypeSanctionDto>> {

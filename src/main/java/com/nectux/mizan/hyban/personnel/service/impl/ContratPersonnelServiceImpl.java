@@ -151,6 +151,11 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 	}
 
 	@Override
+	public List<ContratPersonnel> findByPersonnelWithRelations(Personnel personnel) {
+		return contratPersonnelRepository.findByPersonnelWithRelations(personnel);
+	}
+
+	@Override
 	public List<ContratPersonnel> findByTypeContrat(TypeContrat typeContrat) {
 		// TODO Auto-generated method stub
 		return contratPersonnelRepository.findByTypeContrat(typeContrat);
@@ -430,18 +435,7 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 		return null;
 	}
 
-	@Override
-	public ContratPersonnelDTO loadContratActif(Pageable pageable) {
-		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
-		try {
-			Page<ContratPersonnel> page = contratPersonnelRepository.findByStatutTrueAndDepartFalseOrderByPersonnelNomAscPersonnelPrenomAsc(pageable);
-			contratPersonnelDTO.setRows(page.getContent());
-			contratPersonnelDTO.setTotal(page.getTotalElements());
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		return contratPersonnelDTO;
-	}
+
 
 	@Override
 	public ContratPersonnelDTO loadContratDepart(Pageable pageable) {
@@ -468,6 +462,20 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 		}
 		return contratPersonnelDTO;
 	}
+
+
+    @Override
+    public ContratPersonnelDTO loadContratActif(Pageable pageable) {
+        ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
+        try {
+            Page<ContratPersonnel> page = contratPersonnelRepository.findByStatutTrueAndDepartFalseOrderByPersonnelNomAscPersonnelPrenomAsc(pageable);
+            contratPersonnelDTO.setRows(page.getContent());
+            contratPersonnelDTO.setTotal(page.getTotalElements());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return contratPersonnelDTO;
+    }
 
 	@Override
 	public ContratPersonnelDTO loadContratActif(Pageable pageable, String search) {

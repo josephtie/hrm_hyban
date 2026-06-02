@@ -1,4 +1,4 @@
-import { api } from './api'
+﻿import { api } from './api'
 import type { ApiResponse } from '@/types/auth'
 
 // Interface pour compatibilité avec l'entité CpteVirmtBanque
@@ -221,3 +221,4 @@ class CompteVirementService {
 
 export const compteVirementService = new CompteVirementService()
 export default compteVirementService
+

@@ -1,12 +1,26 @@
-import { RubriqueRestControllerApi } from '@/generated/api'
+﻿import { api } from './api'
 import type { ApiResponse } from '@/types/auth'
-import type * as GeneratedTypes from '@/generated/api'
 
 // Interface pour compatibilité avec le code existant
 export interface RubriqueRestDto {
-  // TODO: Adapter selon les champs réels de l'entité
   id?: number
-  // Ajouter les autres champs selon la documentation
+  code?: string
+  libelle?: string
+  typeRubrique?: string
+  categorie?: string
+  modeCalcul?: string
+  valeur?: number
+  montant?: number | undefined
+  taux?: number | undefined
+  formule?: string
+  typeImposition?: string
+  afficherBulletin?: boolean
+  active?: boolean
+  description?: string
+  mtExedent?: number
+  imposable?: boolean
+  cotisable?: boolean
+  dateCreation?: string
 }
 
 export interface RubriqueRestFilter {
@@ -18,38 +32,25 @@ export interface RubriqueRestFilter {
 }
 
 class RubriqueRestService {
-  private generatedApi: RubriqueRestControllerApi
-
-  constructor() {
-    this.generatedApi = new RubriqueRestControllerApi()
-  }
-
-  // TODO: Implémenter les méthodes selon les endpoints disponibles
-  // Consultez src/generated/docs/RubriqueRestControllerApi.md pour la documentation complète
   
   async getAll(filter?: RubriqueRestFilter): Promise<ApiResponse<RubriqueRestDto[]>> {
     try {
-      // Adapter au endpoint réel (exemple avec pagination)
-      const paginationRequest: GeneratedTypes.PaginationRequest = {
+      const response = await api.post('/parametrages/rubriques/lister', {
         limit: filter?.size ?? 10,
         offset: filter?.page ?? 0,
         search: filter?.search
-      }
+      })
       
-      // Adapter à la méthode réelle du contrôleur
-      // const response = await this.generatedApi.getRubriqueRestList(paginationRequest)
-      
-      // Template à adapter:
       return {
         success: true,
-        data: [],
-        total: 0,
-        message: 'RubriqueRest retrieved successfully'
+        data: response.data || [],
+        total: response.data?.length || 0,
+        message: 'Rubriques retrieved successfully'
       }
     } catch (error: any) {
       return {
         success: false,
-        data: [],
+        data: [] as RubriqueRestDto[],
         message: error.response?.data?.message || 'Failed to retrieve rubriquerest'
       }
     }
@@ -57,80 +58,118 @@ class RubriqueRestService {
 
   async getById(id: number): Promise<ApiResponse<RubriqueRestDto>> {
     try {
-      // Adapter au endpoint réel
-      // const response = await this.generatedApi.getRubriqueRestById({ id })
+      const response = await api.get(`/parametrages/rubriques/${id}`)
       
       return {
         success: true,
-        data: {} as RubriqueRestDto,
-        message: 'RubriqueRest retrieved successfully'
+        data: response.data,
+        message: 'Rubrique retrieved successfully'
       }
     } catch (error: any) {
       return {
         success: false,
         data: {} as RubriqueRestDto,
-        message: error.response?.data?.message || 'Failed to retrieve rubriquerest'
+        message: error.response?.data?.message || 'Failed to retrieve rubrique'
       }
     }
   }
 
   async create(data: any): Promise<ApiResponse<RubriqueRestDto>> {
     try {
-      // Adapter au endpoint réel
-      // const response = await this.generatedApi.saveRubriqueRest(data)
+      // Préparation des données pour le backend avec les nouveaux champs
+      const rubriqueRequest = {
+        idR: null,
+        code: data.code,
+        libelle: data.libelle,
+        typeRubrique: data.typeRubrique,
+        categorie: data.categorie,
+        modeCalcul: data.modeCalcul,
+        valeur: data.valeur,
+        montant: data.montant,
+        taux: data.taux,
+        formule: data.formule,
+        typeImposition: data.typeImposition,
+        afficherBulletin: data.afficherBulletin,
+        active: data.active,
+        description: data.description,
+        mtExedent: data.mtExedent,
+        imposable: data.imposable,
+        cotisable: data.cotisable
+      }
+      
+      const response = await api.post('/parametrages/rubriques/enregistrer', rubriqueRequest)
       
       return {
         success: true,
-        data: {} as RubriqueRestDto,
-        message: 'RubriqueRest created successfully'
+        data: response.data,
+        message: 'Rubrique created successfully'
       }
     } catch (error: any) {
       return {
         success: false,
         data: {} as RubriqueRestDto,
-        message: error.response?.data?.message || 'Failed to create rubriquerest'
+        message: error.response?.data?.message || 'Failed to create rubrique'
       }
     }
   }
 
   async update(id: number, data: any): Promise<ApiResponse<RubriqueRestDto>> {
     try {
-      // Adapter au endpoint réel
-      // const response = await this.generatedApi.updateRubriqueRest({ id, ...data })
+      // Préparation des données pour le backend avec les nouveaux champs
+      const rubriqueRequest = {
+        idR: id,
+        code: data.code,
+        libelle: data.libelle,
+        typeRubrique: data.typeRubrique,
+        categorie: data.categorie,
+        modeCalcul: data.modeCalcul,
+        valeur: data.valeur,
+        montant: data.montant,
+        taux: data.taux,
+        formule: data.formule,
+        typeImposition: data.typeImposition,
+        afficherBulletin: data.afficherBulletin,
+        active: data.active,
+        description: data.description,
+        mtExedent: data.mtExedent,
+        imposable: data.imposable,
+        cotisable: data.cotisable
+      }
+      
+      const response = await api.put('/parametrages/rubriques/modifier', rubriqueRequest)
       
       return {
         success: true,
-        data: {} as RubriqueRestDto,
-        message: 'RubriqueRest updated successfully'
+        data: response.data,
+        message: 'Rubrique updated successfully'
       }
     } catch (error: any) {
       return {
         success: false,
         data: {} as RubriqueRestDto,
-        message: error.response?.data?.message || 'Failed to update rubriquerest'
+        message: error.response?.data?.message || 'Failed to update rubrique'
       }
     }
   }
 
-  async delete(id: number): Promise<ApiResponse<void>> {
+  async delete(id: number | undefined): Promise<ApiResponse<void>> {
     try {
-      // Adapter au endpoint réel
-      // await this.generatedApi.deleteRubriqueRest({ id })
+      await api.post('/parametrages/rubriques/supprimer', { idR: id })
       
       return {
         success: true,
         data: undefined,
-        message: 'RubriqueRest deleted successfully'
+        message: 'Rubrique deleted successfully'
       }
     } catch (error: any) {
       return {
         success: false,
         data: undefined,
-        message: error.response?.data?.message || 'Failed to delete rubriquerest'
+        message: error.response?.data?.message || 'Failed to delete rubrique'
       }
     }
   }
 }
 
 export const rubriquerestService = new RubriqueRestService()
-export default rubriquerestService
+

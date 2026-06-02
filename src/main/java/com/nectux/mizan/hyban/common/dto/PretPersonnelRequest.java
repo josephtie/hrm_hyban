@@ -8,6 +8,7 @@ public class PretPersonnelRequest extends PaginationRequest {
     private Long idpers;
     private Long idPers;
     private String dEmprunt;
+    private String statut;
     private Long periodepaie;
     private Long idPeriodDep;
     private Long idpret;
@@ -60,4 +61,20 @@ public class PretPersonnelRequest extends PaginationRequest {
     public void setIdp(Long idp) { this.idp = idp; }
     public Long getIdPretperso() { return idPretperso; }
     public void setIdPretperso(Long idPretperso) { this.idPretperso = idPretperso; }
+
+    public String getStatut() {
+        return statut;
+    }
+
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
+
+    public String getdEmprunt1() {
+        return dEmprunt1;
+    }
+
+    public void setdEmprunt1(String dEmprunt1) {
+        this.dEmprunt1 = dEmprunt1;
+    }
 }

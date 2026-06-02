@@ -98,10 +98,10 @@ public class Personnel   extends Auditable {
 	@Transient
 	private String situationMed;
 	
-	private int situationEmploie;
+	private String situationEmploie;
 	
-	@Transient
-	private String emplqualite;
+	//@Transient
+	//private String emplqualite;
 	
 	private int nombrEnfant;
 	
@@ -358,39 +358,34 @@ public class Personnel   extends Auditable {
 
 
 	
-	public int getSituationEmploie() {
+	public String getSituationEmploie() {
 		return situationEmploie;
 	}
 
-	public void setSituationEmploie(int situationEmploie) {
+	public void setSituationEmploie(String situationEmploie) {
 		this.situationEmploie = situationEmploie;
 	}
 
-	public String getEmplqualite() {
-		if(situationEmploie == 1)
-			emplqualite = "DR";
-		else if(situationEmploie == 2)
-			emplqualite = "CS";
-		else if(situationEmploie == 3)
-			emplqualite = "CM";
-		else if(situationEmploie == 4)
-			emplqualite = "EQ";
-		else if(situationEmploie == 5)
-			emplqualite = "EN";
-		else if(situationEmploie == 6)
-			emplqualite = "OQ";
-		else if(situationEmploie == 7)
-			emplqualite = "ON";
-		else if(situationEmploie == 8)
-			emplqualite = "A";
-		else if(situationEmploie == 0)
-			emplqualite = "Aucun";
-		return emplqualite;
-	}
-
-	public void setEmplqualite(String emplqualite) {
-		this.emplqualite = emplqualite;
-	}
+//	public String getEmplqualite() {
+//		if(situationEmploie == 1)
+//			emplqualite = "Niveau1 - Exécutant";
+//		else if(situationEmploie == 2)
+//			emplqualite = "\"Niveau2 - Opérationnel\"";
+//		else if(situationEmploie == 3)
+//			emplqualite = "\"Niveau3 - Technique\"";
+//		else if(situationEmploie == 4)
+//			emplqualite = "\"Niveau4 - Manager\"";
+//		else if(situationEmploie == 5)
+//			emplqualite = "\"Niveau5 - Directeur\"";
+//
+//		else if(situationEmploie == 0)
+//			emplqualite = "Aucun";
+//		return emplqualite;
+//	}
+//
+//	public void setEmplqualite(String emplqualite) {
+//		this.emplqualite = emplqualite;
+//	}
 
 	public String getSituationMed() {
 		if(situationMedaille == 1)
@@ -647,28 +642,19 @@ public class Personnel   extends Auditable {
 	}
 
 	public String getStatfonct() {
-		
-		if(carec==true)
-			statfonct = "Contractuel";
-		else{
-
-			if (stage == null)
-				statfonct = " ";
-			if (Boolean.TRUE.equals(stage))
-				statfonct = "Stage";
-
-			  if( fonctionnaire == null )
-				  statfonct = " ";
-			  if(Boolean.TRUE.equals(fonctionnaire) )
-				statfonct = "Fonctionnaire ";
-
-			if( consultant == null )
-				statfonct = " ";
-			if(Boolean.TRUE.equals(consultant))
-				statfonct = "Consultant ";
-
+		if (Boolean.TRUE.equals(carec)) {
+			return "Contractuel";
 		}
-		return statfonct;
+		if (Boolean.TRUE.equals(stage)) {
+			return "Stagiaire";
+		}
+		if (Boolean.TRUE.equals(fonctionnaire)) {
+			return "Fonctionnaire";
+		}
+		if (Boolean.TRUE.equals(consultant)) {
+			return "Consultant";
+		}
+		return "";
 	}
 
     public BigDecimal getNetapayer() {
@@ -730,7 +716,7 @@ public class Personnel   extends Auditable {
                 ", situationMedaille=" + situationMedaille +
                 ", situationMed='" + situationMed + '\'' +
                 ", situationEmploie=" + situationEmploie +
-                ", emplqualite='" + emplqualite + '\'' +
+               // ", emplqualite='" + emplqualite + '\'' +
                 ", nombrEnfant=" + nombrEnfant +
                 ", nombrePart=" + nombrePart +
                 ", dateArrivee=" + dateArrivee +

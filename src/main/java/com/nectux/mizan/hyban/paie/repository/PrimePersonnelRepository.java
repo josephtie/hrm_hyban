@@ -6,7 +6,9 @@ import com.nectux.mizan.hyban.personnel.entity.Personnel;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -30,6 +32,14 @@ public interface PrimePersonnelRepository extends CrudRepository<PrimePersonnel,
 	public PrimePersonnelDTO findByContratPersonnelPersonnelId(Long Idpers);
 	
 	public Page<PrimePersonnel> findAll(Pageable pageable);
+
+	@Query("SELECT pp FROM PrimePersonnel pp " +
+		"WHERE LOWER(pp.contratPersonnel.personnel.nom) LIKE LOWER(CONCAT('%', :search, '%')) " +
+		"   OR LOWER(pp.contratPersonnel.personnel.prenom) LIKE LOWER(CONCAT('%', :search, '%')) " +
+		"   OR LOWER(pp.contratPersonnel.personnel.matricule) LIKE LOWER(CONCAT('%', :search, '%')) " +
+		"   OR LOWER(pp.prime.libelle) LIKE LOWER(CONCAT('%', :search, '%')) " +
+		"   OR LOWER(pp.prime.code) LIKE LOWER(CONCAT('%', :search, '%'))")
+	Page<PrimePersonnel> searchAll(@Param("search") String search, Pageable pageable);
 
     List<PrimePersonnel> findByContratPersonnelIdAndPeriodePaieIdAndPrimeId(Long idContrat, Long idPeriod, Long idPrime);
 

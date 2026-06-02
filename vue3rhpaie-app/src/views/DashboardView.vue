@@ -50,7 +50,7 @@
           </div>
           <div class="stat-info">
             <h3>{{ formatCurrency(stats.masseSalariale) }}</h3>
-            <p>Masse salariale mensuelle</p>
+            <p>Masse salariale mensuelle mois antérieur</p>
           </div>
         </div>
       </el-card>
@@ -108,7 +108,7 @@
               <el-tag type="warning">{{ contratsEcheance.length }}</el-tag>
             </div>
           </template>
-          <el-table :data="contratsEcheance" style="width: 100%">
+          <el-table :data="contratsEcheance" height="300" style="width: 100%">
             <el-table-column prop="employe" label="Employé" />
             <el-table-column prop="poste" label="Poste" />
             <el-table-column prop="dateFin" label="Date fin">
@@ -188,6 +188,9 @@ import {
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { Chart, registerables } from 'chart.js'
+import { api } from '@/services/api'
+import { personnelRestService } from '@/services/personnel.service'
+import { contratPersonnelService } from '@/services/contrat-personnel.service'
 
 Chart.register(...registerables)
 
@@ -195,58 +198,21 @@ const authStore = useAuthStore()
 
 // Références
 const effectifsChart = ref<HTMLCanvasElement>()
+const effectifsChartInstance = ref<Chart | null>(null)
 
 // Données mockées
 const stats = ref({
-  totalEmployes: 245,
-  employesActifs: 228,
-  contratsExpirant: 12,
-  masseSalariale: 45678900
+  totalEmployes: 0,
+  employesActifs: 0,
+  contratsExpirant: 0,
+  masseSalariale: 0
 })
 
-const recentActivities = ref([
-  {
-    id: 1,
-    type: 'create',
-    title: 'Nouvel employé ajouté: Jean Dupont',
-    createdAt: new Date(Date.now() - 1000 * 60 * 30)
-  },
-  {
-    id: 2,
-    type: 'edit',
-    title: 'Contrat renouvelé: Marie Curie',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
-  },
-  {
-    id: 3,
-    type: 'absence',
-    title: 'Demande de congé: Albert Einstein',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 4)
-  },
-  {
-    id: 4,
-    type: 'payroll',
-    title: 'Bulletin généré: 45 employés',
-    createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24)
-  }
-])
+const effectifsParDirection = ref<{ libelle: string; effectif: number }[]>([])
 
-const contratsEcheance = ref([
-  {
-    id: 1,
-    employe: 'Jean Dupont',
-    poste: 'Développeur Senior',
-    dateFin: new Date(Date.now() + 1000 * 60 * 60 * 24 * 15),
-    joursRestants: 15
-  },
-  {
-    id: 2,
-    employe: 'Marie Curie',
-    poste: 'Chercheur',
-    dateFin: new Date(Date.now() + 1000 * 60 * 60 * 24 * 5),
-    joursRestants: 5
-  }
-])
+ const recentActivities = ref<any[]>([])
+
+const contratsEcheance = ref<any[]>([])
 
 const absencesEnAttente = ref([
   {
@@ -303,9 +269,146 @@ const getActivityIcon = (type: string) => {
   }
 }
 
-const refreshData = () => {
-  ElMessage.success('Données actualisées')
-  // TODO: Recharger les données depuis l'API
+const toNumber = (value: any) => {
+  const parsed = Number(value ?? 0)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+const formatDateParam = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const parseDate = (value: any) => {
+  if (!value) return null
+  if (value instanceof Date) return value
+  if (typeof value === 'string' && value.includes('/')) {
+    const [day, month, year] = value.split('/')
+    return new Date(Number(year), Number(month) - 1, Number(day))
+  }
+  return new Date(value)
+}
+
+const getLibelle = (value: any) => {
+  if (!value) return 'Non renseigné'
+  return typeof value === 'string' ? value : value.libelle || 'Non renseigné'
+}
+
+const getEmployeName = (personnel: any) => {
+  if (!personnel) return 'Non renseigné'
+  return `${personnel.nom || ''} ${personnel.prenom || ''}`.trim() || 'Non renseigné'
+}
+
+const getDaysUntil = (date: Date) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const target = new Date(date)
+  target.setHours(0, 0, 0, 0)
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+const getCurrentMonthRange = () => {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  return {
+    start: formatDateParam(start),
+    end: formatDateParam(end)
+  }
+}
+
+const getUpcomingContractRange = () => {
+  const start = new Date()
+  const end = new Date()
+  start.setFullYear(start.getFullYear() - 10)
+  return {
+    start: formatDateParam(start),
+    end: formatDateParam(end)
+  }
+}
+
+const loadMasseSalarialeMoisAnterieur = async () => {
+  const response = await api.get('/paie/bulletin/masse-salariale-mois-anterieur')
+  stats.value.masseSalariale = toNumber(response.data?.masseSalariale)
+}
+
+const loadEffectifsParDirection = async () => {
+  const response = await api.get('/personnels/effectifs-par-direction')
+  effectifsParDirection.value = Array.isArray(response.data)
+    ? response.data.map((row: any) => ({
+      libelle: row.libelle || 'Non renseigné',
+      effectif: toNumber(row.effectif)
+    }))
+    : []
+  await nextTick()
+  initChart()
+}
+
+const loadRecentActivities = async () => {
+  const response = await api.get('/personnels/dashboard/activites-recentes')
+  recentActivities.value = Array.isArray(response.data)
+    ? response.data.map((activity: any) => ({
+      ...activity,
+      createdAt: activity.createdAt ? new Date(activity.createdAt) : new Date()
+    }))
+    : []
+}
+
+const loadContratsEcheance = async () => {
+  const range = getUpcomingContractRange()
+  const response = await contratPersonnelService.getContratsWithFilters({
+    offset: 0,
+    limit: 1000,
+    expirePeriodStart: range.start,
+    expirePeriodEnd: range.end
+  })
+  const rows = response.rows || response.data || []
+  contratsEcheance.value = rows
+    .map((contrat: any) => {
+      const dateFin = parseDate(contrat.dateFin)
+      if (!dateFin || Number.isNaN(dateFin.getTime())) return null
+      const joursRestants = getDaysUntil(dateFin)
+      if (contrat.statut !== true || joursRestants > 0) return null
+      return {
+        id: contrat.id,
+        employe: getEmployeName(contrat.personnel),
+        poste: getLibelle(contrat.fonction),
+        dateFin,
+        joursRestants
+      }
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => a.dateFin.getTime() - b.dateFin.getTime())
+}
+
+const refreshData = async () => {
+  try {
+    const currentMonthRange = getCurrentMonthRange()
+    const [personnels, contratsActifs, contratsExpirant] = await Promise.all([
+      personnelRestService.getPersonnels({ page: 0, size: 1 }),
+      contratPersonnelService.getContratsActifs({ offset: 0, limit: 1 }),
+      contratPersonnelService.getContratsWithFilters({
+        offset: 0,
+        limit: 1,
+        expirePeriodStart: currentMonthRange.start,
+        expirePeriodEnd: currentMonthRange.end
+      })
+    ])
+
+    stats.value.totalEmployes = Number(personnels.total ?? personnels.data?.length ?? 0)
+    stats.value.employesActifs = Number(contratsActifs.total ?? contratsActifs.rows?.length ?? 0)
+    stats.value.contratsExpirant = Number(contratsExpirant.total ?? contratsExpirant.rows?.length ?? 0)
+    await loadMasseSalarialeMoisAnterieur()
+    await loadEffectifsParDirection()
+    await loadRecentActivities()
+    await loadContratsEcheance()
+    ElMessage.success('Données actualisées')
+  } catch (error) {
+    console.error('Erreur chargement dashboard:', error)
+    ElMessage.error('Erreur lors du chargement du tableau de bord')
+  }
 }
 
 const approuverAbsence = (absence: any) => {
@@ -323,13 +426,20 @@ const initChart = () => {
   
   const ctx = effectifsChart.value.getContext('2d')
   if (!ctx) return
+
+  if (effectifsChartInstance.value) {
+    effectifsChartInstance.value.destroy()
+  }
+
+  const labels = effectifsParDirection.value.map(item => item.libelle)
+  const values = effectifsParDirection.value.map(item => item.effectif)
   
-  new Chart(ctx, {
+  effectifsChartInstance.value = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Direction IT', 'Direction RH', 'Direction Fin', 'Direction Com', 'Direction Ops'],
+      labels: labels.length ? labels : ['Aucune direction'],
       datasets: [{
-        data: [45, 25, 35, 40, 83],
+        data: values.length ? values : [1],
         backgroundColor: [
           '#409EFF',
           '#67C23A',
@@ -353,9 +463,7 @@ const initChart = () => {
 }
 
 onMounted(() => {
-  nextTick(() => {
-    initChart()
-  })
+  refreshData()
 })
 </script>
 

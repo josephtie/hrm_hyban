@@ -202,6 +202,12 @@ public class LivreDePaie {
     @Transient
     private String mtfpc;
 
+    private BigDecimal brutTotal;
+    @Transient
+    private String mtbrutTotal;
+
+
+
     private BigDecimal fpcregul;
     @Transient
     private String mtfpcregul;
@@ -236,27 +242,18 @@ public class LivreDePaie {
 
     private BigDecimal temptravail;
 
-    @Transient
     List<PrimePersonnel> listIndemniteBrut = new ArrayList<PrimePersonnel>();
 
-    @Transient
     List<PrimePersonnel> listIndemniteNonImp = new ArrayList<PrimePersonnel>();
 
-    @Transient
     List<Rubrique> listRubrique = new ArrayList<Rubrique>();
 
-    @Transient
     List<PrimePersonnel> listIndemBrutNonImp = new ArrayList<PrimePersonnel>();
 
-
-    @Transient
     List<PrimePersonnel> listRetenueMutuellt = new ArrayList<PrimePersonnel>();
 
-
-    @Transient
     List<PrimePersonnel> listRetenueSociale = new ArrayList<PrimePersonnel>();
 
-    @Transient
     List<PrimePersonnel> listGainsNet = new ArrayList<PrimePersonnel>();
 
 
@@ -317,12 +314,19 @@ public class LivreDePaie {
         this.contratPersonnel = ctratperso;
         this.periodePaie = plconge;
 
-        if (tempeffect != null) {
+        // On ne calcule netCible que si une vraie saisie de temps existe (jours > 0).
+        // Un TempEffectif "vide" (jourspresence=0) est ignoré pour ne pas écraser le calcul standard.
+        if (tempeffect != null && tempeffect.getJourspresence() > 0) {
             this.netCible = safe(ctratperso.getNetAPayer())
                     .multiply(BigDecimal.valueOf(tempeffect.getJourspresence()))
                     .divide(JOURS_OUVRABLES_MOIS, 2, RoundingMode.HALF_UP);
         }
+        if (tempeffect != null) {
+            if (tempeffect.getJourspresence() != null) {
+                this.jourTravail=BigDecimal.valueOf(tempeffect.getJourspresence());
+            }
 
+        }
         // 🚀 moteur
         if (Boolean.TRUE.equals(ctratperso.getPersonnel().getCarec())) {
             calculerContractuel(tempeffect);
@@ -333,7 +337,9 @@ public class LivreDePaie {
 
     private BigDecimal appliquerProrata(BigDecimal montant, TempEffectif tempeffect) {
 
-        if (tempeffect == null) return montant;
+        // Pas de saisie effective (null ou jours == 0) : on retourne le montant plein,
+        // sinon le prorata multiplié par 0 mettrait tout le bulletin à zéro.
+        if (tempeffect == null || tempeffect.getJourspresence() <= 0) return montant;
 
         BigDecimal joursPresence = BigDecimal.valueOf(tempeffect.getJourspresence());
 
@@ -349,10 +355,10 @@ public class LivreDePaie {
 
         calculBrutImposable(tempeffect);
         calculBrutNonImposable(tempeffect);
-        BigDecimal valbaseCnps= calculBaseCnps();
+        BigDecimal valbaseCnps = calculBaseCnps();
         calculITS();
 
-        calculCNPS(valbaseCnps);
+        this.cnps = calculCNPS(valbaseCnps);
 
         calculTotalRetenueFiscale(); // 🔥 AJOUT IMPORTANT
         calculRetenues();
@@ -367,24 +373,100 @@ public class LivreDePaie {
     }
     private void calculerConsultant(TempEffectif tempeffect) {
 
-       // calculTransport();
-       // calculIndemnites();
+        // ================================
+        // 1. Net contractuel de base
+        // ================================
 
-        //calculBrutImposable();
-       // calculBrutNonImposable();
-       // BigDecimal valbaseCnps= calculBaseCnps();
-       // calculITS();
+        BigDecimal netContrat = safe(
+                contratPersonnel.getNetAPayer()
+        );
 
-      //  calculCNPS(valbaseCnps);
+        // ================================
+        // 2. Application prorata
+        // ================================
 
-      //  calculTotalRetenueFiscale(); // 🔥 AJOUT IMPORTANT
-        calculRetenues();
+        BigDecimal netProrata = appliquerProrata(
+                netContrat,
+                tempeffect
+        );
 
-      //  calculNet(tempeffect);
+        // ================================
+        // 3. Gains supplémentaires
+        // ================================
 
-      //  calculChargesPatronales();
-      //  calculTotalPatronal();
-        calculMasseSalariale();
+        this.regularisation = BigDecimal.ZERO;
+
+        for (PrimePersonnel p : safeList(listGainsNet)) {
+
+            BigDecimal montant = appliquerProrata(
+                    safe(p.getMontant()),
+                    tempeffect
+            );
+
+            this.regularisation =
+                    this.regularisation.add(montant);
+        }
+
+        // ================================
+        // 4. Retenues
+        // ================================
+
+        BigDecimal retenues = BigDecimal.ZERO;
+
+        retenues = retenues
+                .add(safe(avceAcpte))
+                .add(safe(pretAlios));
+
+        // autres retenues sociales éventuelles
+        for (PrimePersonnel p : safeList(listRetenueSociale)) {
+
+            retenues = retenues.add(
+                    safe(p.getMontant())
+            );
+        }
+
+        // mutuelle éventuelle
+        for (PrimePersonnel p : safeList(listRetenueMutuellt)) {
+
+            retenues = retenues.add(
+                    safe(p.getMontant())
+            );
+        }
+
+        this.totalRetenue = retenues;
+
+        // ================================
+        // 5. Net à payer final
+        // ================================
+
+        this.netPayer = ceil(
+                netProrata
+                        .add(safe(regularisation))
+                        .subtract(retenues)
+        );
+
+        // ================================
+        // 6. Masse salariale
+        // ================================
+
+        this.totalMasseSalariale =
+                this.netPayer;
+
+        // ================================
+        // 7. Pour affichage bulletin
+        // ================================
+
+        this.totalBrut = netProrata;
+
+        this.brutImposable = BigDecimal.ZERO;
+        this.brutNonImposable = BigDecimal.ZERO;
+
+        this.cnps = BigDecimal.ZERO;
+        this.its = BigDecimal.ZERO;
+        this.cn = BigDecimal.ZERO;
+        this.igr = BigDecimal.ZERO;
+
+        this.totalPatronal = BigDecimal.ZERO;
     }
     private void calculIndemnites(TempEffectif tempeffect) {
 
@@ -443,9 +525,9 @@ public class LivreDePaie {
         BigDecimal base = appliquerProrata(safe(salaireBase), tempeffect);
         BigDecimal surs = appliquerProrata(safe(sursalaire), tempeffect);
         BigDecimal log = appliquerProrata(safe(indemniteLogement), tempeffect);
-         this.salaireBase=base;
-         this.sursalaire=log;
-         this.indemniteLogement=base;
+        this.salaireBase = base;
+        this.sursalaire = surs;
+        this.indemniteLogement = log;
         this.brutImposable = ceil(
                 base
                         .add(surs)
@@ -516,24 +598,24 @@ public class LivreDePaie {
 
         BigDecimal mutuelle = BigDecimal.ZERO;
 
-        for (PrimePersonnel p : listRetenueMutuellt) {
+        for (PrimePersonnel p : safeList(listRetenueMutuellt)) {
             mutuelle = mutuelle.add(safe(p.getMontant()));
         }
 
         BigDecimal sociale = BigDecimal.ZERO;
 
-        for (PrimePersonnel p : listRetenueSociale) {
+        for (PrimePersonnel p : safeList(listRetenueSociale)) {
             sociale = sociale.add(safe(p.getMontant()));
         }
 
-        this.retenueSociiale = sociale.add(cnps);
+        this.retenueSociiale = sociale.add(safe(cnps));
 
         this.totalRetenue = ceil(
-                its
-                        .add(avceAcpte)
-                        .add(pretAlios)
-                        .add(mutuelle)
-                        .add(retenueSociiale)
+                safe(its)
+                        .add(safe(avceAcpte))
+                        .add(safe(pretAlios))
+                        .add(safe(mutuelle))
+                        .add(safe(retenueSociiale))
         );
     }
 
@@ -541,24 +623,32 @@ public class LivreDePaie {
 
         this.regularisation = BigDecimal.ZERO;
 
-        for (PrimePersonnel p : listGainsNet) {
+        for (PrimePersonnel p : safeList(listGainsNet)) {
             regularisation = regularisation.add(safe(p.getMontant()));
         }
 
-        BigDecimal totalBrut = brutImposable
-                .add(indemniteTransport)
-                .add(autreNonImposable)
-                .add(regularisation);
-
-        this.netPayer = ceil(
-                totalBrut.subtract(totalRetenue)
+        this.totalBrut = ceil(
+                safe(brutImposable).add(safe(brutNonImposable))
         );
 
-        if(tempeffect!=null){
-            this.netRegulPayer=netCible.subtract(netPayer) ;
-            this.netPayer=netCible.subtract(pretAlios).subtract(avceAcpte) ;
+       //         .add(safe(indemniteTransport))
+         //       .add(safe(autreNonImposable))
+       //         .add(safe(regularisation));
+
+        this.netPayer = ceil(
+                totalBrut.subtract(safe(totalRetenue))
+        );
+
+        // Branche de régularisation appliquée uniquement si une vraie saisie de temps a fixé un netCible > 0.
+        if (tempeffect != null
+                && tempeffect.getJourspresence() > 0
+                && netCible != null
+                && netCible.compareTo(BigDecimal.ZERO) > 0) {
+            this.netRegulPayer = netCible.subtract(netPayer);
+            this.netPayer = netCible.subtract(safe(pretAlios)).subtract(safe(avceAcpte));
         }
     }
+
     private void calculTotalRetenueFiscale() {
 
         this.totalRetenueFiscale =
@@ -570,21 +660,21 @@ public class LivreDePaie {
     }
     private void calculChargesPatronales() {
 
-        this.ta = percent(brutImposable, BigDecimal.valueOf(0.4));
-        this.fpc = percent(brutImposable, BigDecimal.valueOf(0.6));
-        this.fpcregul = percent(brutImposable, BigDecimal.valueOf(0.6));
+        this.ta = percent(safe(brutImposable), BigDecimal.valueOf(0.4));
+        this.fpc = percent(safe(brutImposable), BigDecimal.valueOf(0.6));
+        this.fpcregul = percent(safe(brutImposable), BigDecimal.valueOf(0.6));
 
         this.prestationFamiliale = calculerPrestationFamiliale();
         this.accidentTravail = calculerAccidentTravail();
 
         this.retraite = percent(
-                brutImposable
-                        .add(indemniteRepresentation)
-                        .add(autreNonImposable),
+                safe(brutImposable)
+                        .add(safe(indemniteRepresentation))
+                        .add(safe(autreNonImposable)),
                 BigDecimal.valueOf(7.7)
         );
 
-        // CMU patronale déjà calculée ailleurs
+        // CMU patronale dj calcul ailleurs
     }
 
     private void calculTotalPatronal() {
@@ -1669,5 +1759,21 @@ public class LivreDePaie {
 
     public void setNetCible(BigDecimal netCible) {
         this.netCible = netCible;
+    }
+
+    public BigDecimal getBrutTotal() {
+        return brutTotal;
+    }
+
+    public void setBrutTotal(BigDecimal brutTotal) {
+        this.brutTotal = brutTotal;
+    }
+
+    public String getMtbrutTotal() {
+        return mtbrutTotal;
+    }
+
+    public void setMtbrutTotal(String mtbrutTotal) {
+        this.mtbrutTotal = mtbrutTotal;
     }
 }

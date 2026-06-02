@@ -43,13 +43,13 @@ import com.nectux.mizan.hyban.common.dto.ContratPersonnelFilterRequest;
 
 @RestController
 @RequestMapping("/api/personnels")
-@CrossOrigin(
-    origins = {"http://localhost:7153", "http://192.168.1.2:7153", "http://192.168.1.2:8080", "http://192.168.1.3:7156", "http://192.168.1.3:7157", "http://192.168.1.3:7158", "http://192.168.1.3:7159", "http://192.168.1.3:7160", "http://192.168.1.3:7161", "http://192.168.1.3:7162", "http://192.168.1.3:7163", "http://192.168.1.3:7164", "http://192.168.1.3:7165", "http://192.168.1.3:7166", "http://192.168.1.3:7167", "http://192.168.1.3:7168", "http://192.168.1.3:7169", "http://192.168.1.3:7170", "http://192.168.1.3:7171", "http://192.168.1.3:7172", "http://192.168.1.3:7173", "http://192.168.1.3:7174", "http://192.168.1.3:7175", "http://192.168.1.3:7176", "http://192.168.1.3:7177", "http://192.168.1.3:7178", "http://192.168.1.3:7179", "http://192.168.1.3:7180", "http://192.168.1.3:7181", "http://192.168.1.3:7182", "http://192.168.1.3:7183", "http://192.168.1.3:7184", "http://192.168.1.3:7185", "http://192.168.1.3:7186", "http://192.168.1.3:7187", "http://192.168.1.3:7188", "http://192.168.1.3:7189", "http://192.168.1.3:7190", "http://192.168.1.3:7191", "http://192.168.1.3:7192", "http://192.168.1.3:7193", "http://192.168.1.3:7194", "http://192.168.1.3:7195", "http://192.168.1.3:7196", "http://192.168.1.3:7197", "http://192.168.1.3:7198", "http://192.168.1.3:7199"},
-    allowCredentials = "true"
-)
+//@CrossOrigin(
+//    origins = {"http://localhost:7153", "http://192.168.1.4:7153", "http://192.168.1.4:8080", "http://192.168.1.4:7156", "http://192.168.1.4:7157", "http://192.168.1.4:7158", "http://192.168.1.4:7159", "http://192.168.1.4:7160", "http://192.168.1.4:7161", "http://192.168.1.4:7162", "http://192.168.1.4:7163", "http://192.168.1.4:7164", "http://192.168.1.4:7165", "http://192.168.1.4:7166", "http://192.168.1.4:7167", "http://192.168.1.4:7168", "http://192.168.1.4:7169", "http://192.168.1.4:7170", "http://192.168.1.4:7171", "http://192.168.1.4:7172", "http://192.168.1.4:7173", "http://192.168.1.4:7174", "http://192.168.1.4:7175", "http://192.168.1.4:7176", "http://192.168.1.4:7177", "http://192.168.1.4:7178", "http://192.168.1.4:7179", "http://192.168.1.4:7180", "http://192.168.1.4:7181", "http://192.168.1.4:7182", "http://192.168.1.4:7183", "http://192.168.1.4:7184", "http://192.168.1.4:7185", "http://192.168.1.4:7186", "http://192.168.1.4:7187", "http://192.168.1.4:7188", "http://192.168.1.4:7189", "http://192.168.1.4:7190", "http://192.168.1.4:7191", "http://192.168.1.4:7192", "http://192.168.1.4:7193", "http://192.168.1.4:7194", "http://192.168.1.4:7195", "http://192.168.1.4:7196", "http://192.168.1.4:7197", "http://192.168.1.4:7198", "http://192.168.1.4:7199"},
+//    allowCredentials = "true"
+//)
 public class ContratPersonnelController {
 
-    private static final Logger logger = LogManager.getLogger(PersonnelController.class);
+    private static final Logger logger = LogManager.getLogger(ContratPersonnelController.class);
 
 	@Autowired private PersonnelService personnelService;
 	@Autowired private ContratPersonnelService contratPersonnelService;
@@ -121,17 +121,32 @@ public class ContratPersonnelController {
 	@PostMapping(value = "/listcontratparpersonnel")
 	public @ResponseBody List<ContratPersonnel> listContratParPersonnel(@RequestBody IdRequest req) {
 		Personnel personnel = personnelService.findPersonnel(req.getId());
-		return contratPersonnelService.findByPersonnel(personnel);
+		return contratPersonnelService.findByPersonnelWithRelations(personnel);
 	}
 
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "/listcontratpersonneljson")
 	public @ResponseBody ContratPersonnelDTO getContratListJSON(@RequestBody PaginationRequest req, Principal principal) {
-		Integer offset = req.getOffset() == null ? 0 : req.getOffset();
-		Integer limit = req.getLimit() == null ? 10 : req.getLimit();
-		String search = req.getSearch();
-		PageRequest pageRequest = PageRequest.of(offset , limit, Direction.DESC, "id");
-		ContratPersonnelDTO contratPersonnelDTO = (search == null || search.isEmpty()) ? contratPersonnelService.loadContratActif(pageRequest) : contratPersonnelService.loadContratActif(pageRequest, search);
+		int rawOffset = req.getOffset() == null ? 0 : req.getOffset();
+		int limit = req.getLimit() == null ? 10 : req.getLimit();
+		if (limit <= 0) {
+			limit = 10;
+		}
+		if (rawOffset < 0) {
+			rawOffset = 0;
+		}
+
+		String search = req.getSearch() == null ? null : req.getSearch().trim();
+
+		// Compatibilité ascendante:
+		// - anciens clients peuvent envoyer offset comme index de page (0,1,2...)
+		// - nouveaux clients envoient offset en nombre de lignes ((page-1)*limit)
+		int pageIndex = (rawOffset >= limit) ? (rawOffset / limit) : rawOffset;
+		//PageRequest page = PageRequest.of(pageIndex, limit, Direction.DESC, "id");
+        PageRequest page = PageRequest.of(rawOffset / limit, limit, Direction.DESC, "id");
+		ContratPersonnelDTO contratPersonnelDTO = (search == null || search.isEmpty())
+			? contratPersonnelService.loadContratActif(page)
+			: contratPersonnelService.loadContratActif(page, search);
 		return contratPersonnelDTO;
 	}
 

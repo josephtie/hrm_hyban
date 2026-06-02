@@ -17,7 +17,7 @@
             <div class="stat-label">Affichés</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Expirants' }}</div>
+            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
             <div class="stat-label">Type</div>
           </div>
         </div>
@@ -40,6 +40,11 @@
           </div>
         </div>
 
+        <el-tabs v-model="activeTab" class="contrats-tabs">
+          <el-tab-pane label="Contrats en cours" name="contracts" />
+          <el-tab-pane label="Contrats expirés" name="expired" />
+        </el-tabs>
+
         <!-- Barre d'outils améliorée -->
         <div class="toolbar">
           <div class="toolbar-left">
@@ -57,6 +62,7 @@
             </el-input>
           </div>
           <div class="toolbar-right">
+            <template v-if="activeTab === 'contracts'">
             <el-select
               v-model="currentView"
               placeholder="Type"
@@ -110,6 +116,7 @@
               <el-option label="Contractuel" value="true" />
               <el-option label="Non Contractuel" value="false" />
             </el-select>
+            </template>
             
             <el-button 
               @click="exportExcel" 
@@ -123,36 +130,82 @@
               Exporter
             </el-button>
             
-            <el-button 
+          </div>
+        </div>
+
+        <div v-if="activeTab === 'expired'" class="toolbar expiration-toolbar">
+          <div class="toolbar-left">
+            <el-select
+              v-model="expiredView"
+              placeholder="Type"
+              style="width: 150px"
+              clearable
+              size="large"
+              class="enhanced-input"
+            >
+              <el-option label="Tous les contrats" value="all" />
+              <el-option label="Contrats actifs" value="active" />
+              <el-option label="Contrats inactifs" value="inactive" />
+            </el-select>
+            <el-select
+              v-model="expiredFilterTypeContrat"
+              placeholder="Type de contrat"
+              style="width: 150px"
+              clearable
+              size="large"
+              class="enhanced-input"
+            >
+              <el-option label="CDI" value="CDI" />
+              <el-option label="CDD" value="CDD" />
+              <el-option label="Stage" value="Stage" />
+              <el-option label="Apprentissage" value="Apprentissage" />
+              <el-option label="Consultance" value="Consultance" />
+            </el-select>
+            <el-date-picker
+              v-model="expireDate"
+              type="date"
+              placeholder="Date d'expiration"
+              format="DD/MM/YYYY"
+              value-format="YYYY-MM-DD"
+              clearable
+              size="large"
+              class="enhanced-input"
+            />
+            <el-date-picker
+              v-model="expirationPeriod"
+              type="daterange"
+              range-separator="au"
+              start-placeholder="Début période"
+              end-placeholder="Fin période"
+              format="DD/MM/YYYY"
+              value-format="YYYY-MM-DD"
+              clearable
+              size="large"
+              class="enhanced-input"
+            />
+          </div>
+          <div class="toolbar-right">
+            <el-button
+              @click="applyExpirationFilters"
+              type="warning"
+              class="enhanced-button"
+              :loading="loading"
+              :disabled="loading"
+              size="large"
+            >
+              <el-icon><Search /></el-icon>
+              Filtrer les expirations
+            </el-button>
+            <el-button
               v-if="expireDate || expirePeriodStart"
-              @click="clearExpirationFilters" 
-              type="warning" 
+              @click="clearExpirationFilters"
               class="enhanced-button"
               :loading="loading"
               :disabled="loading"
               size="large"
             >
               <el-icon><Refresh /></el-icon>
-              Effacer les filtres d'expiration
-            </el-button>
-            
-            <!-- Boutons pour les filtres d'expiration -->
-            <el-button 
-              @click="showExpiresOnDateModal = true" 
-              type="warning" 
-              class="enhanced-button"
-            >
-              <el-icon><Calendar /></el-icon>
-              Expire à une date
-            </el-button>
-            
-            <el-button 
-              @click="showExpiresInPeriodModal = true" 
-              type="warning" 
-              class="enhanced-button"
-            >
-              <el-icon><Timer /></el-icon>
-              Expire dans période
+              Réinitialiser
             </el-button>
           </div>
         </div>
@@ -284,7 +337,7 @@
         <el-pagination
           v-model:current-page="currentPage"
           v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
+          :page-sizes="[50, 100, 200]"
           :total="total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
@@ -556,8 +609,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Plus, Edit, Delete, Search, Refresh, Close, Calendar, Clock,
   User, UserFilled, CreditCard, Briefcase, View, Download,
-  Document, WarningFilled, Timer
+  Document, WarningFilled
 } from '@element-plus/icons-vue'
+import * as XLSX from 'xlsx'
 import { contratPersonnelService, type ContratPersonnel as ContratPersonnelType, type ContratPersonnelFilterRequest } from '@/services/contrat-personnel.service'
 
 interface Personnel {
@@ -608,7 +662,8 @@ const total = ref(0)
 const loading = ref(false)
 const searchText = ref('')
 const currentPage = ref(0)
-const pageSize = ref(10)
+const pageSize = ref(50)
+const activeTab = ref<'contracts' | 'expired'>('contracts')
 const showViewModal = ref(false)
 const showTerminateModal = ref(false)
 const selectedContrat = ref<ContratPersonnel | null>(null)
@@ -619,6 +674,8 @@ const currentView = ref('all')
 const filterTypeContrat = ref('')
 const filterSalaire = ref('')
 const filterCarec = ref('')
+const expiredView = ref('all')
+const expiredFilterTypeContrat = ref('')
 
 // Variables pour les filtres d'expiration
 const showExpiresOnDateModal = ref<boolean>(false)
@@ -626,6 +683,7 @@ const showExpiresInPeriodModal = ref<boolean>(false)
 const expireDate = ref<string>('')
 const expirePeriodStart = ref<string>('')
 const expirePeriodEnd = ref<string>('')
+const expirationPeriod = ref<[string, string] | null>(null)
 
 // Formulaire pour la fin de contrat
 const terminateForm = reactive({
@@ -858,30 +916,119 @@ const getFonctionLabel = (fonction: string | { libelle: string }) => {
   return fonction?.libelle || 'N/A'
 }
 
+const normalizeText = (value: unknown) => String(value || '').toLowerCase()
+
+const normalizeContractType = (value: unknown) => {
+  const normalized = normalizeText(value).trim()
+  if (['consultant', 'consultance', 'consulting'].includes(normalized)) return 'consultance'
+  return normalized
+}
+
+const getSalaireValue = (contrat: ContratPersonnel) => {
+  const salaire = contrat.categorie?.salaireBase || contrat.salaireCategoriel || 0
+  return typeof salaire === 'string' ? parseFloat(salaire.replace(/[^\d.-]/g, '')) || 0 : salaire
+}
+
+const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
+  return rows.filter(contrat => {
+    if (currentView.value === 'active' && contrat.statut !== true) return false
+    if (currentView.value === 'inactive' && contrat.statut !== false) return false
+
+    if (
+      filterTypeContrat.value &&
+      normalizeContractType(getTypeContratLabel(contrat.typeContrat)) !== normalizeContractType(filterTypeContrat.value)
+    ) return false
+
+    if (filterCarec.value && String(contrat.personnel?.carec) !== filterCarec.value) return false
+
+    const salaire = getSalaireValue(contrat)
+    if (filterSalaire.value === 'low' && salaire >= 100000) return false
+    if (filterSalaire.value === 'medium' && (salaire < 100000 || salaire > 200000)) return false
+    if (filterSalaire.value === 'high' && (salaire < 200000 || salaire > 300000)) return false
+    if (filterSalaire.value === 'veryhigh' && salaire <= 300000) return false
+
+    const search = normalizeText(searchText.value)
+    if (search) {
+      const searchable = [
+        contrat.personnel?.matricule,
+        contrat.personnel?.nom,
+        contrat.personnel?.prenom,
+        getTypeContratLabel(contrat.typeContrat),
+        getFonctionLabel(contrat.fonction)
+      ].map(normalizeText).join(' ')
+
+      if (!searchable.includes(search)) return false
+    }
+
+    return true
+  })
+}
+
+const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
+  return rows.filter(contrat => {
+    if (expiredView.value === 'active' && contrat.statut !== true) return false
+    if (expiredView.value === 'inactive' && contrat.statut !== false) return false
+
+    if (
+      expiredFilterTypeContrat.value &&
+      normalizeContractType(getTypeContratLabel(contrat.typeContrat)) !== normalizeContractType(expiredFilterTypeContrat.value)
+    ) return false
+
+    return true
+  })
+}
+
+const paginateRows = (rows: ContratPersonnel[]) => {
+  const start = currentPage.value * pageSize.value
+  return rows.slice(start, start + pageSize.value)
+}
+
 // Fonctions principales
 const loadContrats = async () => {
   loading.value = true
   try {
-    // Préparer les filtres pour l'endpoint unifié
-    const filters: ContratPersonnelFilterRequest = {
+    const pagination = {
       offset: currentPage.value * pageSize.value,
       limit: pageSize.value,
-      search: searchText.value || undefined,
-      statut: currentView.value === 'all' ? undefined : currentView.value,
-      typeContrat: filterTypeContrat.value || undefined,
-      salaireRange: filterSalaire.value || undefined,
-      carec: filterCarec.value ? filterCarec.value === 'true' : undefined,
-      // Nouveaux filtres d'expiration
-      expireDate: expireDate.value || undefined,
-      expirePeriodStart: expirePeriodStart.value || undefined,
-      expirePeriodEnd: expirePeriodEnd.value || undefined
+      search: searchText.value || undefined
     }
 
-    // Utiliser uniquement l'endpoint de filtrage unifié
-    const response = await contratPersonnelService.getContratsWithFilters(filters)
+    let response
+
+    if (activeTab.value === 'expired') {
+      if (expireDate.value || (expirePeriodStart.value && expirePeriodEnd.value)) {
+        const filters: ContratPersonnelFilterRequest = {
+          ...pagination,
+          expireDate: expireDate.value || undefined,
+          expirePeriodStart: expirePeriodStart.value || undefined,
+          expirePeriodEnd: expirePeriodEnd.value || undefined
+        }
+
+        response = await contratPersonnelService.getContratsWithFilters(filters)
+      } else {
+        response = await contratPersonnelService.getContratsExpires(pagination)
+      }
+    } else {
+      response = await contratPersonnelService.getAllContrats({
+        offset: 0,
+        limit: 999999
+      })
+
+      const filteredRows = applyCurrentContractsFilters(response.rows || [])
+      contrats.value = paginateRows(filteredRows)
+      total.value = filteredRows.length
+
+      if (contrats.value.length === 0 && currentPage.value > 0) {
+        currentPage.value = 0
+        await loadContrats()
+      }
+
+      return
+    }
     
-    contrats.value = response.rows || []
-    total.value = response.total || 0
+    const filteredExpiredRows = applyExpiredContractsFilters(response.rows || [])
+    contrats.value = filteredExpiredRows
+    total.value = filteredExpiredRows.length
     
     if (contrats.value.length === 0 && currentPage.value > 0) {
       currentPage.value = 0
@@ -1000,63 +1147,74 @@ const confirmTerminate = async () => {
   }
 }
 
-const generateCSV = (contrats: ContratPersonnel[]) => {
-  const headers = ['Matricule', 'Nom', 'Prénom', 'Type Contrat', 'Fonction', 'Date Début', 'Date Fin', 'Salaire', 'Statut']
-  const csvContent = [
-    headers.join(','),
-    ...contrats.map(contrat => [
-      contrat.personnel?.matricule || '',
-      contrat.personnel?.nom || '',
-      contrat.personnel?.prenom || '',
-      typeof contrat.typeContrat === 'string' ? contrat.typeContrat : contrat.typeContrat?.libelle || '',
-      typeof contrat.fonction === 'string' ? contrat.fonction : contrat.fonction?.libelle || '',
-      contrat.dateDebut || '',
-      contrat.dateFin || '',
-      contrat.categorie?.salaireBase || contrat.salaireCategoriel || 0,
-      contrat.statut ? 'Actif' : 'Inactif'
-    ].join(','))
-  ].join('\n')
-  
-  return csvContent
-}
+const exportContratsXlsx = (contrats: ContratPersonnel[], filename: string) => {
+  const rows = contrats.map(contrat => ({
+    Matricule: contrat.personnel?.matricule || '',
+    Nom: contrat.personnel?.nom || '',
+    Prénom: contrat.personnel?.prenom || '',
+    'Type Contrat': getTypeContratLabel(contrat.typeContrat),
+    Fonction: getFonctionLabel(contrat.fonction),
+    'Date Début': contrat.dateDebut ? formatDate(contrat.dateDebut) : '',
+    'Date Fin': contrat.dateFin ? formatDate(contrat.dateFin) : '',
+    Salaire: contrat.categorie?.salaireBase || contrat.salaireCategoriel || 0,
+    Statut: contrat.statut ? 'Actif' : 'Inactif',
+    'État employé': contrat.personnel?.carec ? 'Contractuel' : 'Non Contractuel'
+  }))
 
-const downloadCSV = (content: string, filename: string) => {
-  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  const url = URL.createObjectURL(blob)
-  link.setAttribute('href', url)
-  link.setAttribute('download', filename)
-  link.style.visibility = 'hidden'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+  const worksheet = XLSX.utils.json_to_sheet(rows)
+  worksheet['!cols'] = [
+    { wch: 16 },
+    { wch: 22 },
+    { wch: 22 },
+    { wch: 18 },
+    { wch: 24 },
+    { wch: 14 },
+    { wch: 14 },
+    { wch: 16 },
+    { wch: 12 },
+    { wch: 18 }
+  ]
+
+  const workbook = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Contrats')
+  XLSX.writeFile(workbook, filename)
 }
 
 const exportExcel = async () => {
   try {
     loading.value = true // Indicateur de chargement
     
-    // Exporter TOUS les résultats du filtre (sans pagination)
-    const filters: ContratPersonnelFilterRequest = {
+    const pagination = {
       offset: 0, // Pas d'offset pour exporter tout
       limit: 999999, // Limite très élevée pour tout récupérer
-      search: searchText.value || undefined,
-      statut: currentView.value === 'all' ? undefined : currentView.value,
-      typeContrat: filterTypeContrat.value || undefined,
-      salaireRange: filterSalaire.value || undefined,
-      carec: filterCarec.value ? filterCarec.value === 'true' : undefined,
-      expireDate: expireDate.value || undefined,
-      expirePeriodStart: expirePeriodStart.value || undefined,
-      expirePeriodEnd: expirePeriodEnd.value || undefined
+      search: searchText.value || undefined
     }
 
-    // Récupérer tous les contrats correspondants aux filtres
-    const response = await contratPersonnelService.getContratsWithFilters(filters)
-    const allContrats = response.rows || []
+    let response
 
-    // Implémenter la logique d'exportation Excel
-    const csvContent = generateCSV(allContrats)
-    downloadCSV(csvContent, `contrats_${new Date().toISOString().split('T')[0]}.csv`)
+    if (activeTab.value === 'expired') {
+      if (expireDate.value || (expirePeriodStart.value && expirePeriodEnd.value)) {
+        response = await contratPersonnelService.getContratsWithFilters({
+          ...pagination,
+          expireDate: expireDate.value || undefined,
+          expirePeriodStart: expirePeriodStart.value || undefined,
+          expirePeriodEnd: expirePeriodEnd.value || undefined
+        })
+      } else {
+        response = await contratPersonnelService.getContratsExpires(pagination)
+      }
+    } else {
+      response = await contratPersonnelService.getAllContrats({
+        offset: 0,
+        limit: 999999
+      })
+    }
+
+    const allContrats = activeTab.value === 'contracts'
+      ? applyCurrentContractsFilters(response.rows || [])
+      : applyExpiredContractsFilters(response.rows || [])
+
+    exportContratsXlsx(allContrats, `${activeTab.value === 'expired' ? 'contrats_expires' : 'contrats_en_cours'}_${new Date().toISOString().split('T')[0]}.xlsx`)
     
     const message = allContrats.length > 0 
       ? `✅ Export Excel terminé avec succès - ${allContrats.length} contrat${allContrats.length > 1 ? 's' : ''} exporté${allContrats.length > 1 ? 's' : ''}`
@@ -1071,6 +1229,28 @@ const exportExcel = async () => {
 }
 
 // Fonctions pour les filtres d'expiration
+const syncExpirationPeriod = () => {
+  expirePeriodStart.value = expirationPeriod.value?.[0] || ''
+  expirePeriodEnd.value = expirationPeriod.value?.[1] || ''
+}
+
+const applyExpirationFilters = async () => {
+  syncExpirationPeriod()
+
+  if (expireDate.value && (expirePeriodStart.value || expirePeriodEnd.value)) {
+    ElMessage.warning('Veuillez utiliser soit une date précise, soit une période, pas les deux')
+    return
+  }
+
+  if ((expirePeriodStart.value && !expirePeriodEnd.value) || (!expirePeriodStart.value && expirePeriodEnd.value)) {
+    ElMessage.warning('Veuillez sélectionner une période complète')
+    return
+  }
+
+  currentPage.value = 0
+  await loadContrats()
+}
+
 const searchExpiresOnDate = async () => {
   if (!expireDate.value) {
     ElMessage.warning('Veuillez sélectionner une date d\'expiration')
@@ -1146,6 +1326,7 @@ const clearExpirationFilters = () => {
   expireDate.value = ''
   expirePeriodStart.value = ''
   expirePeriodEnd.value = ''
+  expirationPeriod.value = null
   currentPage.value = 0
   loadContrats()
   ElMessage.info('Filtres d\'expiration effacés')
@@ -1169,10 +1350,24 @@ const formatSalary = (salary: number | string) => {
   return isNaN(numSalary) ? '0' : numSalary.toLocaleString('fr-FR')
 }
 
-// Watchers pour les filtres et la recherche (retiré les variables d'expiration)
+// Watchers pour les filtres et la recherche
 watch([searchText, currentView, filterTypeContrat, filterSalaire, filterCarec], () => {
   currentPage.value = 0
   loadContrats()
+})
+
+watch([expiredView, expiredFilterTypeContrat], () => {
+  currentPage.value = 0
+  loadContrats()
+})
+
+watch(activeTab, () => {
+  currentPage.value = 0
+  loadContrats()
+})
+
+watch(expirationPeriod, () => {
+  syncExpirationPeriod()
 })
 
 watch([currentPage, pageSize], () => {

@@ -26,8 +26,51 @@ public interface EchelonnementRepository extends CrudRepository<Echelonnement, L
 	
 	public Page<Echelonnement> findByMontantLike(Pageable pageable,String search);
 	
-	public Page<Echelonnement> findByPretPersonnelPersonnelNomLike(Pageable pageable,String search);
+	//public Page<Echelonnement> findByPretPersonnelPersonnelNomLike(String search);
 
+    // Nouvelles méthodes de recherche pour les filtres avancés
+    public Page<Echelonnement> findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(Pageable pageable, String matricule);
+    
+    public Page<Echelonnement> findByPretPersonnelPersonnelNomIgnoreCaseContaining(Pageable pageable, String nom);
+    
+    public Page<Echelonnement> findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(Pageable pageable, String prenom);
+    
+    public Page<Echelonnement> findByPaye(Pageable pageable, Boolean paye);
+    
+    public Page<Echelonnement> findByPeriodePaieId(Pageable pageable, Long periodePaieId);
+    
+    // Méthodes combinées pour la recherche multi-critères
+    public Page<Echelonnement> findByPretPersonnelPersonnelMatriculeIgnoreCaseContainingAndPayeAndPeriodePaieId(
+        Pageable pageable, String matricule, Boolean paye, Long periodePaieId);
+    
+    public Page<Echelonnement> findByPretPersonnelPersonnelNomIgnoreCaseContainingAndPayeAndPeriodePaieId(
+        Pageable pageable, String nom, Boolean paye, Long periodePaieId);
+    
+    public Page<Echelonnement> findByPretPersonnelPersonnelPrenomIgnoreCaseContainingAndPayeAndPeriodePaieId(
+        Pageable pageable, String prenom, Boolean paye, Long periodePaieId);
+    
+    // Méthodes combinées avec période seulement
+    public Page<Echelonnement> findByPretPersonnelPersonnelMatriculeIgnoreCaseContainingAndPeriodePaieId(
+        Pageable pageable, String matricule, Long periodePaieId);
+    
+    public Page<Echelonnement> findByPretPersonnelPersonnelNomIgnoreCaseContainingAndPeriodePaieId(
+        Pageable pageable, String nom, Long periodePaieId);
+    
+    public Page<Echelonnement> findByPretPersonnelPersonnelPrenomIgnoreCaseContainingAndPeriodePaieId(
+        Pageable pageable, String prenom, Long periodePaieId);
+    
+    // Méthode générique pour recherche par nom/prénom combiné
+    public Page<Echelonnement> findByPretPersonnelPersonnelNomCompletIgnoreCaseContaining(
+        Pageable pageable, String nomComplet);
+    
+    // Méthodes pour retourner List<Echelonnement> (pour l'export)
+    public List<Echelonnement> findByPretPersonnelPersonnelMatriculeIgnoreCaseContaining(String matricule);
+    
+    public List<Echelonnement> findByPretPersonnelPersonnelNomIgnoreCaseContaining(String nom);
+    
+    public List<Echelonnement> findByPretPersonnelPersonnelPrenomIgnoreCaseContaining(String prenom);
+    
+    public List<Echelonnement> findByPaye(Boolean paye);
 
     List<Echelonnement> findByPeriodePaieId(Long idPeriode);
 }

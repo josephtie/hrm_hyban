@@ -46,7 +46,10 @@ public class Rubrique extends Auditable {
 	
 	@Column(nullable=false)
 	private Integer etatImposition;
-	
+
+    private String categorie;
+
+    private String typeRubrique;
 
     private String modeCalcul;
 
@@ -178,6 +181,9 @@ public class Rubrique extends Auditable {
 		this.mtExedent = mtExedent;
 	}
 
+
+
+
 	public String getStretatimposition() {
 		if(etatImposition==null)
 			stretatimposition="";
@@ -192,7 +198,7 @@ public class Rubrique extends Auditable {
 		if(etatImposition==5)
 			stretatimposition="Regularisation";
 		if(etatImposition==6)
-			stretatimposition="Retenue Sociale";
+			stretatimposition="Retenue Patronale";
 		return stretatimposition;
 	}
 
@@ -247,6 +253,22 @@ public class Rubrique extends Auditable {
         this.speciale = speciale;
     }
 
+    public String getCategorie() {
+        return categorie;
+    }
+
+    public void setCategorie(String categorie) {
+        this.categorie = categorie;
+    }
+
+    public String getTypeRubrique() {
+        return typeRubrique;
+    }
+
+    public void setTypeRubrique(String typeRubrique) {
+        this.typeRubrique = typeRubrique;
+    }
+
     @Override
     public String toString() {
         return "Rubrique{" +
@@ -257,6 +279,8 @@ public class Rubrique extends Auditable {
                 ", mtExedent=" + mtExedent +
                 ", strmtExedent='" + strmtExedent + '\'' +
                 ", etatImposition=" + etatImposition +
+                ", categorie='" + categorie + '\'' +
+                ", typeRubrique='" + typeRubrique + '\'' +
                 ", modeCalcul='" + modeCalcul + '\'' +
                 ", valeurDef=" + valeurDef +
                 ", cotisable=" + cotisable +

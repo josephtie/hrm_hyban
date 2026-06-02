@@ -1,0 +1,24 @@
+# Configuration pour l'environnement de production
+# Utilisez cette configuration pour la production
+
+# Configuration API Backend
+VITE_API_BASE_URL=https://api.hyban.com
+VITE_API_PORT=443
+VITE_API_TIMEOUT=30000
+
+# Configuration Keycloak
+VITE_KEYCLOAK_URL=https://auth.hyban.com
+VITE_KEYCLOAK_PORT=443
+VITE_KEYCLOAK_REALM=hyban
+VITE_KEYCLOAK_CLIENT_ID=hrm_frontend
+VITE_KEYCLOAK_GRANT_TYPE=password
+VITE_KEYCLOAK_SCOPE=openid profile email
+
+# Configuration de l'application
+VITE_APP_NAME=HRM Hyban
+VITE_APP_VERSION=1.0.0
+VITE_APP_DEBUG=false
+
+# Configuration des environnements
+NODE_ENV=production
+VITE_NODE_ENV=production

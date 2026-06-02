@@ -4,7 +4,8 @@ import com.nectux.mizan.hyban.parametrages.entity.Societe;
 import com.nectux.mizan.hyban.parametrages.entity.Utilisateur;
 import com.nectux.mizan.hyban.parametrages.service.RubriqueService;
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
-
+//import com.nectux.mizan.hyban.parametrages.service.UtilisateurRoleService;
+//import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
 import com.nectux.mizan.hyban.personnel.specifque.entity.PrimeSpecifique;
 import com.nectux.mizan.hyban.personnel.specifque.services.PrimeSpecifiqueService;
 import org.apache.logging.log4j.LogManager;
@@ -18,8 +19,9 @@ import java.security.Principal;
 import java.util.List;
 
 @RestController
-@RequestMapping("/parametrages")
+@RequestMapping("/api/parametrages")
 public class PrimeSpecifiqueController {
+
 
 
     private static final Logger logger = LogManager.getLogger(PrimeSpecifiqueController.class);
@@ -30,15 +32,15 @@ public class PrimeSpecifiqueController {
     @Autowired private SocieteService societeService;
     //@Autowired private UtilisateurRoleService utilisateurRoleService;
 
-
+//
 //    @RequestMapping("/speciales")
 //    public String viewAccountType(ModelMap modelMap, Principal principal) throws IOException {
 //        logger.info(">>>>> Types Documents");
 //        modelMap.addAttribute("activeSetting", "active");
 //        modelMap.addAttribute("blockSetting", "block");
 //        modelMap.addAttribute("activePRubrique", "active");
-//        modelMap.addAttribute("user", utilisateurService.findByUsername(principal.getName()));
-//        Utilisateur utilisateur=utilisateurService.findByUsername(principal.getName());
+//      //  modelMap.addAttribute("user", utilisateurService.findByUsername(principal.getName()));
+//      //  Utilisateur utilisateur=utilisateurService.findByUsername(principal.getName());
 //        System.out.println("utilisateur    " +utilisateur.toString());
 //
 //        modelMap.addAttribute("profil", utilisateur.getUtilisateurRoles().stream()

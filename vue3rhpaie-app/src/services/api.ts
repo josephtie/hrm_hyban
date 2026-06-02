@@ -1,12 +1,13 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import router from '@/router'
 import type { ApiResponse, ApiError } from '@/types/auth'
+import { API_CONFIG, API_URLS } from '@/config/api'
 
-// Configuration de base
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:7200/api'
-const REQUEST_TIMEOUT = 30000
+// Configuration centralisée
+const API_BASE_URL = API_URLS.BASE
+const REQUEST_TIMEOUT = API_CONFIG.TIMEOUT
 
 // Création de l'instance Axios
 export const api: AxiosInstance = axios.create({
@@ -18,198 +19,154 @@ export const api: AxiosInstance = axios.create({
   }
 })
 
-// Intercepteur pour les requêtes
+// ============================================
+// INTERCEPTOR DE REQUÊTE (Unique)
+// ============================================
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Ajouter le token d'authentification si disponible
+    // 1. Ajouter le token d'authentification s'il existe
     const token = localStorage.getItem('access_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
-      console.log('🔑 Token envoyé:', token.substring(0, 50) + '...')
+      console.log('🔑 Token ajouté au header Authorization')
     } else {
-      console.log('❌ Aucun token trouvé')
+      console.log('⚠️ Aucun token trouvé dans localStorage')
     }
-    
-    // Préserver le Content-Type pour FormData
+
+    // 2. Gérer le Content-Type pour FormData
     if (config.data instanceof FormData) {
-      // Ne pas définir Content-Type pour FormData, laisse Axios le faire automatiquement avec le boundary
+      // Laisser Axios définir le Content-Type automatiquement avec le boundary
       delete config.headers['Content-Type']
-      console.log('📤 FormData détecté, Content-Type laissé à Axios')
-    } else if (!config.headers['Content-Type']) {
-      // Pour les autres requêtes, utiliser application/json par défaut
-      config.headers['Content-Type'] = 'application/json'
-    }
-    
-    // Log pour le débogage
-    console.log('🚀 Requête API:', config.method?.toUpperCase(), config.url)
-    console.log('🚀 API Request:', config.method?.toUpperCase(), config.url, {
-      params: config.params,
-      data: config.data,
-      headers: config.headers
-    })
-    
-    return config
-  },
-  (error: AxiosError) => {
-    console.error('❌ Request Error:', error)
-    return Promise.reject(error)
-  }
-)
-
-// Intercepteur pour les réponses
-api.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response
-  },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-
-    // Si erreur 401 et qu'on n'a pas déjà essayé de rafraîchir le token
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      try {
-        // Importer keycloakAuthService dynamiquement pour éviter les dépendances circulaires
-        const keycloakAuthService = await import('./keycloak-auth.service')
-        const newToken = await keycloakAuthService.default.refreshToken()
-        
-        if (newToken) {
-          // Mettre à jour le header de la requête originale
-          originalRequest.headers.Authorization = `Bearer ${newToken}`
-          // Relancer la requête avec le nouveau token
-          return api(originalRequest)
-        }
-      } catch (refreshError) {
-        console.error('Erreur refresh token:', refreshError)
-        // Rediriger vers login si le refresh échoue
-        localStorage.removeItem('authToken')
-        localStorage.removeItem('refreshToken')
-        router.push('/login')
-      }
-    }
-    
-    // Gérer les autres erreurs
-    if (error.response?.status === 401) {
-      // Rediriger vers la page de connexion
-      localStorage.removeItem('authToken')
-      localStorage.removeItem('refreshToken')
-      router.push('/login')
-    }
-    
-    // Log de l'erreur pour le débogage
-    console.error('❌ API Error:', error.config?.method?.toUpperCase(), error.config?.url, {
-      status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
-    })
-    
-    return Promise.reject(error)
-  }
-)
-
-// Token check utility
-export const checkToken = () => {
-  const token = localStorage.getItem('authToken')
-  const tokenInfo = {
-    token: token ? 'EXISTS' : 'MISSING',
-    tokenLength: token?.length || 0,
-    localStorage: {
-      authToken: !!localStorage.getItem('authToken'),
-      refreshToken: !!localStorage.getItem('refreshToken'),
-      user: !!localStorage.getItem('user')
-    }
-  }
-  console.log('🔑 Token check:', tokenInfo)
-  return tokenInfo
-}
-
-export default api
-
-// Extension de l'interface pour les métadonnées
-declare module 'axios' {
-  interface InternalAxiosRequestConfig {
-    metadata?: {
-      startTime?: Date
-    }
-  }
-}
-
-// Interceptor de requête
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    // Ajout du token d'authentification
-    const token = localStorage.getItem('access_token')
-    
-    // Debug: Vérifier le token
-    if (import.meta.env.DEV) {
-      console.log('🔑 Token check:', {
-        token: token ? 'EXISTS' : 'MISSING',
-        tokenLength: token?.length || 0,
-        localStorage: {
-          access_token: !!localStorage.getItem('access_token'),
-          refresh_token: !!localStorage.getItem('refresh_token'),
-          user: !!localStorage.getItem('user')
-        }
-      })
-    }
-    
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
-      
-      // Debug: Confirmer l'ajout du header
-      if (import.meta.env.DEV) {
-        console.log('🔐 Authorization header added:', config.headers.Authorization)
-      }
-    } else {
-      // Debug: Token manquant
-      if (import.meta.env.DEV) {
-        console.warn('⚠️ No token available, request will be unauthenticated')
-      }
+      console.log('📤 FormData détecté - Content-Type laissé à Axios')
     }
 
-    // Ajout de l'ID de requête pour le tracking
-    config.metadata = { startTime: new Date() }
+    // 3. Tracker le temps de la requête pour les logs
+    ;(config as any).metadata = { startTime: new Date() }
 
-    // Log en développement
+    // 4. Logs en développement
     if (import.meta.env.DEV) {
       console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
         params: config.params,
-        data: config.data,
-        headers: config.headers
+        hasData: !!config.data,
+        hasToken: !!token,
+        headers: {
+          'Content-Type': config.headers['Content-Type'],
+          'Authorization': config.headers.Authorization ? 'Bearer ***' : 'none'
+        }
       })
     }
 
     return config
   },
   (error: AxiosError) => {
-    console.error('❌ Request Error:', error)
+    console.error('❌ Erreur dans la requête:', error)
     return Promise.reject(error)
   }
 )
 
-// Interceptor de réponse
+// ============================================
+// INTERCEPTOR DE RÉPONSE (Unique)
+// ============================================
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    // Calcul du temps de réponse
-    const endTime = new Date()
-    const startTime = response.config.metadata?.startTime?.getTime()
-    const duration = startTime ? endTime.getTime() - startTime : 0
-
-    // Log en développement
+    // Logs en développement
     if (import.meta.env.DEV) {
+      const startTime = (response.config as any).metadata?.startTime?.getTime()
+      const duration = startTime ? new Date().getTime() - startTime : 0
       console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
         status: response.status,
-        duration: `${duration}ms`,
-        data: response.data
+        duration: `${duration}ms`
       })
     }
-
     return response
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-    // Log d'erreur
+    // ============================================
+    // GESTION DES ERREURS
+    // ============================================
+
+    // 1. Erreur 401 - Token expiré ou invalide
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true
+      console.log('🔄 Token expiré - Tentative de rafraîchissement...')
+
+      try {
+        // Charger dynamiquement pour éviter les imports circulaires
+        const { keycloakAuthService } = await import('./keycloak-auth.service')
+        const newToken = await keycloakAuthService.refreshToken()
+
+        if (newToken) {
+          console.log('✅ Token rafraîchi avec succès')
+          // Mettre à jour le token en localStorage
+          localStorage.setItem('access_token', newToken)
+          // Réessayer la requête originale avec le nouveau token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`
+          return api(originalRequest)
+        }
+      } catch (refreshError) {
+        console.error('❌ Erreur lors du rafraîchissement du token:', refreshError)
+      }
+
+      // Si rafraîchissement échoue, déconnecter l'utilisateur
+      console.log('🚪 Déconnexion - Redirection vers login')
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('user')
+
+      ElMessageBox.alert(
+        'Votre session a expiré. Veuillez vous reconnecter.',
+        'Session Expirée',
+        {
+          confirmButtonText: 'OK',
+          type: 'warning',
+          callback: () => {
+            router.push('/login')
+          }
+        }
+      )
+      return Promise.reject(error)
+    }
+
+    // 2. Erreur 403 - Accès refusé
+    if (error.response?.status === 403) {
+      ElMessage.error('Accès refusé. Permissions insuffisantes.')
+      return Promise.reject(error)
+    }
+
+    // 3. Erreur 404 - Ressource non trouvée
+    if (error.response?.status === 404) {
+      console.warn('Resource not found:', originalRequest.url)
+      return Promise.reject(error)
+    }
+
+    // 4. Erreur 422 - Validation échouée
+    if (error.response?.status === 422) {
+      const errorData = error.response.data as any
+      if (errorData?.errors && Array.isArray(errorData.errors)) {
+        errorData.errors.forEach((err: string) => {
+          ElMessage.error(err)
+        })
+      } else {
+        ElMessage.error(errorData?.message || 'Erreur de validation')
+      }
+      return Promise.reject(error)
+    }
+
+    // 5. Erreur 429 - Trop de requêtes
+    if (error.response?.status === 429) {
+      ElMessage.warning('Trop de requêtes. Veuillez réessayer plus tard.')
+      return Promise.reject(error)
+    }
+
+    // 6. Erreur 500 - Erreur serveur
+    if (error.response?.status === 500) {
+      ElMessage.error('Erreur serveur. Veuillez contacter l\'administrateur.')
+      return Promise.reject(error)
+    }
+
+    // 7. Autres erreurs
     if (import.meta.env.DEV) {
       console.error(`❌ API Error: ${originalRequest?.method?.toUpperCase()} ${originalRequest?.url}`, {
         status: error.response?.status,
@@ -218,192 +175,76 @@ api.interceptors.response.use(
       })
     }
 
-    // Gestion des erreurs HTTP
-    if (error.response) {
-      const status = error.response.status
-      const errorData = error.response.data as any
-
-      switch (status) {
-        case 401:
-          // Token expiré ou invalide
-          if (!originalRequest._retry) {
-            originalRequest._retry = true
-            
-            try {
-              // Tentative de rafraîchissement du token
-              const refreshToken = localStorage.getItem('refresh_token')
-              if (refreshToken) {
-                const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-                  refreshToken
-                })
-                
-                const { token, refreshToken: newRefreshToken } = response.data
-                localStorage.setItem('access_token', token)
-                localStorage.setItem('refresh_token', newRefreshToken)
-                
-                // Relancer la requête originale
-                return api(originalRequest)
-              }
-            } catch (refreshError) {
-              console.error('Token refresh failed:', refreshError)
-            }
-          }
-          
-          // Déconnexion et redirection vers login
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          localStorage.removeItem('user')
-          
-          ElMessageBox.alert(
-            'Votre session a expiré. Veuillez vous reconnecter.',
-            'Session Expirée',
-            {
-              confirmButtonText: 'OK',
-              type: 'warning'
-            }
-          ).then(() => {
-            router.push('/login')
-          })
-          break
-
-        case 403:
-          ElMessage.error('Accès refusé. Permissions insuffisantes.')
-          break
-
-        case 404:
-          ElMessage.error('Ressource non trouvée.')
-          break
-
-        case 422:
-          // Erreurs de validation
-          if (errorData?.errors && Array.isArray(errorData.errors)) {
-            errorData.errors.forEach((err: string) => {
-              ElMessage.error(err)
-            })
-          } else {
-            ElMessage.error(errorData?.message || 'Erreur de validation')
-          }
-          break
-
-        case 429:
-          ElMessage.warning('Trop de requêtes. Veuillez réessayer plus tard.')
-          break
-
-        case 500:
-          ElMessage.error('Erreur serveur. Veuillez contacter l\'administrateur.')
-          break
-
-        default:
-          ElMessage.error(errorData?.message || 'Une erreur est survenue.')
-      }
-    } else if (error.request) {
-      // Erreur réseau
-      ElMessage.error('Erreur de connexion. Vérifiez votre réseau.')
-    } else {
-      // Erreur inattendue
-      ElMessage.error('Une erreur inattendue est survenue.')
-    }
-
     return Promise.reject(error)
   }
 )
 
-// Méthodes utilitaires
+// ============================================
+// UTILITAIRES
+// ============================================
+
+/**
+ * Vérifier l'état du token
+ */
+export const checkToken = () => {
+  const token = localStorage.getItem('access_token')
+  const refreshToken = localStorage.getItem('refresh_token')
+  const user = localStorage.getItem('user')
+
+  const tokenInfo = {
+    hasAccessToken: !!token,
+    hasRefreshToken: !!refreshToken,
+    hasUser: !!user,
+    accessTokenLength: token?.length || 0,
+    accessTokenPreview: token ? `${token.substring(0, 20)}...${token.substring(token.length - 10)}` : 'none',
+    user: user ? JSON.parse(user) : null
+  }
+
+  console.log('🔑 Token Status:', tokenInfo)
+  return tokenInfo
+}
+
+/**
+ * Déconnecter l'utilisateur
+ */
+export const logout = async () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('user')
+  console.log('🚪 Utilisateur déconnecté')
+  await router.push('/login')
+}
+
+/**
+ * Compatibilité: retourne l'instance api authentifiée partagée.
+ */
+export const createAuthenticatedApi = (): AxiosInstance => api
+
 export const apiUtils = {
-  // Vérifier si l'utilisateur est authentifié
   isAuthenticated: (): boolean => {
-    const token = localStorage.getItem('access_token')
-    const user = localStorage.getItem('user')
-    return !!(token && user)
+    return !!localStorage.getItem('access_token')
   },
 
-  // Forcer le rechargement de la page si token manquant
   ensureAuth: (): void => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      console.warn('⚠️ No token found, redirecting to login...')
-      router.push('/login')
-      return
+    if (!localStorage.getItem('access_token')) {
+      throw new Error('Utilisateur non authentifié')
     }
   },
 
-  // Rafraîchir manuellement le token
   refreshToken: async (): Promise<boolean> => {
     try {
-      const refreshToken = localStorage.getItem('refresh_token')
-      if (!refreshToken) {
-        console.warn('⚠️ No refresh token available')
-        return false
+      const { keycloakAuthService } = await import('./keycloak-auth.service')
+      const newToken = await keycloakAuthService.refreshToken()
+      if (newToken) {
+        localStorage.setItem('access_token', newToken)
+        return true
       }
-
-      const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-        refreshToken
-      })
-      
-      const { token, refreshToken: newRefreshToken } = response.data
-      localStorage.setItem('access_token', token)
-      localStorage.setItem('refresh_token', newRefreshToken)
-      
-      console.log('✅ Token refreshed successfully')
-      return true
+      return false
     } catch (error) {
-      console.error('❌ Token refresh failed:', error)
+      console.error('❌ Erreur lors du rafraîchissement du token:', error)
       return false
     }
-  },
-
-  // Construction de l'URL avec paramètres
-  buildUrl: (endpoint: string, params?: Record<string, any>): string => {
-    if (!params) return endpoint
-    
-    const url = new URL(endpoint, API_BASE_URL)
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        url.searchParams.append(key, String(value))
-      }
-    })
-    return url.pathname + url.search
-  },
-
-  // Gestion du téléchargement de fichiers
-  downloadFile: async (endpoint: string, filename?: string) => {
-    try {
-      const response = await api.get(endpoint, {
-        responseType: 'blob'
-      })
-      
-      const blob = new Blob([response.data])
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename || 'download'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-      
-      ElMessage.success('Téléchargement réussi')
-    } catch (error) {
-      ElMessage.error('Erreur lors du téléchargement')
-      throw error
-    }
-  },
-
-  // Upload de fichiers
-  uploadFile: async (endpoint: string, file: File, onProgress?: (progress: number) => void) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    
-    return api.post(endpoint, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress && progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress(progress)
-        }
-      }
-    })
   }
 }
+
+export default api

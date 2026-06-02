@@ -1,4 +1,4 @@
-import { api } from './api'
+﻿import { api } from './api'
 import type { ApiResponse } from '@/types/auth'
 
 // Interface pour compatibilité avec le code existant
@@ -170,3 +170,4 @@ class BanqueRestService {
 }
 
 export const banquerestService = new BanqueRestService()
+

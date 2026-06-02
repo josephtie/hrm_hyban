@@ -5,14 +5,17 @@ import com.nectux.mizan.hyban.parametrages.dto.CreateUserRequest;
 import com.nectux.mizan.hyban.parametrages.dto.ResetPasswordRequest;
 import com.nectux.mizan.hyban.parametrages.dto.UserWithRolesDto;
 import com.nectux.mizan.hyban.parametrages.service.KeycloakUserService;
+import jakarta.ws.rs.NotAuthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -26,13 +29,20 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<String> createUser(@RequestBody CreateUserRequest request) {
+        List<String> roles = request.getRoles() == null ? new ArrayList<>() : request.getRoles();
+        if (request.getUsername() == null || request.getUsername().isBlank()
+                || request.getFirstName() == null || request.getFirstName().isBlank()
+                || request.getLastName() == null || request.getLastName().isBlank()
+                || roles.isEmpty()) {
+            return ResponseEntity.badRequest().body("Les champs username, firstName, lastName et roles sont obligatoires.");
+        }
         String userId = keycloakUserService.registerUser(
                 request.getUsername(),
                 request.getEmail(),
                 request.getFirstName(),
                 request.getLastName(),
                 request.getPassword(),
-                request.getRoles()
+                roles
         );
         return ResponseEntity.ok(userId);
      //   return ResponseEntity.status(501).body("Service désactivé en profil local");
@@ -70,24 +80,33 @@ public class UserController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/allUsers")
-    public ResponseEntity<List<UserWithRolesDto>> listUsers(
+    public ResponseEntity<?> listUsers(
 
     ) {
-
-        return ResponseEntity.ok(
-                keycloakUserService.getAllUsersWithRolesAndLastLogin()
-        );
+        try {
+            return ResponseEntity.ok(
+                    keycloakUserService.getAllUsersWithRolesAndLastLogin()
+            );
+        } catch (NotAuthorizedException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body("Authentification Keycloak admin refusée. Vérifiez keycloak.admin.clientId/clientSecret et les droits du client.");
+        }
     }
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/search/allUsers")
-    public ResponseEntity<List<UserWithRolesDto>> listUsers(
+    public ResponseEntity<?> listUsers(
             @RequestParam int limit,
             @RequestParam int offset,
             @RequestParam(required = false) String search
     ) {
-        PageRequest pageRequest = PageRequest.of(offset / limit, limit, Sort.Direction.DESC, "id");
-        return ResponseEntity.ok(
-                keycloakUserService.getAllUsersWithRolesAndLastLoginseach(pageRequest,search));
+        try {
+            PageRequest pageRequest = PageRequest.of(offset / limit, limit, Sort.Direction.DESC, "id");
+            return ResponseEntity.ok(
+                    keycloakUserService.getAllUsersWithRolesAndLastLoginseach(pageRequest,search));
+        } catch (NotAuthorizedException e) {
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                    .body("Authentification Keycloak admin refusée. Vérifiez keycloak.admin.clientId/clientSecret et les droits du client.");
+        }
 
     }
 

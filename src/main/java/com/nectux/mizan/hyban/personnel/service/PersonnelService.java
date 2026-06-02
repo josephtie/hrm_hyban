@@ -20,11 +20,11 @@ public interface PersonnelService {
 	public ContratPersonnelDTO save(Long id, String nom, String prenom, Long nationalite, Long service, Long categorie, Long fonction, Long typeContrat,
                                     String matricule, String sexe, String dateNaissance, String lieuNaissance, String email, String residence, int situationMatrimoniale,
                                     int nombreEnfant, String dateArrivee, String numeroCNPS, String adresse, String dateDebut, String dateFin,
-                                    BigDecimal salaireNet, BigDecimal indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg, BigDecimal indemniteRespons, BigDecimal indemniteRepresent, BigDecimal indemniteTransport, BigDecimal sursalaire);
+                                    BigDecimal salaireNet, BigDecimal indemnitelogement, String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, int ancienneteInitial, Boolean carec, String typemp, String telephone, int situationMedaill, String situationEmploie, String dateRetourcg, BigDecimal indemniteRespons, BigDecimal indemniteRepresent, BigDecimal indemniteTransport, BigDecimal sursalaire);
 	
 	public PersonnelDTO save(Long id, String nom, String prenom, Long nationalite, Long service, String matricule, String sexe, String dateNaissance, String lieuNaissance, String email,
                              String residence, int situationMatrimoniale, int nombreEnfant, String dateArrivee, String numeroCNPS, String adresse, Boolean statut,
-                             String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, Boolean carec, String typemp, String telephone, int situationMedaill, int situationEmploie, String dateRetourcg);
+                             String modePaiement, Long idbanque, String numeroCompte, String numeroGuichet, String rib, Boolean carec, String typemp, String telephone, int situationMedaill, String situationEmploie, String dateRetourcg);
 	
 	public PersonnelDTO save(Long id, int situationMatrimoniale, int nombreEnfant, Boolean statut);
 

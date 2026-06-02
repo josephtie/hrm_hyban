@@ -12,7 +12,7 @@ import com.nectux.mizan.hyban.personnel.specifque.enums.SpecialContractType;
 import com.nectux.mizan.hyban.personnel.specifque.repository.EmployeeRepository;
 import com.nectux.mizan.hyban.personnel.specifque.repository.SpecialContractRepository;
 import com.nectux.mizan.hyban.personnel.specifque.services.EmployeeService;
-import com.nectux.mizan.hyban.personnel.web.PersonnelController;
+//import com.nectux.mizan.hyban.personnel.web.PersonnelController;
 import com.nectux.mizan.hyban.rh.carriere.repository.SiteWorkRepository;
 import com.nectux.mizan.hyban.utils.Utils;
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ import java.util.Optional;
 @Transactional
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PersonnelController.class);
+    private static final Logger logger = LoggerFactory.getLogger(EmployeeServiceImpl.class);
     private final EmployeeRepository repository;
     private final SpecialContractRepository contractRepository;
     private final NationnaliteRepository nationnaliteRepository;
@@ -127,19 +127,15 @@ public class EmployeeServiceImpl implements EmployeeService {
                 }
 
                 // Vérifier si modification du net à payer
-                BigDecimal ancienNet = safe(oldContract.getRemunerationForfaitaire());
-                BigDecimal nouveauNet = BigDecimal.valueOf(netAPayer);
+                if (oldContract.getRemunerationForfaitaire().compareTo(BigDecimal.valueOf(netAPayer)) != 0) {
 
-                if (ancienNet.compareTo(nouveauNet) != 0) {
-
-                    // 🔴 Désactiver ancien contrat
+                    // Désactiver ancien contrat
                     oldContract.setActif(false);
                     oldContract.setDateFin(new Date());
                     contractRepository.save(oldContract);
 
                 } else {
-
-                    // 🟢 Aucun changement → retour direct
+                    // Aucun changement important → on retourne le contrat existant
                     dto.setRow(oldContract);
                     dto.setStatus(true);
                     dto.setResult("succes");
@@ -236,10 +232,6 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new RuntimeException("Employé introuvable"));
     }
 
-
-    private BigDecimal safe(BigDecimal val) {
-        return val == null ? BigDecimal.ZERO : val;
-    }
     // ==========================
     // FIND ALL
     // ==========================
