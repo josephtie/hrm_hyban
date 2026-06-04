@@ -39,6 +39,7 @@ services:
       KC_DB_USERNAME: ${POSTGRES_KEYCLOAK_USER:-keycloak}
       KC_DB_PASSWORD: ${POSTGRES_KEYCLOAK_PASSWORD:-keycloak}
       KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_PROXY_HEADERS: xforwarded
@@ -60,7 +61,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-hrm:5432/${POSTGRES_HRM_DB:-hyban_db_v1}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_HRM_USER:-directus}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_HRM_PASSWORD:-directus}
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${BACKEND_KEYCLOAK_ISSUER_URI:-http://keycloak:8080/realms/hyban}
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: ${BACKEND_KEYCLOAK_ISSUER_URI:-http://83.171.249.150:8083/realms/hyban}
       KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-change-me}
       SERVER_PORT: 7200
       JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx768m}
@@ -80,8 +81,8 @@ services:
       context: ./vue3rhpaie-app
       dockerfile: Dockerfile.portainer
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:7200}
-        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://localhost:8083}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://83.171.249.150:7200}
+        VITE_KEYCLOAK_URL: ${VITE_KEYCLOAK_URL:-http://83.171.249.150:8083}
         VITE_KEYCLOAK_REALM: ${VITE_KEYCLOAK_REALM:-hyban}
         VITE_KEYCLOAK_CLIENT_ID: ${VITE_KEYCLOAK_CLIENT_ID:-hrm_frontend}
         VITE_API_TIMEOUT: ${VITE_API_TIMEOUT:-30000}

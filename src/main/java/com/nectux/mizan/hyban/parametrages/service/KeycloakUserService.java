@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-@Profile("prod") // Actif seulement si le profil n'est PAS "local"
+@Profile({"prod","docker"}) // Actif seulement si le profil n'est PAS "local"
 @RequiredArgsConstructor
 
 public class KeycloakUserService {
