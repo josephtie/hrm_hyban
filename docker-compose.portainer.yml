@@ -8,6 +8,8 @@ services:
       POSTGRES_DB: ${POSTGRES_HRM_DB:-hyban_db_v1}
       POSTGRES_USER: ${POSTGRES_HRM_USER:-directus}
       POSTGRES_PASSWORD: ${POSTGRES_HRM_PASSWORD:-directus}
+    ports:
+      - "${POSTGRES_HRM_PUBLIC_PORT:-5438}:5432"
     volumes:
       - postgres_hrmV1_data:/var/lib/postgresql/data
     networks:
@@ -21,6 +23,8 @@ services:
       POSTGRES_DB: ${POSTGRES_KEYCLOAK_DB:-keycloak_db}
       POSTGRES_USER: ${POSTGRES_KEYCLOAK_USER:-keycloak}
       POSTGRES_PASSWORD: ${POSTGRES_KEYCLOAK_PASSWORD:-keycloak}
+    ports:
+      - "${POSTGRES_KEYCLOAK_PUBLIC_PORT:-5439}:5432"
     volumes:
       - postgres_hrmV1_keycloak_data:/var/lib/postgresql/data
     networks:
@@ -105,7 +109,7 @@ services:
       CARBONE_TEMPLATES_DIR: /app/templates
       CARBONE_RENDER_TIMEOUT: ${CARBONE_RENDER_TIMEOUT:-60000}
     ports:
-      - "${CARBONE_PUBLIC_PORT:-4000}:4000"
+      - "${CARBONE_PUBLIC_PORT:-4001}:4000"
     volumes:
       - carbone_hrmV1_templates:/app/templates
       - carbone_hrmV1_reports:/app/reports
