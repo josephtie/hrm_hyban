@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_HRM_USER:-directus}
       POSTGRES_PASSWORD: ${POSTGRES_HRM_PASSWORD:-directus}
     volumes:
-      - postgres_hrm_data:/var/lib/postgresql/data
+      - postgres_hrmV1_data:/var/lib/postgresql/data
     networks:
       - hrm_hyban_network
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
       POSTGRES_USER: ${POSTGRES_KEYCLOAK_USER:-keycloak}
       POSTGRES_PASSWORD: ${POSTGRES_KEYCLOAK_PASSWORD:-keycloak}
     volumes:
-      - postgres_keycloak_data:/var/lib/postgresql/data
+      - postgres_hrmV1_keycloak_data:/var/lib/postgresql/data
     networks:
       - hrm_hyban_network
     restart: unless-stopped
@@ -73,7 +73,7 @@ services:
     networks:
       - hrm_hyban_network
     volumes:
-      - uploads_data:/app/uploads
+      - uploads_hrmV1_data:/app/uploads
     restart: unless-stopped
 
   frontend:
@@ -97,7 +97,7 @@ services:
 
   carbone:
     image: carbone/carbone-ee:latest-fonts
-    container_name: carbone-server
+    container_name: carbone-server-hrmV1
     environment:
       CARBONE_EE_LICENSE: ${CARBONE_EE_LICENSE:-}
       CARBONE_EE_STUDIO: ${CARBONE_EE_STUDIO:-true}
@@ -107,18 +107,18 @@ services:
     ports:
       - "${CARBONE_PUBLIC_PORT:-4000}:4000"
     volumes:
-      - carbone_templates:/app/templates
-      - carbone_reports:/app/reports
+      - carbone_hrmV1_templates:/app/templates
+      - carbone_hrmV1_reports:/app/reports
     networks:
       - hrm_hyban_network
     restart: unless-stopped
 
 volumes:
-  postgres_hrm_data:
-  postgres_keycloak_data:
-  uploads_data:
-  carbone_templates:
-  carbone_reports:
+  postgres_hrmV1_data:
+  postgres_hrmV1_keycloak_data:
+  uploads_hrmV1_data:
+  carbone_hrmV1_templates:
+  carbone_hrmV1_reports:
 
 networks:
   hrm_hyban_network:
