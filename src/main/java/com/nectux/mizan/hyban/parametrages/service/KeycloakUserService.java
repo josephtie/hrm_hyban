@@ -68,7 +68,17 @@ public class KeycloakUserService {
 
         Response response = realm().users().create(user);
         if (response.getStatus() != 201) {
-            throw new RuntimeException("Keycloak error - user not created. Status: " + response.getStatus());
+            String errorBody = "";
+            try {
+                if (response.hasEntity()) {
+                    errorBody = response.readEntity(String.class);
+                }
+            } catch (Exception ex) {
+                log.warn("Impossible de lire le corps de la reponse Keycloak", ex);
+            }
+            log.error("Keycloak error - user not created. Status: {} - Body: {}", response.getStatus(), errorBody);
+            throw new RuntimeException("Keycloak error - user not created. Status: " + response.getStatus()
+                    + (errorBody.isBlank() ? "" : " - " + errorBody));
         }
 
         String userId = extractUserIdFromResponse(response);

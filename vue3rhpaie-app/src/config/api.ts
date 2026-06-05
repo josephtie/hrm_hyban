@@ -114,7 +114,8 @@ export const API_URLS = {
   // Keycloak
   KEYCLOAK_TOKEN: buildKeycloakUrl(API_CONFIG.ENDPOINTS.KEYCLOAK_TOKEN),
   KEYCLOAK_USERINFO: buildKeycloakUrl('/protocol/openid-connect/userinfo'),
-  KEYCLOAK_LOGOUT: buildKeycloakUrl('/protocol/openid-connect/logout')
+  KEYCLOAK_LOGOUT: buildKeycloakUrl('/protocol/openid-connect/logout'),
+  KEYCLOAK_ACCOUNT: `${API_CONFIG.KEYCLOAK_URL}/realms/${API_CONFIG.KEYCLOAK.REALM}/account`
 }
 
 // Export par défaut

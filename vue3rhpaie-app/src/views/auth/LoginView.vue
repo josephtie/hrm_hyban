@@ -116,11 +116,6 @@
         
         <div class="login-footer">
           <p>© 2024 RHPAIE - Tous droits réservés</p>
-          <div class="demo-info">
-            <el-tag type="success" size="large" effect="dark">
-              <strong>Identifiants de démo :</strong> admin / admin123
-            </el-tag>
-          </div>
         </div>
       </div>
     </div>

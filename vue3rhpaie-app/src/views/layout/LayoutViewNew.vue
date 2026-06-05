@@ -24,6 +24,10 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="profile">Mon profil</el-dropdown-item>
+                <el-dropdown-item command="account">
+                  <el-icon><Key /></el-icon>
+                  Gérer mon compte
+                </el-dropdown-item>
                 <el-dropdown-item command="settings">Paramètres</el-dropdown-item>
                 <el-dropdown-item divided command="logout">
                   <el-icon><SwitchButton /></el-icon>
@@ -53,9 +57,11 @@ import { ElMessageBox } from 'element-plus'
 import {
   UserFilled,
   ArrowDown,
-  SwitchButton
+  SwitchButton,
+  Key
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { API_URLS } from '@/config/api'
 import SidebarMenu from '@/components/navigation/SidebarMenu.vue'
 import TagsView from '@/components/navigation/TagsView.vue'
 
@@ -81,6 +87,9 @@ const handleUserMenu = async (command: string) => {
   switch (command) {
     case 'profile':
       // TODO: Navigate to profile
+      break
+    case 'account':
+      window.open(API_URLS.KEYCLOAK_ACCOUNT, '_blank')
       break
     case 'settings':
       // TODO: Navigate to settings
