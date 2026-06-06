@@ -1235,7 +1235,7 @@ const loadContractLists = async () => {
 const loadFunctions = async () => {
   try {
     console.log('🔄 Chargement des fonctions...')
-    const response = await api.post('/api/personnels/fonctions/listerfonctionjson')
+    const response = await api.post('/personnels/fonctions/listerfonctionjson')
     
     if (response.data && response.data.rows) {
       fonctions.value = response.data.rows.map((func: any) => ({
@@ -1259,7 +1259,7 @@ const loadFunctions = async () => {
 const loadSites = async () => {
   try {
     console.log('🔄 Chargement des sites...')
-    const response = await api.post('/api/rh/carriere/site/lister')
+    const response = await api.post('/rh/carriere/site/lister')
     
     if (response.data && response.data.rows) {
       sites.value = response.data.rows.map((site: any) => ({
@@ -1512,7 +1512,7 @@ const loadPersonnel = async () => {
 const loadSanctions = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des sanctions pour le personnel ID:', personnelId)
-    const response = await api.post('/api/rh/carriere/sanctions-personnel/trouver', { id: personnelId })
+    const response = await api.post('/rh/carriere/sanctions-personnel/trouver', { id: personnelId })
     console.log('📥 Réponse API sanctions:', response)
     
     if (response.data && response.data.rows) {
@@ -1543,7 +1543,7 @@ const loadSanctions = async (personnelId: number) => {
 const loadSpouses = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des conjoints pour le personnel ID:', personnelId)
-    const response = await api.post('/api/personnel/listerconjointsparpersonnel', { id: personnelId })
+    const response = await api.post('/personnel/listerconjointsparpersonnel', { id: personnelId })
     console.log('📥 Réponse API conjoints:', response)
     
     if (response.data && response.data.rows) {
@@ -1573,7 +1573,7 @@ const loadSpouses = async (personnelId: number) => {
 const loadChildren = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des enfants pour le personnel ID:', personnelId)
-    const response = await api.post('/api/personnel/listerenfantsparpersonnel', { id: personnelId })
+    const response = await api.post('/personnel/listerenfantsparpersonnel', { id: personnelId })
     console.log('📥 Réponse API enfants:', response)
     
     if (response.data && response.data.rows) {
@@ -1601,7 +1601,7 @@ const loadChildren = async (personnelId: number) => {
 const loadDocuments = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des documents pour le personnel ID:', personnelId)
-    const response = await api.post('/api/personnel/documents/employeId', { id: personnelId })
+    const response = await api.post('/personnel/documents/employeId', { id: personnelId })
     console.log('📥 Réponse API documents:', response)
     
     if (response.data && response.data.rows) {
@@ -1631,7 +1631,7 @@ const loadDocuments = async (personnelId: number) => {
 const loadLeaveMovements = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des mouvements de congé pour le personnel ID:', personnelId)
-    const response = await api.get(`/api/personnel/mvt-conges/lister/personnel/${personnelId}`)
+    const response = await api.get(`/personnel/mvt-conges/lister/personnel/${personnelId}`)
     console.log('📥 Réponse API mouvements congé:', response)
     
     if (response.data && response.data.rows) {
@@ -1661,7 +1661,7 @@ const loadLeaveMovements = async (personnelId: number) => {
 const loadAssignments = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des affectations pour le personnel ID:', personnelId)
-    const response = await api.post('/api/rh/carriere/affectations/lister-par-personnel', { idPersonnel: personnelId })
+    const response = await api.post('/rh/carriere/affectations/lister-par-personnel', { idPersonnel: personnelId })
     console.log('📥 Réponse API affectations:', response)
     
     if (response.data && response.data.rows) {
@@ -1696,7 +1696,7 @@ const loadAbsenceTypes = async () => {
   try {
     console.log('🔄 Chargement des types d\'absence...')
     // Utiliser GET /list au lieu de POST /lister
-    const response = await api.get('/api/rh/absences/list')
+    const response = await api.get('/rh/absences/list')
     console.log('📥 Réponse API types d\'absence:', response)
     
     if (response.data && response.data.result === 'success') {
@@ -1741,7 +1741,7 @@ const loadAbsenceTypes = async () => {
 const loadAbsences = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des absences pour le personnel ID:', personnelId)
-    const response = await api.post('/api/absence/listerabsencepersonnelsparpersonnel', { id: personnelId })
+    const response = await api.post('/absence/listerabsencepersonnelsparpersonnel', { id: personnelId })
     console.log('📥 Réponse API absences:', response)
     
     if (response.data && response.data.rows) {
@@ -1775,7 +1775,7 @@ const loadAbsences = async (personnelId: number) => {
 const loadContracts = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des contrats pour le personnel ID:', personnelId)
-    const response = await api.post('/api/personnels/listcontratparpersonnel', { id: personnelId })
+    const response = await api.post('/personnels/listcontratparpersonnel', { id: personnelId })
     console.log('📥 Réponse API contrats:', response)
     
     if (response.data) {
@@ -1835,7 +1835,7 @@ const viewContract = (contract: any) => {
 const loadPromotions = async (personnelId: number) => {
   try {
     console.log('🔄 Chargement des promotions pour le personnel ID:', personnelId)
-    const response = await api.post('/api/rh/carriere/promotions-personnel/lister-par-personnel', { id: personnelId })
+    const response = await api.post('/rh/carriere/promotions-personnel/lister-par-personnel', { id: personnelId })
     console.log('📥 Réponse API promotions:', response)
     
     if (response.data && response.data.rows) {
@@ -2058,7 +2058,7 @@ const downloadDocument = async (affectationId: number) => {
   if (affectationId) {
     try {
       // Utiliser l'endpoint backend avec l'ID de l'affectation
-      const response = await api.post('/api/rh/carriere/affectations/download', {
+      const response = await api.post('/rh/carriere/affectations/download', {
         id: affectationId
       }, {
         responseType: 'blob' // Important pour les fichiers binaires
@@ -2106,7 +2106,7 @@ const downloadPersonnelDocument = async (documentId: number) => {
   
   try {
     // Utiliser l'ID du document pour le téléchargement
-    const response = await api.post('/api/personnel/documents/download', {
+    const response = await api.post('/personnel/documents/download', {
       id: documentId
     }, {
       responseType: 'blob'
@@ -2323,7 +2323,7 @@ const prefillWithLastContract = async () => {
     console.log('📋 Dernier contrat trouvé pour pré-remplissage:', lastContract)
 
     // Récupérer les données complètes du dernier contrat depuis l'API
-    const fullContractResponse = await api.post('/api/personnels/listcontratparpersonnel', { 
+    const fullContractResponse = await api.post('/personnels/listcontratparpersonnel', { 
       id: personnel.value?.id 
     })
     
@@ -2504,7 +2504,7 @@ const getSelectedStorageLocation = () => {
 const loadDocumentTypes = async () => {
   try {
     console.log('🔄 Chargement des types de documents...')
-    const response = await api.get('/api/personnel/document-types')
+    const response = await api.get('/personnel/document-types')
     console.log('✅ Types de documents chargés:', response.data)
     documentTypes.value = response.data
   } catch (error) {
@@ -2516,7 +2516,7 @@ const loadDocumentTypes = async () => {
 const loadStorageLocations = async () => {
   try {
     console.log('🔄 Chargement des emplacements de stockage...')
-    const response = await api.get('/api/storage-locations')
+    const response = await api.get('/storage-locations')
     console.log('✅ Emplacements de stockage chargés:', response.data)
     storageLocations.value = response.data
   } catch (error) {
@@ -2617,7 +2617,7 @@ const saveContract = async () => {
     console.log('📤 Envoi des données au endpoint /api/personnels/savecontratpersonnel:', contractData)
     
     // Appel API pour enregistrer le contrat
-    const response = await api.post('/api/personnels/savecontratpersonnel', contractData)
+    const response = await api.post('/personnels/savecontratpersonnel', contractData)
     
     console.log('📥 Réponse API savecontratpersonnel:', response)
     
@@ -2699,7 +2699,7 @@ const saveAbsence = async () => {
     console.log('📤 Envoi des données au endpoint /api/absence/enregistrerabsencepersonnel:', absenceData)
     
     // Appel API pour enregistrer l'absence
-    const response = await api.post('/api/absence/enregistrerabsencepersonnel', absenceData)
+    const response = await api.post('/absence/enregistrerabsencepersonnel', absenceData)
     
     console.log('📥 Réponse API enregistrerabsencepersonnel:', response)
     
@@ -2732,7 +2732,7 @@ const findAbsence = async (absenceId: number) => {
     console.log('🔍 Recherche de l\'absence ID:', absenceId)
     console.log('👤 ID du personnel:', personnel.value.id)
     
-    const response = await api.post('/api/absence/trouverabsencepersonnel', { 
+    const response = await api.post('/absence/trouverabsencepersonnel', { 
       id: absenceId,
       personnelId: personnel.value.id  // Changé: envoi direct de l'ID
     })
@@ -2803,7 +2803,7 @@ const saveAssignment = async () => {
     console.log('📤 Envoi FormData au endpoint /api/rh/carriere/affectations/enregistrer')
     
     // Appel API pour enregistrer l'affectation avec document en une seule fois
-    const response = await api.post('/api/rh/carriere/affectations/enregistrer', formData)
+    const response = await api.post('/rh/carriere/affectations/enregistrer', formData)
     
     console.log('📥 Réponse API enregistrer affectation:', response)
     
@@ -2897,7 +2897,7 @@ const saveDocument = async () => {
       description: documentForm.remarques
     })
 
-    const response = await api.post('/api/personnel/documents/upload', formData, {
+    const response = await api.post('/personnel/documents/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -2938,7 +2938,7 @@ const saveDocumentAlternative = async () => {
     formData.append('idStorage', documentForm.locationId?.toString() || '')
     formData.append('description', documentForm.remarques || '')
 
-    const response = await api.post('/api/personnel/upload', formData, {
+    const response = await api.post('/personnel/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -2994,7 +2994,7 @@ const saveChild = async () => {
 
     console.log('📤 Envoi des données enfant:', childRequest)
 
-    const response = await api.post('/api/personnel/enregistrerenfant', childRequest)
+    const response = await api.post('/personnel/enregistrerenfant', childRequest)
     
     if (response.data) {
       ElMessage.success('Enfant enregistré avec succès')
@@ -3073,7 +3073,7 @@ const saveSpouse = async () => {
 
     console.log('📤 Envoi des données conjoint:', spouseRequest)
 
-    const response = await api.post('/api/personnel/enregistrerconjoint', spouseRequest)
+    const response = await api.post('/personnel/enregistrerconjoint', spouseRequest)
     
     if (response.data) {
       ElMessage.success('Conjoint enregistré avec succès')
@@ -3140,7 +3140,7 @@ const editAbsence = async (absence: any) => {
   
   // Récupérer les données brutes depuis le backend
   try {
-    const response = await api.post('/api/absence/trouverabsencepersonnel', { 
+    const response = await api.post('/absence/trouverabsencepersonnel', { 
       id: absence.id,
       idPersonnel: personnel.value.id
     })
@@ -3280,7 +3280,7 @@ const deleteChild = async (childId: number) => {
       type: 'warning'
     })
 
-    const response = await api.post('/api/personnel/supprimerenfant', { id: childId })
+    const response = await api.post('/personnel/supprimerenfant', { id: childId })
     
     if (response.data) {
       ElMessage.success('Enfant supprimé avec succès')
@@ -3323,7 +3323,7 @@ const deleteSpouse = async (spouseId: number) => {
       type: 'warning'
     })
 
-    const response = await api.post('/api/personnel/supprimerconjoint', { id: spouseId })
+    const response = await api.post('/personnel/supprimerconjoint', { id: spouseId })
     
     if (response.data) {
       ElMessage.success('Conjoint supprimé avec succès')

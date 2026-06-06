@@ -1,4 +1,4 @@
-﻿import { api } from '@/services/api'
+import { api } from '@/services/api'
 import type { ApiResponse as AuthApiResponse } from '@/types/auth'
 
 // ==================== INTERFACES ====================
@@ -197,7 +197,7 @@ export class ReferencesService {
   
   async getAllNationalites(): Promise<ApiResponse<Nationnalite[]>> {
     try {
-      const response = await api.get('/api/nationalites')
+      const response = await api.get('/nationalites')
       const data = response.data
       
       return {

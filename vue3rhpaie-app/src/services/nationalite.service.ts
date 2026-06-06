@@ -15,7 +15,7 @@ class NationnaliteService {
   // Récupérer toutes les nationalités
   async getAllNationalites(): Promise<ApiResponse<Nationnalite[]>> {
     try {
-      const response = await api.get('/api/nationalites')
+      const response = await api.get('/nationalites')
       const data = response.data
       
       return {
@@ -36,7 +36,7 @@ class NationnaliteService {
   // Récupérer une nationalité par ID
   async getNationaliteById(id: number): Promise<ApiResponse<Nationnalite>> {
     try {
-      const response = await api.get(`/api/nationalites/${id}`)
+      const response = await api.get(`/nationalites/${id}`)
       const data = response.data
       
       return {
@@ -57,7 +57,7 @@ class NationnaliteService {
   // Créer une nouvelle nationalité
   async createNationalite(nationalite: Partial<Nationnalite>): Promise<ApiResponse<Nationnalite>> {
     try {
-      const response = await api.post('/api/nationalites', nationalite)
+      const response = await api.post('/nationalites', nationalite)
       const data = response.data
       
       return {
@@ -78,7 +78,7 @@ class NationnaliteService {
   // Mettre à jour une nationalité
   async updateNationalite(id: number, nationalite: Partial<Nationnalite>): Promise<ApiResponse<Nationnalite>> {
     try {
-      const response = await api.put(`/api/nationalites/${id}`, nationalite)
+      const response = await api.put(`/nationalites/${id}`, nationalite)
       const data = response.data
       
       return {
@@ -99,7 +99,7 @@ class NationnaliteService {
   // Supprimer une nationalité
   async deleteNationalite(id: number): Promise<ApiResponse<boolean>> {
     try {
-      const response = await api.delete(`/api/nationalites/${id}`)
+      const response = await api.delete(`/nationalites/${id}`)
       const data = response.data
       
       return {

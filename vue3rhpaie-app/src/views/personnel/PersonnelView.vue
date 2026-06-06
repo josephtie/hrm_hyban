@@ -419,7 +419,7 @@ const exportPersonnel = async () => {
     }
     
     // Appeler l'endpoint d'export avec l'instance api
-    const response = await api.post('/api/personnels/personnel/export', exportParams, {
+    const response = await api.post('/personnels/personnel/export', exportParams, {
       responseType: 'blob',
       headers: {
         'Content-Type': 'application/json'
