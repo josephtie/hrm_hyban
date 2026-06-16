@@ -840,14 +840,49 @@ const disabledDate = (time: Date) => {
 // Fonctions utilitaires
 const formatDate = (date: string | undefined | null) => {
   if (!date) return 'N/A'
-  
+
   try {
     let dateObj: Date
-    
+
     // Si le format est DD/MM/YYYY
     if (date.includes('/')) {
       const [day, month, year] = date.split('/')
       dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    }
+    // Si le format est DD-MM-YYYY HH:mm:ss (format français avec tirets et heures)
+    else if (date.includes('-') && date.includes(':')) {
+      const parts = date.split(' ')
+      const datePart = parts[0]
+      const timePart = parts[1] || '00:00:00'
+
+      if (datePart) {
+        const dateSegments = datePart.split('-')
+
+        // Si le premier segment a 2 chiffres, c'est DD-MM-YYYY
+        if (dateSegments[0].length === 2) {
+          const [day, month, year] = dateSegments
+          const isoDate = `${year}-${month}-${day}T${timePart}`
+          dateObj = new Date(isoDate)
+        } else {
+          // Sinon, considérer que c'est YYYY-MM-DD HH:mm:ss
+          dateObj = new Date(date)
+        }
+      } else {
+        dateObj = new Date(date)
+      }
+    }
+    // Si le format est DD-MM-YYYY (sans heures)
+    else if (date.includes('-') && !date.includes(':')) {
+      const dateSegments = date.split('-')
+
+      // Si le premier segment a 2 chiffres, c'est DD-MM-YYYY
+      if (dateSegments[0].length === 2) {
+        const [day, month, year] = dateSegments
+        dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      } else {
+        // Sinon, considérer que c'est YYYY-MM-DD
+        dateObj = new Date(date + 'T00:00:00')
+      }
     }
     // Si le format est YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD
     else if (date.includes('-')) {
@@ -857,12 +892,12 @@ const formatDate = (date: string | undefined | null) => {
     else {
       dateObj = new Date(date)
     }
-    
+
     if (isNaN(dateObj.getTime())) {
       console.error('Date invalide:', date)
       return date
     }
-    
+
     return new Intl.DateTimeFormat('fr-FR', {
       day: '2-digit',
       month: '2-digit',
@@ -1333,16 +1368,130 @@ const clearExpirationFilters = () => {
 }
 
 const formatDateForDisplay = (dateString: string) => {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  // Utiliser la même logique de normalisation que formatDate
+  let dateObj: Date
+
+  if (!dateString) return 'N/A'
+
+  try {
+    // Si le format est DD/MM/YYYY
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/')
+      dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    }
+    // Si le format est DD-MM-YYYY HH:mm:ss
+    else if (dateString.includes('-') && dateString.includes(':')) {
+      const parts = dateString.split(' ')
+      const datePart = parts[0]
+      const timePart = parts[1] || '00:00:00'
+
+      if (datePart) {
+        const dateSegments = datePart.split('-')
+
+        if (dateSegments[0].length === 2) {
+          const [day, month, year] = dateSegments
+          const isoDate = `${year}-${month}-${day}T${timePart}`
+          dateObj = new Date(isoDate)
+        } else {
+          dateObj = new Date(dateString)
+        }
+      } else {
+        dateObj = new Date(dateString)
+      }
+    }
+    // Si le format est DD-MM-YYYY (sans heures)
+    else if (dateString.includes('-') && !dateString.includes(':')) {
+      const dateSegments = dateString.split('-')
+
+      if (dateSegments[0].length === 2) {
+        const [day, month, year] = dateSegments
+        dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      } else {
+        dateObj = new Date(dateString + 'T00:00:00')
+      }
+    }
+    // Si le format est YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD
+    else if (dateString.includes('-')) {
+      dateObj = new Date(dateString)
+    }
+    else {
+      dateObj = new Date(dateString)
+    }
+
+    if (isNaN(dateObj.getTime())) {
+      return dateString
+    }
+
+    return dateObj.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  } catch (error) {
+    console.error('Error formatting date for display:', error, dateString)
+    return dateString
+  }
 }
 
 const isExpiringSoon = (dateFin: string) => {
-  const today = new Date()
-  const endDate = new Date(dateFin)
-  const diffTime = endDate.getTime() - today.getTime()
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays <= 30 && diffDays >= 0 // Expirant dans 30 jours ou moins
+  // Utiliser la même logique de normalisation
+  let endDate: Date
+
+  if (!dateFin) return false
+
+  try {
+    // Si le format est DD/MM/YYYY
+    if (dateFin.includes('/')) {
+      const [day, month, year] = dateFin.split('/')
+      endDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    }
+    // Si le format est DD-MM-YYYY HH:mm:ss
+    else if (dateFin.includes('-') && dateFin.includes(':')) {
+      const parts = dateFin.split(' ')
+      const datePart = parts[0]
+      const timePart = parts[1] || '00:00:00'
+
+      if (datePart) {
+        const dateSegments = datePart.split('-')
+
+        if (dateSegments[0].length === 2) {
+          const [day, month, year] = dateSegments
+          const isoDate = `${year}-${month}-${day}T${timePart}`
+          endDate = new Date(isoDate)
+        } else {
+          endDate = new Date(dateFin)
+        }
+      } else {
+        endDate = new Date(dateFin)
+      }
+    }
+    // Si le format est DD-MM-YYYY (sans heures)
+    else if (dateFin.includes('-') && !dateFin.includes(':')) {
+      const dateSegments = dateFin.split('-')
+
+      if (dateSegments[0].length === 2) {
+        const [day, month, year] = dateSegments
+        endDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      } else {
+        endDate = new Date(dateFin + 'T00:00:00')
+      }
+    }
+    // Si le format est YYYY-MM-DD HH:mm:ss ou YYYY-MM-DD
+    else if (dateFin.includes('-')) {
+      endDate = new Date(dateFin)
+    }
+    else {
+      endDate = new Date(dateFin)
+    }
+
+    if (isNaN(endDate.getTime())) {
+      return false
+    }
+
+    const today = new Date()
+    const diffTime = endDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays <= 30 && diffDays >= 0 // Expirant dans 30 jours ou moins
+  } catch (error) {
+    console.error('Error checking expiration:', error, dateFin)
+    return false
+  }
 }
 
 const formatSalary = (salary: number | string) => {
