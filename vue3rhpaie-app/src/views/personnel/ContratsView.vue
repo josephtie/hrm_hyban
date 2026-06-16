@@ -1000,16 +1000,88 @@ const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
 }
 
 const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   return rows.filter(contrat => {
+    // Filtrer par statut
     if (expiredView.value === 'active' && contrat.statut !== true) return false
     if (expiredView.value === 'inactive' && contrat.statut !== false) return false
 
+    // Filtrer par type de contrat
     if (
       expiredFilterTypeContrat.value &&
       normalizeContractType(getTypeContratLabel(contrat.typeContrat)) !== normalizeContractType(expiredFilterTypeContrat.value)
     ) return false
 
-    return true
+    // Normaliser la date de fin du contrat
+    let contractEndDate: Date
+    if (!contrat.dateFin) return false
+
+    try {
+      // Utiliser la même logique de normalisation que formatDate
+      if (contrat.dateFin.includes('/')) {
+        const [day, month, year] = contrat.dateFin.split('/')
+        contractEndDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      } else if (contrat.dateFin.includes('-') && contrat.dateFin.includes(':')) {
+        const parts = contrat.dateFin.split(' ')
+        const datePart = parts[0]
+        const timePart = parts[1] || '00:00:00'
+
+        if (datePart) {
+          const dateSegments = datePart.split('-')
+
+          if (dateSegments[0].length === 2) {
+            const [day, month, year] = dateSegments
+            const isoDate = `${year}-${month}-${day}T${timePart}`
+            contractEndDate = new Date(isoDate)
+          } else {
+            contractEndDate = new Date(contrat.dateFin)
+          }
+        } else {
+          contractEndDate = new Date(contrat.dateFin)
+        }
+      } else if (contrat.dateFin.includes('-') && !contrat.dateFin.includes(':')) {
+        const dateSegments = contrat.dateFin.split('-')
+
+        if (dateSegments[0].length === 2) {
+          const [day, month, year] = dateSegments
+          contractEndDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+        } else {
+          contractEndDate = new Date(contrat.dateFin + 'T00:00:00')
+        }
+      } else if (contrat.dateFin.includes('-')) {
+        contractEndDate = new Date(contrat.dateFin)
+      } else {
+        contractEndDate = new Date(contrat.dateFin)
+      }
+
+      if (isNaN(contractEndDate.getTime())) return false
+    } catch (error) {
+      console.error('Error parsing contract end date:', error, contrat.dateFin)
+      return false
+    }
+
+    contractEndDate.setHours(0, 0, 0, 0)
+
+    // Filtrer par date d'expiration spécifique
+    if (expireDate.value) {
+      const targetDate = new Date(expireDate.value)
+      targetDate.setHours(0, 0, 0, 0)
+      return contractEndDate.getTime() === targetDate.getTime()
+    }
+
+    // Filtrer par période d'expiration
+    if (expirePeriodStart.value && expirePeriodEnd.value) {
+      const startDate = new Date(expirePeriodStart.value)
+      const endDate = new Date(expirePeriodEnd.value)
+      startDate.setHours(0, 0, 0, 0)
+      endDate.setHours(0, 0, 0, 0)
+      return contractEndDate.getTime() >= startDate.getTime() && contractEndDate.getTime() <= endDate.getTime()
+    }
+
+    // Par défaut: afficher tous les contrats expirés (dateFin < aujourd'hui)
+    return contractEndDate.getTime() < today.getTime()
   })
 }
 
@@ -1022,49 +1094,25 @@ const paginateRows = (rows: ContratPersonnel[]) => {
 const loadContrats = async () => {
   loading.value = true
   try {
-    const pagination = {
-      offset: currentPage.value * pageSize.value,
-      limit: pageSize.value,
-      search: searchText.value || undefined
-    }
+    // Toujours utiliser getAllContrats comme base pour les deux onglets
+    const response = await contratPersonnelService.getAllContrats({
+      offset: 0,
+      limit: 999999
+    })
 
-    let response
+    let filteredRows: ContratPersonnel[]
 
     if (activeTab.value === 'expired') {
-      if (expireDate.value || (expirePeriodStart.value && expirePeriodEnd.value)) {
-        const filters: ContratPersonnelFilterRequest = {
-          ...pagination,
-          expireDate: expireDate.value || undefined,
-          expirePeriodStart: expirePeriodStart.value || undefined,
-          expirePeriodEnd: expirePeriodEnd.value || undefined
-        }
-
-        response = await contratPersonnelService.getContratsWithFilters(filters)
-      } else {
-        response = await contratPersonnelService.getContratsExpires(pagination)
-      }
+      // Appliquer les filtres d'expiration côté client
+      filteredRows = applyExpiredContractsFilters(response.rows || [])
     } else {
-      response = await contratPersonnelService.getAllContrats({
-        offset: 0,
-        limit: 999999
-      })
-
-      const filteredRows = applyCurrentContractsFilters(response.rows || [])
-      contrats.value = paginateRows(filteredRows)
-      total.value = filteredRows.length
-
-      if (contrats.value.length === 0 && currentPage.value > 0) {
-        currentPage.value = 0
-        await loadContrats()
-      }
-
-      return
+      // Appliquer les filtres des contrats en cours côté client
+      filteredRows = applyCurrentContractsFilters(response.rows || [])
     }
-    
-    const filteredExpiredRows = applyExpiredContractsFilters(response.rows || [])
-    contrats.value = filteredExpiredRows
-    total.value = filteredExpiredRows.length
-    
+
+    contrats.value = paginateRows(filteredRows)
+    total.value = filteredRows.length
+
     if (contrats.value.length === 0 && currentPage.value > 0) {
       currentPage.value = 0
       await loadContrats()
