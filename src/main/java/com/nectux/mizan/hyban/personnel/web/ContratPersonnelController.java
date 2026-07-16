@@ -170,9 +170,19 @@ public class ContratPersonnelController {
 			filters.put("statut", req.getStatut());
 		}
 		
-		// Filtre par type de contrat
+		// Filtre par type de contrat (simple, déprécié)
 		if (req.getTypeContrat() != null && !req.getTypeContrat().isEmpty()) {
 			filters.put("typeContrat", req.getTypeContrat());
+		}
+		
+		// Filtre par type de contrat (choix multiple)
+		if (req.getTypeContrats() != null && !req.getTypeContrats().isEmpty()) {
+			String current = filters.getOrDefault("typeContrat", "");
+			if (current.isEmpty()) {
+				filters.put("typeContrat", String.join(",", req.getTypeContrats()));
+			} else {
+				filters.put("typeContrat", current + "," + String.join(",", req.getTypeContrats()));
+			}
 		}
 		
 		// Filtre par salaire
@@ -188,6 +198,10 @@ public class ContratPersonnelController {
 		// Filtres avancés d'expiration
 		if (req.getExpireDate() != null && !req.getExpireDate().isEmpty()) {
 			filters.put("expireDate", req.getExpireDate());
+		}
+		
+		if (req.getExpireDateMax() != null && !req.getExpireDateMax().isEmpty()) {
+			filters.put("expireDateMax", req.getExpireDateMax());
 		}
 		
 		if (req.getExpirePeriodStart() != null && !req.getExpirePeriodStart().isEmpty() &&

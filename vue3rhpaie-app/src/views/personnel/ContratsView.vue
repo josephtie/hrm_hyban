@@ -150,8 +150,11 @@
             <el-select
               v-model="expiredFilterTypeContrat"
               placeholder="Type de contrat"
-              style="width: 150px"
+              style="width: 180px"
               clearable
+              multiple
+              collapse-tags
+              collapse-tags-tooltip
               size="large"
               class="enhanced-input"
             >
@@ -162,9 +165,9 @@
               <el-option label="Consultance" value="Consultance" />
             </el-select>
             <el-date-picker
-              v-model="expireDate"
+              v-model="expireDateMax"
               type="date"
-              placeholder="Date d'expiration"
+              placeholder="Date max d'expiration"
               format="DD/MM/YYYY"
               value-format="YYYY-MM-DD"
               clearable
@@ -197,7 +200,7 @@
               Filtrer les expirations
             </el-button>
             <el-button
-              v-if="expireDate || expirePeriodStart"
+              v-if="expireDateMax || expirePeriodStart"
               @click="clearExpirationFilters"
               class="enhanced-button"
               :loading="loading"
@@ -532,13 +535,13 @@
   </el-dialog>
 
   <!-- Modal pour expiration à une date -->
-  <el-dialog v-model="showExpiresOnDateModal" title="Contrats expirant à une date" width="600px">
-    <el-form :model="{ expireDate }" label-width="140px" class="terminate-form-fields">
-      <el-form-item label="Date d'expiration" required>
+  <el-dialog v-model="showExpiresOnDateModal" title="Contrats expirant au plus tard le" width="600px">
+    <el-form :model="{ expireDateMax }" label-width="140px" class="terminate-form-fields">
+      <el-form-item label="Date max d'expiration" required>
         <el-date-picker
-          v-model="expireDate"
+          v-model="expireDateMax"
           type="date"
-          placeholder="Sélectionner une date d'expiration"
+          placeholder="Sélectionner une date d'expiration max"
           style="width: 100%"
           format="DD/MM/YYYY"
           value-format="YYYY-MM-DD"
@@ -675,12 +678,12 @@ const filterTypeContrat = ref('')
 const filterSalaire = ref('')
 const filterCarec = ref('')
 const expiredView = ref('all')
-const expiredFilterTypeContrat = ref('')
+const expiredFilterTypeContrat = ref<string[]>([])
 
 // Variables pour les filtres d'expiration
 const showExpiresOnDateModal = ref<boolean>(false)
 const showExpiresInPeriodModal = ref<boolean>(false)
-const expireDate = ref<string>('')
+const expireDateMax = ref<string>('')
 const expirePeriodStart = ref<string>('')
 const expirePeriodEnd = ref<string>('')
 const expirationPeriod = ref<[string, string] | null>(null)
@@ -999,6 +1002,53 @@ const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
   })
 }
 
+const parseFlexibleDate = (dateStr: string): Date | null => {
+  if (!dateStr) return null
+
+  try {
+    let dateObj: Date
+
+    if (dateStr.includes('/')) {
+      const [day, month, year] = dateStr.split('/')
+      dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    } else if (dateStr.includes('-') && dateStr.includes(':')) {
+      const parts = dateStr.split(' ')
+      const datePart = parts[0]
+      const timePart = parts[1] || '00:00:00'
+
+      if (datePart) {
+        const dateSegments = datePart.split('-')
+
+        if (dateSegments[0].length === 2) {
+          const [day, month, year] = dateSegments
+          dateObj = new Date(`${year}-${month}-${day}T${timePart}`)
+        } else {
+          dateObj = new Date(dateStr)
+        }
+      } else {
+        dateObj = new Date(dateStr)
+      }
+    } else if (dateStr.includes('-') && !dateStr.includes(':')) {
+      const dateSegments = dateStr.split('-')
+
+      if (dateSegments[0].length === 2) {
+        const [day, month, year] = dateSegments
+        dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+      } else {
+        dateObj = new Date(dateStr + 'T00:00:00')
+      }
+    } else {
+      dateObj = new Date(dateStr)
+    }
+
+    if (isNaN(dateObj.getTime())) return null
+    return dateObj
+  } catch (error) {
+    console.error('Error parsing date:', error, dateStr)
+    return null
+  }
+}
+
 const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -1008,80 +1058,69 @@ const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
     if (expiredView.value === 'active' && contrat.statut !== true) return false
     if (expiredView.value === 'inactive' && contrat.statut !== false) return false
 
-    // Filtrer par type de contrat
-    if (
-      expiredFilterTypeContrat.value &&
-      normalizeContractType(getTypeContratLabel(contrat.typeContrat)) !== normalizeContractType(expiredFilterTypeContrat.value)
-    ) return false
+    // Filtrer par type de contrat (choix multiple)
+    if (expiredFilterTypeContrat.value && expiredFilterTypeContrat.value.length > 0) {
+      const contratType = normalizeContractType(getTypeContratLabel(contrat.typeContrat))
+      const selectedTypes = expiredFilterTypeContrat.value.map(type => normalizeContractType(type))
+
+      if (!selectedTypes.includes(contratType)) return false
+    }
+
+    // Recherche textuelle (nom, prénom, matricule, type, fonction)
+    const search = normalizeText(searchText.value)
+    if (search) {
+      const searchable = [
+        contrat.personnel?.matricule,
+        contrat.personnel?.nom,
+        contrat.personnel?.prenom,
+        getTypeContratLabel(contrat.typeContrat),
+        getFonctionLabel(contrat.fonction)
+      ].map(normalizeText).join(' ')
+
+      if (!searchable.includes(search)) return false
+    }
 
     // Normaliser la date de fin du contrat
-    let contractEndDate: Date
     if (!contrat.dateFin) return false
 
-    try {
-      // Utiliser la même logique de normalisation que formatDate
-      if (contrat.dateFin.includes('/')) {
-        const [day, month, year] = contrat.dateFin.split('/')
-        contractEndDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-      } else if (contrat.dateFin.includes('-') && contrat.dateFin.includes(':')) {
-        const parts = contrat.dateFin.split(' ')
-        const datePart = parts[0]
-        const timePart = parts[1] || '00:00:00'
-
-        if (datePart) {
-          const dateSegments = datePart.split('-')
-
-          if (dateSegments[0].length === 2) {
-            const [day, month, year] = dateSegments
-            const isoDate = `${year}-${month}-${day}T${timePart}`
-            contractEndDate = new Date(isoDate)
-          } else {
-            contractEndDate = new Date(contrat.dateFin)
-          }
-        } else {
-          contractEndDate = new Date(contrat.dateFin)
-        }
-      } else if (contrat.dateFin.includes('-') && !contrat.dateFin.includes(':')) {
-        const dateSegments = contrat.dateFin.split('-')
-
-        if (dateSegments[0].length === 2) {
-          const [day, month, year] = dateSegments
-          contractEndDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-        } else {
-          contractEndDate = new Date(contrat.dateFin + 'T00:00:00')
-        }
-      } else if (contrat.dateFin.includes('-')) {
-        contractEndDate = new Date(contrat.dateFin)
-      } else {
-        contractEndDate = new Date(contrat.dateFin)
-      }
-
-      if (isNaN(contractEndDate.getTime())) return false
-    } catch (error) {
-      console.error('Error parsing contract end date:', error, contrat.dateFin)
-      return false
-    }
+    const contractEndDate = parseFlexibleDate(contrat.dateFin)
+    if (!contractEndDate) return false
 
     contractEndDate.setHours(0, 0, 0, 0)
 
-    // Filtrer par date d'expiration spécifique
-    if (expireDate.value) {
-      const targetDate = new Date(expireDate.value)
-      targetDate.setHours(0, 0, 0, 0)
-      return contractEndDate.getTime() === targetDate.getTime()
+    // Date max d'expiration (dateFin <= date choisie)
+    let maxDate: Date | null = null
+    if (expireDateMax.value) {
+      maxDate = parseFlexibleDate(expireDateMax.value)
+      if (maxDate) maxDate.setHours(0, 0, 0, 0)
     }
 
-    // Filtrer par période d'expiration
+    // Période d'expiration
+    let startDate: Date | null = null
+    let endDate: Date | null = null
     if (expirePeriodStart.value && expirePeriodEnd.value) {
-      const startDate = new Date(expirePeriodStart.value)
-      const endDate = new Date(expirePeriodEnd.value)
-      startDate.setHours(0, 0, 0, 0)
-      endDate.setHours(0, 0, 0, 0)
-      return contractEndDate.getTime() >= startDate.getTime() && contractEndDate.getTime() <= endDate.getTime()
+      startDate = parseFlexibleDate(expirePeriodStart.value)
+      endDate = parseFlexibleDate(expirePeriodEnd.value)
+      if (startDate) startDate.setHours(0, 0, 0, 0)
+      if (endDate) endDate.setHours(0, 0, 0, 0)
+    }
+
+    // Appliquer les filtres de date (cumulatifs)
+    if (startDate && endDate) {
+      const inPeriod = contractEndDate.getTime() >= startDate.getTime() && contractEndDate.getTime() <= endDate.getTime()
+      if (!inPeriod) return false
+    }
+
+    if (maxDate) {
+      if (contractEndDate.getTime() > maxDate.getTime()) return false
     }
 
     // Par défaut: afficher tous les contrats expirés (dateFin < aujourd'hui)
-    return contractEndDate.getTime() < today.getTime()
+    if (!maxDate && !startDate && !endDate) {
+      return contractEndDate.getTime() < today.getTime()
+    }
+
+    return true
   })
 }
 
@@ -1267,31 +1306,10 @@ const exportExcel = async () => {
   try {
     loading.value = true // Indicateur de chargement
     
-    const pagination = {
-      offset: 0, // Pas d'offset pour exporter tout
-      limit: 999999, // Limite très élevée pour tout récupérer
-      search: searchText.value || undefined
-    }
-
-    let response
-
-    if (activeTab.value === 'expired') {
-      if (expireDate.value || (expirePeriodStart.value && expirePeriodEnd.value)) {
-        response = await contratPersonnelService.getContratsWithFilters({
-          ...pagination,
-          expireDate: expireDate.value || undefined,
-          expirePeriodStart: expirePeriodStart.value || undefined,
-          expirePeriodEnd: expirePeriodEnd.value || undefined
-        })
-      } else {
-        response = await contratPersonnelService.getContratsExpires(pagination)
-      }
-    } else {
-      response = await contratPersonnelService.getAllContrats({
-        offset: 0,
-        limit: 999999
-      })
-    }
+    const response = await contratPersonnelService.getAllContrats({
+      offset: 0,
+      limit: 999999
+    })
 
     const allContrats = activeTab.value === 'contracts'
       ? applyCurrentContractsFilters(response.rows || [])
@@ -1320,11 +1338,6 @@ const syncExpirationPeriod = () => {
 const applyExpirationFilters = async () => {
   syncExpirationPeriod()
 
-  if (expireDate.value && (expirePeriodStart.value || expirePeriodEnd.value)) {
-    ElMessage.warning('Veuillez utiliser soit une date précise, soit une période, pas les deux')
-    return
-  }
-
   if ((expirePeriodStart.value && !expirePeriodEnd.value) || (!expirePeriodStart.value && expirePeriodEnd.value)) {
     ElMessage.warning('Veuillez sélectionner une période complète')
     return
@@ -1335,38 +1348,16 @@ const applyExpirationFilters = async () => {
 }
 
 const searchExpiresOnDate = async () => {
-  if (!expireDate.value) {
+  if (!expireDateMax.value) {
     ElMessage.warning('Veuillez sélectionner une date d\'expiration')
     return
   }
 
-  loading.value = true
-  try {
-    // Réinitialiser la pagination
-    currentPage.value = 0
-    
-    // Appliquer le filtre d'expiration au tableau principal
-    const filters: ContratPersonnelFilterRequest = {
-      offset: currentPage.value * pageSize.value,
-      limit: pageSize.value,
-      search: searchText.value || undefined,
-      expireDate: expireDate.value
-    }
+  showExpiresOnDateModal.value = false
+  currentPage.value = 0
+  await loadContrats()
 
-    const response = await contratPersonnelService.getContratsWithFilters(filters)
-    contrats.value = response.rows || []
-    total.value = response.total || 0
-    
-    // Fermer la modale
-    showExpiresOnDateModal.value = false
-
-    ElMessage.success(`${response.total} contrat${response.total > 1 ? 's' : ''} trouvé${response.total > 1 ? 's' : ''} expirant le ${formatDateForDisplay(expireDate.value)}`)
-  } catch (error: any) {
-    console.error('Erreur lors de la recherche des contrats expirants:', error)
-    ElMessage.error('Erreur lors de la recherche: ' + (error.response?.data?.message || error.message))
-  } finally {
-    loading.value = false
-  }
+  ElMessage.success(`${contrats.value.length} contrat${contrats.value.length > 1 ? 's' : ''} trouvé${contrats.value.length > 1 ? 's' : ''} expirant au plus tard le ${formatDateForDisplay(expireDateMax.value)}`)
 }
 
 const searchExpiresInPeriod = async () => {
@@ -1375,41 +1366,19 @@ const searchExpiresInPeriod = async () => {
     return
   }
 
-  loading.value = true
-  try {
-    // Réinitialiser la pagination
-    currentPage.value = 0
-    
-    // Appliquer le filtre de période au tableau principal
-    const filters: ContratPersonnelFilterRequest = {
-      offset: currentPage.value * pageSize.value,
-      limit: pageSize.value,
-      search: searchText.value || undefined,
-      expirePeriodStart: expirePeriodStart.value,
-      expirePeriodEnd: expirePeriodEnd.value
-    }
+  showExpiresInPeriodModal.value = false
+  currentPage.value = 0
+  await loadContrats()
 
-    const response = await contratPersonnelService.getContratsWithFilters(filters)
-    contrats.value = response.rows || []
-    total.value = response.total || 0
-    
-    // Fermer la modale
-    showExpiresInPeriodModal.value = false
-
-    ElMessage.success(`${response.total} contrat${response.total > 1 ? 's' : ''} trouvé${response.total > 1 ? 's' : ''} dans la période du ${formatDateForDisplay(expirePeriodStart.value)} au ${formatDateForDisplay(expirePeriodEnd.value)}`)
-  } catch (error: any) {
-    console.error('Erreur lors de la recherche des contrats par période:', error)
-    ElMessage.error('Erreur lors de la recherche: ' + (error.response?.data?.message || error.message))
-  } finally {
-    loading.value = false
-  }
+  ElMessage.success(`${contrats.value.length} contrat${contrats.value.length > 1 ? 's' : ''} trouvé${contrats.value.length > 1 ? 's' : ''} dans la période du ${formatDateForDisplay(expirePeriodStart.value)} au ${formatDateForDisplay(expirePeriodEnd.value)}`)
 }
 
 const clearExpirationFilters = () => {
-  expireDate.value = ''
+  expireDateMax.value = ''
   expirePeriodStart.value = ''
   expirePeriodEnd.value = ''
   expirationPeriod.value = null
+  expiredFilterTypeContrat.value = []
   currentPage.value = 0
   loadContrats()
   ElMessage.info('Filtres d\'expiration effacés')
@@ -1553,8 +1522,9 @@ watch([searchText, currentView, filterTypeContrat, filterSalaire, filterCarec], 
   loadContrats()
 })
 
-watch([expiredView, expiredFilterTypeContrat], () => {
+watch([expiredView, expiredFilterTypeContrat, expireDateMax, expirationPeriod], () => {
   currentPage.value = 0
+  syncExpirationPeriod()
   loadContrats()
 })
 

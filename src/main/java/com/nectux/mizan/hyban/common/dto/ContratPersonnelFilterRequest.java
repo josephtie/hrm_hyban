@@ -1,14 +1,18 @@
 package com.nectux.mizan.hyban.common.dto;
 
+import java.util.List;
+
 public class ContratPersonnelFilterRequest {
     private Integer offset;
     private Integer limit;
     private String search;
     private String statut; // "active", "inactive", "expiresOnDate", "expiresInPeriod"
-    private String typeContrat; // "CDI", "CDD", "Stage", "Apprentissage"
+    private String typeContrat; // "CDI", "CDD", "Stage", "Apprentissage" (simple, déprécié)
+    private List<String> typeContrats; // Liste de types de contrats (choix multiple)
     private String salaireRange; // "low", "medium", "high", "veryhigh"
     private Boolean carec; // État contractuel de l'employé
     private String expireDate; // Date d'expiration spécifique (YYYY-MM-DD)
+    private String expireDateMax; // Date max d'expiration (dateFin <= YYYY-MM-DD)
     private String expirePeriodStart; // Début de période d'expiration (YYYY-MM-DD)
     private String expirePeriodEnd; // Fin de période d'expiration (YYYY-MM-DD)
 
@@ -54,6 +58,14 @@ public class ContratPersonnelFilterRequest {
         this.typeContrat = typeContrat;
     }
 
+    public List<String> getTypeContrats() {
+        return typeContrats;
+    }
+
+    public void setTypeContrats(List<String> typeContrats) {
+        this.typeContrats = typeContrats;
+    }
+
     public String getSalaireRange() {
         return salaireRange;
     }
@@ -76,6 +88,14 @@ public class ContratPersonnelFilterRequest {
 
     public void setExpireDate(String expireDate) {
         this.expireDate = expireDate;
+    }
+
+    public String getExpireDateMax() {
+        return expireDateMax;
+    }
+
+    public void setExpireDateMax(String expireDateMax) {
+        this.expireDateMax = expireDateMax;
     }
 
     public String getExpirePeriodStart() {

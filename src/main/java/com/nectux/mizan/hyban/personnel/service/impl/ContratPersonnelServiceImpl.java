@@ -269,7 +269,19 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 			// Filtre par type de contrat
 			String typeContrat = filters.get("typeContrat");
 			if (typeContrat != null && !typeContrat.trim().isEmpty()) {
-				predicates.add(criteriaBuilder.equal(root.get("typeContrat").get("libelle"), typeContrat));
+				if (typeContrat.contains(",")) {
+					java.util.List<String> typeList = java.util.Arrays.stream(typeContrat.split(","))
+						.map(String::trim)
+						.filter(s -> !s.isEmpty())
+						.collect(java.util.stream.Collectors.toList());
+					jakarta.persistence.criteria.CriteriaBuilder.In<String> inClause = criteriaBuilder.in(root.get("typeContrat").get("libelle"));
+					for (String type : typeList) {
+						inClause.value(type);
+					}
+					predicates.add(inClause);
+				} else {
+					predicates.add(criteriaBuilder.equal(root.get("typeContrat").get("libelle"), typeContrat));
+				}
 			}
 			
 			// Filtre par salaire catégoriel
@@ -318,6 +330,19 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 					logger.info(">>>>> FILTRE EXPIRE DATE: " + expireDate + " (converti en Timestamp)");
 				} catch (Exception e) {
 					logger.error(">>>>> ERREUR CONVERSION DATE: " + expireDate, e);
+				}
+			}
+			
+			// Filtre pour les contrats qui expirent au plus tard à une date donnée (dateFin <= date)
+			String expireDateMax = filters.get("expireDateMax");
+			if (expireDateMax != null && !expireDateMax.trim().isEmpty()) {
+				try {
+					LocalDate localExpireDateMax = LocalDate.parse(expireDateMax);
+					java.sql.Timestamp sqlExpireDateMax = java.sql.Timestamp.valueOf(localExpireDateMax.atTime(23, 59, 59));
+					predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("dateFin"), sqlExpireDateMax));
+					logger.info(">>>>> FILTRE EXPIRE DATE MAX: " + expireDateMax + " (converti en Timestamp)");
+				} catch (Exception e) {
+					logger.error(">>>>> ERREUR CONVERSION DATE MAX: " + expireDateMax, e);
 				}
 			}
 			

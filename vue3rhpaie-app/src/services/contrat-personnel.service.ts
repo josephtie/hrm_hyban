@@ -74,10 +74,12 @@ export interface PaginationRequest {
 
 export interface ContratPersonnelFilterRequest extends PaginationRequest {
   statut?: string // "active", "inactive", "expiresOnDate", "expiresInPeriod"
-  typeContrat?: string // "CDI", "CDD", "Stage", "Apprentissage"
+  typeContrat?: string // "CDI", "CDD", "Stage", "Apprentissage" (simple, déprécié)
+  typeContrats?: string[] // Liste de types de contrats (choix multiple)
   salaireRange?: string // "low", "medium", "high", "veryhigh"
   carec?: boolean // État contractuel de l'employé
   expireDate?: string // Date d'expiration spécifique (YYYY-MM-DD)
+  expireDateMax?: string // Date max d'expiration (dateFin <= YYYY-MM-DD)
   expirePeriodStart?: string // Début de période d'expiration (YYYY-MM-DD)
   expirePeriodEnd?: string // Fin de période d'expiration (YYYY-MM-DD)
 }
