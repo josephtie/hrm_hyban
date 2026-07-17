@@ -10,6 +10,8 @@ export interface ContratPersonnel {
   salaireCategoriel: number
   netAPayer: number
   statut: boolean
+  depart?: boolean
+  observCtrat?: string
   categorie: { id: number; libelle: string; salaireBase: string | number }
   updatedAt?: string
   updatedBy?: string

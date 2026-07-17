@@ -17,7 +17,7 @@
             <div class="stat-label">Affichés</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'renewal' ? 'Avenants' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
+            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'closed' ? 'Clôturés' : activeTab === 'toRenew' ? 'À renouveler' : activeTab === 'renewal' ? 'Avenants' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
             <div class="stat-label">Type</div>
           </div>
         </div>
@@ -43,6 +43,8 @@
         <el-tabs v-model="activeTab" class="contrats-tabs">
           <el-tab-pane label="Contrats en cours" name="contracts" />
           <el-tab-pane label="Contrats expirés" name="expired" />
+          <el-tab-pane label="Contrats clôturés" name="closed" />
+          <el-tab-pane label="Contrats à renouveler" name="toRenew" />
           <el-tab-pane label="Avenants / Renouvellements" name="renewal" />
         </el-tabs>
 
@@ -668,7 +670,7 @@ const loading = ref(false)
 const searchText = ref('')
 const currentPage = ref(0)
 const pageSize = ref(50)
-const activeTab = ref<'contracts' | 'expired' | 'renewal'>('contracts')
+const activeTab = ref<'contracts' | 'expired' | 'closed' | 'toRenew' | 'renewal'>('contracts')
 const showViewModal = ref(false)
 const showTerminateModal = ref(false)
 const selectedContrat = ref<ContratPersonnel | null>(null)
@@ -970,13 +972,26 @@ const getSalaireValue = (contrat: ContratPersonnel) => {
 }
 
 const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
   return rows.filter(contrat => {
+    const contractType = normalizeContractType(getTypeContratLabel(contrat.typeContrat))
+    const isCDI = contractType === 'cdi'
+    const endDate = contrat.dateFin ? parseFlexibleDate(contrat.dateFin) : null
+    if (endDate) endDate.setHours(0, 0, 0, 0)
+
+    // Critère "Contrats en cours" : (statut=true ET dateFin >= aujourd'hui) OU (CDI sans date de fin)
+    const isActiveNotExpired = contrat.statut === true && endDate !== null && endDate.getTime() >= today.getTime()
+    const isCDIWithoutEnd = isCDI && !contrat.dateFin
+    if (!isActiveNotExpired && !isCDIWithoutEnd) return false
+
     if (currentView.value === 'active' && contrat.statut !== true) return false
     if (currentView.value === 'inactive' && contrat.statut !== false) return false
 
     if (
       filterTypeContrat.value &&
-      normalizeContractType(getTypeContratLabel(contrat.typeContrat)) !== normalizeContractType(filterTypeContrat.value)
+      contractType !== normalizeContractType(filterTypeContrat.value)
     ) return false
 
     if (filterCarec.value && String(contrat.personnel?.carec) !== filterCarec.value) return false
@@ -1056,6 +1071,9 @@ const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
   today.setHours(0, 0, 0, 0)
 
   return rows.filter(contrat => {
+    // Critère "Contrats expirés" : statut=true ET dateFin < aujourd'hui
+    if (contrat.statut !== true) return false
+
     // Filtrer par statut
     if (expiredView.value === 'active' && contrat.statut !== true) return false
     if (expiredView.value === 'inactive' && contrat.statut !== false) return false
@@ -1120,6 +1138,66 @@ const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
     // Par défaut: afficher tous les contrats expirés (dateFin < aujourd'hui)
     if (!maxDate && !startDate && !endDate) {
       return contractEndDate.getTime() < today.getTime()
+    }
+
+    return true
+  })
+}
+
+const applyClosedContractsFilters = (rows: ContratPersonnel[]) => {
+  const search = normalizeText(searchText.value)
+
+  return rows.filter(contrat => {
+    // Critère "Contrats clôturés" : statut=false ET (départ=true OU observation de fin de contrat renseignée)
+    const hasEndReason = contrat.depart === true || (contrat.observCtrat && contrat.observCtrat.trim() !== '')
+    if (contrat.statut !== false || !hasEndReason) return false
+
+    if (search) {
+      const searchable = [
+        contrat.personnel?.matricule,
+        contrat.personnel?.nom,
+        contrat.personnel?.prenom,
+        getTypeContratLabel(contrat.typeContrat),
+        getFonctionLabel(contrat.fonction)
+      ].map(normalizeText).join(' ')
+
+      if (!searchable.includes(search)) return false
+    }
+
+    return true
+  })
+}
+
+const applyToRenewContractsFilters = (rows: ContratPersonnel[]) => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  return rows.filter(contrat => {
+    const contractType = normalizeContractType(getTypeContratLabel(contrat.typeContrat))
+    const endDate = contrat.dateFin ? parseFlexibleDate(contrat.dateFin) : null
+    if (!endDate) return false
+    endDate.setHours(0, 0, 0, 0)
+
+    // Critère "Contrats à renouveler" : CDD, statut=true, date de fin entre aujourd'hui et dans 30 jours
+    const isCDD = contractType === 'cdd'
+    if (!isCDD || contrat.statut !== true) return false
+
+    const diffTime = endDate.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 1 || diffDays > 30) return false
+
+    const search = normalizeText(searchText.value)
+    if (search) {
+      const searchable = [
+        contrat.personnel?.matricule,
+        contrat.personnel?.nom,
+        contrat.personnel?.prenom,
+        getTypeContratLabel(contrat.typeContrat),
+        getFonctionLabel(contrat.fonction)
+      ].map(normalizeText).join(' ')
+
+      if (!searchable.includes(search)) return false
     }
 
     return true
@@ -1202,14 +1280,14 @@ const loadContrats = async () => {
   loading.value = true
   try {
     let response
-    if (activeTab.value === 'renewal') {
-      // Pour les avenants/renouvellements, récupérer TOUS les contrats (actifs et inactifs)
+    if (['closed', 'toRenew', 'renewal'].includes(activeTab.value)) {
+      // Pour les onglets nécessitant tous les contrats (actifs et inactifs)
       response = await contratPersonnelService.getContratsWithFilters({
         offset: 0,
         limit: 999999
       })
     } else {
-      // Toujours utiliser getAllContrats comme base pour les deux autres onglets
+      // Toujours utiliser getAllContrats comme base pour les onglets en cours et expirés
       response = await contratPersonnelService.getAllContrats({
         offset: 0,
         limit: 999999
@@ -1221,6 +1299,12 @@ const loadContrats = async () => {
     if (activeTab.value === 'expired') {
       // Appliquer les filtres d'expiration côté client
       filteredRows = applyExpiredContractsFilters(response.rows || [])
+    } else if (activeTab.value === 'closed') {
+      // Appliquer les filtres des contrats clôturés côté client
+      filteredRows = applyClosedContractsFilters(response.rows || [])
+    } else if (activeTab.value === 'toRenew') {
+      // Appliquer les filtres des contrats à renouveler côté client
+      filteredRows = applyToRenewContractsFilters(response.rows || [])
     } else if (activeTab.value === 'renewal') {
       // Appliquer les filtres d'avenants/renouvellements côté client
       filteredRows = applyRenewalFilters(response.rows || [])
@@ -1389,24 +1473,34 @@ const exportExcel = async () => {
     let response
     let allContrats: ContratPersonnel[]
 
-    if (activeTab.value === 'renewal') {
+    if (['closed', 'toRenew', 'renewal'].includes(activeTab.value)) {
       response = await contratPersonnelService.getContratsWithFilters({
         offset: 0,
         limit: 999999
       })
-      allContrats = applyRenewalFilters(response.rows || [])
+      if (activeTab.value === 'closed') {
+        allContrats = applyClosedContractsFilters(response.rows || [])
+      } else if (activeTab.value === 'toRenew') {
+        allContrats = applyToRenewContractsFilters(response.rows || [])
+      } else {
+        allContrats = applyRenewalFilters(response.rows || [])
+      }
     } else {
       response = await contratPersonnelService.getAllContrats({
         offset: 0,
         limit: 999999
       })
-      allContrats = activeTab.value === 'contracts'
-        ? applyCurrentContractsFilters(response.rows || [])
-        : applyExpiredContractsFilters(response.rows || [])
+      if (activeTab.value === 'contracts') {
+        allContrats = applyCurrentContractsFilters(response.rows || [])
+      } else {
+        allContrats = applyExpiredContractsFilters(response.rows || [])
+      }
     }
 
     let filenamePrefix = 'contrats_en_cours'
     if (activeTab.value === 'expired') filenamePrefix = 'contrats_expires'
+    if (activeTab.value === 'closed') filenamePrefix = 'contrats_clotures'
+    if (activeTab.value === 'toRenew') filenamePrefix = 'contrats_a_renouveler'
     if (activeTab.value === 'renewal') filenamePrefix = 'avenants_renouvellements'
 
     exportContratsXlsx(allContrats, `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.xlsx`)
