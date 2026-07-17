@@ -17,7 +17,7 @@
             <div class="stat-label">Affichés</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
+            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'renewal' ? 'Avenants' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
             <div class="stat-label">Type</div>
           </div>
         </div>
@@ -43,6 +43,7 @@
         <el-tabs v-model="activeTab" class="contrats-tabs">
           <el-tab-pane label="Contrats en cours" name="contracts" />
           <el-tab-pane label="Contrats expirés" name="expired" />
+          <el-tab-pane label="Avenants / Renouvellements" name="renewal" />
         </el-tabs>
 
         <!-- Barre d'outils améliorée -->
@@ -219,6 +220,7 @@
             :data="contrats" 
             style="width: 100%"
             v-loading="loading"
+            :row-class-name="tableRowClassName"
           >
             <el-table-column prop="personnel.matricule" label="Matricule" min-width="80" sortable>
               <template #default="{ row }">
@@ -666,7 +668,7 @@ const loading = ref(false)
 const searchText = ref('')
 const currentPage = ref(0)
 const pageSize = ref(50)
-const activeTab = ref<'contracts' | 'expired'>('contracts')
+const activeTab = ref<'contracts' | 'expired' | 'renewal'>('contracts')
 const showViewModal = ref(false)
 const showTerminateModal = ref(false)
 const selectedContrat = ref<ContratPersonnel | null>(null)
@@ -1124,6 +1126,72 @@ const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
   })
 }
 
+const applyRenewalFilters = (rows: ContratPersonnel[]) => {
+  const search = normalizeText(searchText.value)
+
+  // Filtrer par recherche textuelle d'abord
+  let filtered = rows
+  if (search) {
+    filtered = rows.filter(contrat => {
+      const searchable = [
+        contrat.personnel?.matricule,
+        contrat.personnel?.nom,
+        contrat.personnel?.prenom,
+        getTypeContratLabel(contrat.typeContrat),
+        getFonctionLabel(contrat.fonction)
+      ].map(normalizeText).join(' ')
+      return searchable.includes(search)
+    })
+  }
+
+  // Grouper par personnel
+  const groups = new Map<number, ContratPersonnel[]>()
+  filtered.forEach(contrat => {
+    const personnelId = contrat.personnel?.id
+    if (!personnelId) return
+    if (!groups.has(personnelId)) {
+      groups.set(personnelId, [])
+    }
+    groups.get(personnelId)!.push(contrat)
+  })
+
+  // Ne garder que les personnels ayant au moins un contrat actif et un inactif
+  const result: ContratPersonnel[] = []
+  groups.forEach(group => {
+    const hasActive = group.some(c => c.statut === true)
+    const hasInactive = group.some(c => c.statut === false)
+    if (hasActive && hasInactive) {
+      // Trier : actif d'abord, puis par date de début décroissante
+      const sortedGroup = [...group].sort((a, b) => {
+        if (a.statut === b.statut) {
+          const dateA = parseFlexibleDate(a.dateDebut)
+          const dateB = parseFlexibleDate(b.dateDebut)
+          if (dateA && dateB) {
+            return dateB.getTime() - dateA.getTime()
+          }
+          return 0
+        }
+        return a.statut ? -1 : 1
+      })
+      result.push(...sortedGroup)
+    }
+  })
+
+  // Trier les groupes par nom/prénom du personnel
+  return result.sort((a, b) => {
+    const nameA = `${a.personnel?.nom || ''} ${a.personnel?.prenom || ''}`.toLowerCase()
+    const nameB = `${b.personnel?.nom || ''} ${b.personnel?.prenom || ''}`.toLowerCase()
+    return nameA.localeCompare(nameB)
+  })
+}
+
+const tableRowClassName = ({ row }: { row: ContratPersonnel }) => {
+  if (activeTab.value === 'renewal' && row.statut === true) {
+    return 'active-renewal-row'
+  }
+  return ''
+}
+
 const paginateRows = (rows: ContratPersonnel[]) => {
   const start = currentPage.value * pageSize.value
   return rows.slice(start, start + pageSize.value)
@@ -1133,17 +1201,29 @@ const paginateRows = (rows: ContratPersonnel[]) => {
 const loadContrats = async () => {
   loading.value = true
   try {
-    // Toujours utiliser getAllContrats comme base pour les deux onglets
-    const response = await contratPersonnelService.getAllContrats({
-      offset: 0,
-      limit: 999999
-    })
+    let response
+    if (activeTab.value === 'renewal') {
+      // Pour les avenants/renouvellements, récupérer TOUS les contrats (actifs et inactifs)
+      response = await contratPersonnelService.getContratsWithFilters({
+        offset: 0,
+        limit: 999999
+      })
+    } else {
+      // Toujours utiliser getAllContrats comme base pour les deux autres onglets
+      response = await contratPersonnelService.getAllContrats({
+        offset: 0,
+        limit: 999999
+      })
+    }
 
     let filteredRows: ContratPersonnel[]
 
     if (activeTab.value === 'expired') {
       // Appliquer les filtres d'expiration côté client
       filteredRows = applyExpiredContractsFilters(response.rows || [])
+    } else if (activeTab.value === 'renewal') {
+      // Appliquer les filtres d'avenants/renouvellements côté client
+      filteredRows = applyRenewalFilters(response.rows || [])
     } else {
       // Appliquer les filtres des contrats en cours côté client
       filteredRows = applyCurrentContractsFilters(response.rows || [])
@@ -1306,16 +1386,30 @@ const exportExcel = async () => {
   try {
     loading.value = true // Indicateur de chargement
     
-    const response = await contratPersonnelService.getAllContrats({
-      offset: 0,
-      limit: 999999
-    })
+    let response
+    let allContrats: ContratPersonnel[]
 
-    const allContrats = activeTab.value === 'contracts'
-      ? applyCurrentContractsFilters(response.rows || [])
-      : applyExpiredContractsFilters(response.rows || [])
+    if (activeTab.value === 'renewal') {
+      response = await contratPersonnelService.getContratsWithFilters({
+        offset: 0,
+        limit: 999999
+      })
+      allContrats = applyRenewalFilters(response.rows || [])
+    } else {
+      response = await contratPersonnelService.getAllContrats({
+        offset: 0,
+        limit: 999999
+      })
+      allContrats = activeTab.value === 'contracts'
+        ? applyCurrentContractsFilters(response.rows || [])
+        : applyExpiredContractsFilters(response.rows || [])
+    }
 
-    exportContratsXlsx(allContrats, `${activeTab.value === 'expired' ? 'contrats_expires' : 'contrats_en_cours'}_${new Date().toISOString().split('T')[0]}.xlsx`)
+    let filenamePrefix = 'contrats_en_cours'
+    if (activeTab.value === 'expired') filenamePrefix = 'contrats_expires'
+    if (activeTab.value === 'renewal') filenamePrefix = 'avenants_renouvellements'
+
+    exportContratsXlsx(allContrats, `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.xlsx`)
     
     const message = allContrats.length > 0 
       ? `✅ Export Excel terminé avec succès - ${allContrats.length} contrat${allContrats.length > 1 ? 's' : ''} exporté${allContrats.length > 1 ? 's' : ''}`
@@ -1748,6 +1842,16 @@ onMounted(() => {
 
 :deep(.el-alert) {
   border-radius: 8px;
+}
+
+:deep(.active-renewal-row) {
+  background-color: #e6f7ff !important;
+  box-shadow: inset 4px 0 0 0 #1890ff;
+}
+
+:deep(.active-renewal-row td) {
+  color: #0958d9;
+  font-weight: 600;
 }
 
 .modal-actions {
