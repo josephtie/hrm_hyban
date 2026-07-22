@@ -27,8 +27,8 @@
     <div class="filters-section enhanced-card">
       <div class="filters-content">
         <el-form :model="filters" inline>
-          <el-form-item label="Période">
-            <el-select v-model="filters.period" placeholder="Sélectionner la période" style="width: 200px" clearable @change="searchBulletins">
+          <el-form-item label="Mois / Période">
+            <el-select v-model="filters.period" placeholder="Sélectionner la période" style="width: 220px" clearable @change="searchBulletins">
               <el-option
                 v-for="period in periods"
                 :key="period.value"
@@ -37,23 +37,63 @@
               />
             </el-select>
           </el-form-item>
-          
+
+          <el-form-item label="Matricule">
+            <el-input
+              v-model="filters.matricule"
+              placeholder="Matricule..."
+              style="width: 160px"
+              clearable
+              @keyup.enter="applyFilters"
+              @clear="applyFilters"
+            />
+          </el-form-item>
+
+          <el-form-item label="Nom">
+            <el-input
+              v-model="filters.nom"
+              placeholder="Nom..."
+              style="width: 160px"
+              clearable
+              @keyup.enter="applyFilters"
+              @clear="applyFilters"
+            />
+          </el-form-item>
+
+          <el-form-item label="Prénom">
+            <el-input
+              v-model="filters.prenom"
+              placeholder="Prénom..."
+              style="width: 160px"
+              clearable
+              @keyup.enter="applyFilters"
+              @clear="applyFilters"
+            />
+          </el-form-item>
+
           <el-form-item label="Recherche">
             <el-input
               v-model="filters.search"
               placeholder="Rechercher (matricule, nom, prénom)..."
-              prefix-icon="Search"
-              style="width: 250px"
+              style="width: 260px"
               clearable
-              @keyup.enter="searchBulletins"
-              @clear="searchBulletins"
-            />
+              @keyup.enter="applyFilters"
+              @clear="applyFilters"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
           </el-form-item>
-          
+
           <el-form-item>
-            <el-button type="info" @click="searchBulletins">
+            <el-button type="info" @click="applyFilters">
               <el-icon><Search /></el-icon>
               Rechercher
+            </el-button>
+            <el-button @click="resetFilters">
+              <el-icon><Refresh /></el-icon>
+              Réinitialiser
             </el-button>
           </el-form-item>
         </el-form>
@@ -182,34 +222,6 @@
             </template>
           </el-table-column>
 
-          <!-- Colonnes dynamiques pour primes non imposables -->
-          <el-table-column 
-            v-for="prime in primesNonImposables" 
-            :key="prime.id"
-            :label="prime.libelle" 
-            :prop="`prime${prime.id}`" 
-            width="140" 
-            align="right"
-          >
-            <template #default="{ row }">
-              {{ formatCurrency(row[`prime${prime.id}`] || 0) }}
-            </template>
-          </el-table-column>
-
-          <!-- Colonnes dynamiques pour primes imposables et non (autre vue) -->
-          <el-table-column 
-            v-for="prime in primesImposablesNon" 
-            :key="`rubriq${prime.id}`"
-            :label="prime.libelle" 
-            :prop="`rubriq${prime.id}`" 
-            width="140" 
-            align="right"
-          >
-            <template #default="{ row }">
-              {{ formatCurrency(row[`rubriq${prime.id}`] || 0) }}
-            </template>
-          </el-table-column>
-
           <el-table-column label="Brut Non Imp." prop="brutNonImposable" width="140" align="right" sortable="custom">
             <template #default="{ row }">
               {{ formatCurrency(row.brutNonImposable) }}
@@ -219,18 +231,6 @@
           <el-table-column label="ITS" prop="its" width="100" align="right" sortable="custom">
             <template #default="{ row }">
               {{ formatCurrency(row.its) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column label="CN" prop="cn" width="100" align="right" sortable="custom">
-            <template #default="{ row }">
-              {{ formatCurrency(row.cn) }}
-            </template>
-          </el-table-column>
-
-          <el-table-column label="IGR" prop="igr" width="100" align="right" sortable="custom">
-            <template #default="{ row }">
-              {{ formatCurrency(row.igr) }}
             </template>
           </el-table-column>
 
@@ -246,7 +246,21 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="CNPS" prop="cnps" width="100" align="right" sortable="custom">
+          <!-- Colonnes dynamiques pour primes sociales -->
+          <el-table-column
+            v-for="prime in primesSociales"
+            :key="prime.id"
+            :label="prime.libelle"
+            :prop="`primeS${prime.id}`"
+            width="140"
+            align="right"
+          >
+            <template #default="{ row }">
+              {{ formatCurrency(row[`primeS${prime.id}`] || 0) }}
+            </template>
+          </el-table-column>
+
+          <el-table-column label="Retenue sociale" prop="cnps" width="140" align="right" sortable="custom">
             <template #default="{ row }">
               {{ formatCurrency(row.cnps) }}
             </template>
@@ -331,6 +345,12 @@
           <el-table-column label="FPC" prop="fpc" width="100" align="right" sortable="custom">
             <template #default="{ row }">
               {{ formatCurrency(row.fpc) }}
+            </template>
+          </el-table-column>
+
+          <el-table-column label="FPC REGUL" prop="fpcregul" width="120" align="right" sortable="custom">
+            <template #default="{ row }">
+              {{ formatCurrency(row.fpcregul) }}
             </template>
           </el-table-column>
 
@@ -426,7 +446,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElLoading, ElMessage } from 'element-plus'
 import {
-  FolderOpened, Plus, Download, Search, Printer
+  FolderOpened, Plus, Download, Search, Printer, Refresh
 } from '@element-plus/icons-vue'
 import { createAuthenticatedApi } from '@/services/api'
 import livrePaieService from '@/services/livrepaie.service'
@@ -434,6 +454,8 @@ import livrePaieService from '@/services/livrepaie.service'
 interface Bulletin {
   id: number
   matricule: string
+  nom: string
+  prenom: string
   nomComplet: string
   statut: string
   statutTravail: string
@@ -461,6 +483,7 @@ interface Bulletin {
   is: number
   ta: number
   fpc: number
+  fpcregul: number
   prestationFamiliale: number
   accidentTravail: number
   retraite: number
@@ -493,11 +516,12 @@ const pageSize = ref(20)
 const sortBy = ref('')
 const sortOrder = ref<'asc' | 'desc'>('asc')
 const selectedBulletins = ref<Bulletin[]>([])
-const totalBulletins = ref(0)
-
 const filters = reactive({
   period: null as number | null,
-  search: ''
+  search: '',
+  matricule: '',
+  nom: '',
+  prenom: ''
 })
 
 const newForm = reactive({
@@ -511,7 +535,7 @@ const primesImposables = ref<Prime[]>([])
 
 const primesImposablesNon = ref<Prime[]>([])
 
-const primesNonImposables = ref<Prime[]>([])
+const primesSociales = ref<Prime[]>([])
 
 const primesMutuelles = ref<Prime[]>([])
 
@@ -525,12 +549,51 @@ const personnels = ref<Personnel[]>([
 
 const periods = ref<Array<{ value: number; label: string }>>([])
 
+const normalizeText = (value: any): string => {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
+
 // Computed properties
 const filteredBulletins = computed(() => {
-  return bulletinsData.value
+  let filtered = bulletinsData.value
+
+  if (filters.search) {
+    const query = normalizeText(filters.search)
+    filtered = filtered.filter(b => {
+      const matricule = normalizeText(b.matricule)
+      const nomComplet = normalizeText(b.nomComplet)
+      return matricule.includes(query) || nomComplet.includes(query)
+    })
+  }
+
+  if (filters.matricule) {
+    const query = normalizeText(filters.matricule)
+    filtered = filtered.filter(b => normalizeText(b.matricule).includes(query))
+  }
+
+  if (filters.nom) {
+    const query = normalizeText(filters.nom)
+    filtered = filtered.filter(b => normalizeText(b.nom).includes(query))
+  }
+
+  if (filters.prenom) {
+    const query = normalizeText(filters.prenom)
+    filtered = filtered.filter(b => normalizeText(b.prenom).includes(query))
+  }
+
+  return filtered
 })
 
-const paginatedBulletins = computed(() => filteredBulletins.value)
+const totalBulletins = computed(() => filteredBulletins.value.length)
+
+const paginatedBulletins = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  return filteredBulletins.value.slice(start, start + pageSize.value)
+})
 
 const totalNet = computed(() => {
   return filteredBulletins.value.reduce((sum, b) => sum + b.netAPayer, 0)
@@ -580,8 +643,10 @@ const mergePrimeColumns = (target: typeof primesImposables, rows: any[], resolve
 const mapBulletinRow = (row: any): Bulletin => {
   const personnel = resolvePersonnel(row)
   const matricule = personnel.matricule || row.matricule || ''
+  const nom = personnel.nom || row.nom || ''
+  const prenom = personnel.prenom || row.prenom || ''
   const nomComplet = personnel.nomComplet
-    || `${personnel.prenom || ''} ${personnel.nom || ''}`.trim()
+    || `${prenom} ${nom}`.trim()
     || row.nomPrenom
     || ''
 
@@ -592,6 +657,8 @@ const mapBulletinRow = (row: any): Bulletin => {
   const mapped = {
     id: toNumber(row.id ?? personnel.id),
     matricule,
+    nom,
+    prenom,
     nomComplet,
     statut: personnel.enSommeil === true ? 'sommeil' : 'actif',
     statutTravail: personnel.statfonct ?? '',
@@ -619,6 +686,7 @@ const mapBulletinRow = (row: any): Bulletin => {
     is: toNumber(row.is ?? row.impotSalaire),
     ta: toNumber(row.ta),
     fpc: toNumber(row.fpc),
+    fpcregul: toNumber(row.fpcregul ?? row.fpcRegul),
     prestationFamiliale: toNumber(row.prestationFamiliale),
     accidentTravail: toNumber(row.accidentTravail),
     retraite: toNumber(row.retraite),
@@ -633,7 +701,7 @@ const mapBulletinRow = (row: any): Bulletin => {
 
   applyPrimeValues(mapped, row?.listIndemniteBrut ?? row?.listIndemBrut, 'prime')
   applyPrimeValues(mapped, row?.listIndemniteNonImp ?? row?.listIndemBrutNonImp, 'primeI')
-  applyPrimeValues(mapped, row?.listIndemniteNonImp ?? row?.listIndemBrutNonImp, 'rubriq')
+  applyPrimeValues(mapped, row?.listRetenueSociale ?? row?.listRetenueSocial, 'primeS')
   applyPrimeValues(mapped, row?.listRetenueMutuellt ?? row?.listRetenueMutuelle, 'primeM')
   applyPrimeValues(mapped, row?.listGainsNet ?? row?.listPrimeGains, 'primeG')
 
@@ -665,12 +733,10 @@ const handleSortChange = ({ prop, order }: { prop: string; order: string | null 
 const handleSizeChange = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
-  loadBulletins()
 }
 
 const handleCurrentChange = (page: number) => {
   currentPage.value = page
-  loadBulletins()
 }
 
 const loadPeriodes = async () => {
@@ -712,20 +778,17 @@ const loadPeriodes = async () => {
 const loadBulletins = async () => {
   if (!filters.period) {
     bulletinsData.value = []
-    totalBulletins.value = 0
     ElMessage.warning('Veuillez sélectionner une période de paie')
     return
   }
 
   loading.value = true
   try {
-    const offset = (currentPage.value - 1) * pageSize.value
     const response = await api.get('/paie/bulletin/chargerbulletinparperiode', {
       params: {
         id: filters.period,
-        limit: pageSize.value,
-        offset,
-        search: filters.search || ''
+        limit: 999999,
+        offset: 0
       }
     })
 
@@ -733,20 +796,18 @@ const loadBulletins = async () => {
     const rows = Array.isArray(dto.rows) ? dto.rows : []
     primesImposables.value = []
     primesImposablesNon.value = []
-    primesNonImposables.value = []
+    primesSociales.value = []
     primesMutuelles.value = []
     primesGains.value = []
     mergePrimeColumns(primesImposables, rows, [r => r?.listIndemniteBrut, r => r?.listIndemBrut])
     mergePrimeColumns(primesImposablesNon, rows, [r => r?.listIndemniteNonImp, r => r?.listIndemBrutNonImp])
-    mergePrimeColumns(primesNonImposables, rows, [r => r?.listIndemniteNonImp, r => r?.listIndemBrutNonImp])
+    mergePrimeColumns(primesSociales, rows, [r => r?.listRetenueSociale, r => r?.listRetenueSocial])
     mergePrimeColumns(primesMutuelles, rows, [r => r?.listRetenueMutuellt, r => r?.listRetenueMutuelle])
     mergePrimeColumns(primesGains, rows, [r => r?.listGainsNet, r => r?.listPrimeGains])
     bulletinsData.value = rows.map(mapBulletinRow)
-    totalBulletins.value = Number(dto.total ?? rows.length)
   } catch (e: any) {
     console.error('loadBulletins error', e)
     bulletinsData.value = []
-    totalBulletins.value = 0
     ElMessage.error(e?.response?.data?.message || e?.message || 'Erreur lors du chargement des bulletins')
   } finally {
     loading.value = false
@@ -754,6 +815,19 @@ const loadBulletins = async () => {
 }
 
 const searchBulletins = async () => {
+  currentPage.value = 1
+  await loadBulletins()
+}
+
+const applyFilters = () => {
+  currentPage.value = 1
+}
+
+const resetFilters = async () => {
+  filters.search = ''
+  filters.matricule = ''
+  filters.nom = ''
+  filters.prenom = ''
   currentPage.value = 1
   await loadBulletins()
 }
