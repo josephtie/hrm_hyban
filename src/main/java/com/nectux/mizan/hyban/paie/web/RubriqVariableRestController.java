@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.RubriqVariableRequest;
 import com.nectux.mizan.hyban.common.dto.RubriqVariableResponse;
@@ -33,6 +34,7 @@ import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
 
 @RestController
 @RequestMapping("/api/paie/rubrique-variable")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE') or hasRole('ADMIN')")
 public class RubriqVariableRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(RubriqVariableRestController.class);

@@ -80,7 +80,7 @@
               <el-option label="En attente" value="en attente" />
               <el-option label="Erreur" value="erreur" />
             </el-select>
-            <el-button type="primary" @click="generateBulletins">
+            <el-button type="primary" @click="generateBulletins" v-permission="'PAYROLL_CALCULATE'">
               <el-icon><Plus /></el-icon>
               Générer bulletins
             </el-button>
@@ -123,6 +123,7 @@
               size="small" 
               type="warning" 
               @click="validateBulletin(scope.row)"
+              v-permission="'PAYROLL_VALIDATE'"
             >
               Valider
             </el-button>

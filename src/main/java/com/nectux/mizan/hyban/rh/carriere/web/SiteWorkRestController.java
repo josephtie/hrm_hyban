@@ -14,12 +14,14 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.Collections;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/rh/carriere/site")
+@PreAuthorize("hasAnyAuthority('CARRIERE_READ', 'CARRIERE_CREATE', 'CARRIERE_UPDATE') or hasRole('ADMIN')")
 public class SiteWorkRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(SiteWorkRestController.class);

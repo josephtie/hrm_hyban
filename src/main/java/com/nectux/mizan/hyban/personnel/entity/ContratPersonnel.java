@@ -1,9 +1,12 @@
 package com.nectux.mizan.hyban.personnel.entity;
 
+import com.nectux.mizan.hyban.personnel.enums.TypeOperationContrat;
 import jakarta.persistence.*;
 
 import com.nectux.mizan.hyban.parametrages.entity.Auditable;
 import com.nectux.mizan.hyban.parametrages.entity.TypeContrat;
+import com.nectux.mizan.hyban.personnel.enums.EtatContrat;
+import com.nectux.mizan.hyban.personnel.enums.MotifClotureContrat;
 import com.nectux.mizan.hyban.utils.CustomDateDeserializer;
 import com.nectux.mizan.hyban.utils.Utils;
 
@@ -107,6 +110,41 @@ public class ContratPersonnel extends Auditable {
 	private String sursal;
 	
 	private int ancienneteInitial;
+
+	private String numeroContrat;
+
+	@JsonSerialize(using = CustomDateDeserializer.class)
+	@Temporal(jakarta.persistence.TemporalType.TIMESTAMP)
+	@DateTimeFormat(pattern="dd/MM/yyyy")
+	private java.util.Date dateSignature;
+
+	@Transient
+	private String dSignature;
+
+	private Integer periodeEssai;
+
+	private String devise;
+
+	private String site;
+
+	private String chantier;
+
+	private String direction;
+
+	private String responsable;
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 30)
+	private EtatContrat etatContrat;
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 30)
+	private MotifClotureContrat motifCloture;
+
+
+	@Enumerated(EnumType.STRING)
+	@Column(length = 30)
+	private TypeOperationContrat operationContrat;
 
 	public ContratPersonnel() {
 		super();
@@ -273,6 +311,95 @@ public class ContratPersonnel extends Auditable {
 		this.ancienneteInitial = ancienneteInitial;
 	}
 
+	public EtatContrat getEtatContrat() {
+		return etatContrat;
+	}
+
+	public void setEtatContrat(EtatContrat etatContrat) {
+		this.etatContrat = etatContrat;
+	}
+
+	public MotifClotureContrat getMotifCloture() {
+		return motifCloture;
+	}
+
+	public void setMotifCloture(MotifClotureContrat motifCloture) {
+		this.motifCloture = motifCloture;
+	}
+
+	public String getNumeroContrat() {
+		return numeroContrat;
+	}
+
+	public void setNumeroContrat(String numeroContrat) {
+		this.numeroContrat = numeroContrat;
+	}
+
+	public java.util.Date getDateSignature() {
+		return dateSignature;
+	}
+
+	public void setDateSignature(java.util.Date dateSignature) {
+		this.dateSignature = dateSignature;
+	}
+
+	public String getdSignature() {
+		dSignature = Utils.dateToString(dateSignature, "dd/MM/yyyy");
+		return dSignature;
+	}
+
+	public void setdSignature(String dSignature) {
+		this.dSignature = dSignature;
+	}
+
+	public Integer getPeriodeEssai() {
+		return periodeEssai;
+	}
+
+	public void setPeriodeEssai(Integer periodeEssai) {
+		this.periodeEssai = periodeEssai;
+	}
+
+	public String getDevise() {
+		return devise;
+	}
+
+	public void setDevise(String devise) {
+		this.devise = devise;
+	}
+
+	public String getSite() {
+		return site;
+	}
+
+	public void setSite(String site) {
+		this.site = site;
+	}
+
+	public String getChantier() {
+		return chantier;
+	}
+
+	public void setChantier(String chantier) {
+		this.chantier = chantier;
+	}
+
+	public String getDirection() {
+		return direction;
+	}
+
+	public void setDirection(String direction) {
+		this.direction = direction;
+	}
+
+	public String getResponsable() {
+		return responsable;
+	}
+
+	public void setResponsable(String responsable) {
+		this.responsable = responsable;
+	}
+
 public BigDecimal getIndemniteRepresent() {
 		return indemniteRepresent;
 	}
@@ -313,39 +440,60 @@ public BigDecimal getIndemniteRepresent() {
 		this.soldeCalcule = soldeCalcule;
 	}
 
-    @Override
-    public String toString() {
-        return "ContratPersonnel{" +
-                "id=" + id +
-                ", statut=" + statut +
-                ", depart=" + depart +
-                ", soldeCalcule=" + soldeCalcule +
-                ", categorie=" + categorie +
-                ", personnel=" + personnel +
-                ", fonction=" + fonction +
-                ", typeContrat=" + typeContrat +
-                ", dateDebut=" + dateDebut +
-                ", dDebut='" + dDebut + '\'' +
-                ", dateFin=" + dateFin +
-                ", dFin='" + dFin + '\'' +
-                ", dateMod=" + dateMod +
-                ", dMod='" + dMod + '\'' +
-                ", netAPayer=" + netAPayer +
-                ", netPayer='" + netPayer + '\'' +
-                ", indemniteLogement=" + indemniteLogement +
-                ", indemniteLogmt='" + indemniteLogmt + '\'' +
-                ", indemniteRepresent=" + indemniteRepresent +
-                ", indemniteReprt='" + indemniteReprt + '\'' +
-                ", ObservCtrat='" + ObservCtrat + '\'' +
-                ", indemniteTransport=" + indemniteTransport +
-                ", indemniteTranspt='" + indemniteTranspt + '\'' +
-                ", sursalaire=" + sursalaire +
-                ", sursal='" + sursal + '\'' +
-                ", ancienneteInitial=" + ancienneteInitial +
-                '}';
-    }
 
-    public Boolean getDepart() {
+	public TypeOperationContrat getOperationContrat() {
+		return operationContrat;
+	}
+
+	public void setOperationContrat(TypeOperationContrat operationContrat) {
+		this.operationContrat = operationContrat;
+	}
+
+	@Override
+	public String toString() {
+		return "ContratPersonnel{" +
+				"id=" + id +
+				", statut=" + statut +
+				", depart=" + depart +
+				", soldeCalcule=" + soldeCalcule +
+				", categorie=" + categorie +
+				", personnel=" + personnel +
+				", fonction=" + fonction +
+				", typeContrat=" + typeContrat +
+				", dateDebut=" + dateDebut +
+				", dDebut='" + dDebut + '\'' +
+				", dateFin=" + dateFin +
+				", dFin='" + dFin + '\'' +
+				", dateMod=" + dateMod +
+				", dMod='" + dMod + '\'' +
+				", netAPayer=" + netAPayer +
+				", netPayer='" + netPayer + '\'' +
+				", indemniteLogement=" + indemniteLogement +
+				", indemniteLogmt='" + indemniteLogmt + '\'' +
+				", indemniteRepresent=" + indemniteRepresent +
+				", indemniteReprt='" + indemniteReprt + '\'' +
+				", ObservCtrat='" + ObservCtrat + '\'' +
+				", indemniteTransport=" + indemniteTransport +
+				", indemniteTranspt='" + indemniteTranspt + '\'' +
+				", sursalaire=" + sursalaire +
+				", sursal='" + sursal + '\'' +
+				", ancienneteInitial=" + ancienneteInitial +
+				", numeroContrat='" + numeroContrat + '\'' +
+				", dateSignature=" + dateSignature +
+				", dSignature='" + dSignature + '\'' +
+				", periodeEssai=" + periodeEssai +
+				", devise='" + devise + '\'' +
+				", site='" + site + '\'' +
+				", chantier='" + chantier + '\'' +
+				", direction='" + direction + '\'' +
+				", responsable='" + responsable + '\'' +
+				", etatContrat=" + etatContrat +
+				", motifCloture=" + motifCloture +
+				", operationContrat=" + operationContrat +
+				'}';
+	}
+
+	public Boolean getDepart() {
 		return depart;
 	}
 

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.SanctionPersonnelRequest;
 import com.nectux.mizan.hyban.common.dto.SanctionPersonnelResponse;
@@ -21,6 +22,7 @@ import com.nectux.mizan.hyban.rh.carriere.service.SanctionPersonnelService;
 
 @RestController
 @RequestMapping("/api/rh/carriere/sanctions-personnel")
+@PreAuthorize("hasAnyAuthority('SANCTION_READ', 'SANCTION_CREATE', 'SANCTION_UPDATE') or hasRole('ADMIN')")
 public class SanctionPersonnelRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(SanctionPersonnelRestController.class);

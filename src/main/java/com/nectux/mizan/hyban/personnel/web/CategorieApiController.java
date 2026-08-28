@@ -19,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -28,13 +29,8 @@ import com.nectux.mizan.hyban.common.dto.PaginationRequest;
 import com.nectux.mizan.hyban.common.dto.IdRequest;
 
 @RestController
-
 @RequestMapping("/api/categories")
-
-//@CrossOrigin(
-//        origins = {"http://localhost:7153", "http://localhost:4200", "http://127.0.0.1:3000"},
-//        allowCredentials = "true"
-//)
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class CategorieApiController {
 
 	private static final Logger logger = LogManager.getLogger(CategorieApiController.class);

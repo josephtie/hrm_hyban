@@ -11,11 +11,11 @@
           <p class="page-subtitle">Gestion des départs et soldes de tout compte</p>
         </div>
         <div class="header-right">
-          <el-button type="primary" @click="showNewModal = true" class="enhanced-button">
+          <el-button type="primary" @click="showNewModal = true" class="enhanced-button" v-permission="'PAYROLL_CALCULATE'">
             <el-icon><Plus /></el-icon>
             Nouveau Départ
           </el-button>
-          <el-button type="success" @click="exportAllData" class="enhanced-button">
+          <el-button type="success" @click="exportAllData" class="enhanced-button" v-permission="'PAYROLL_EXPORT'">
             <el-icon><Download /></el-icon>
             Exporter
           </el-button>
@@ -122,8 +122,9 @@
           <el-table-column label="Actions" width="180" fixed="right">
             <template #default="{ row }">
               <el-button-group>
-                <el-button type="primary" size="small" @click="viewPersonnel(row)">
-                  <el-icon><View /></el-icon>
+                <el-button type="danger" size="small" @click="retirerEffectif(row)">
+                  <el-icon><Switch /></el-icon>
+                  Retirer
                 </el-button>
                 <el-button 
                   type="success" 
@@ -166,7 +167,7 @@
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :page-sizes="[10, 20, 50, 100, 200]"
-            :total="departPersonnels.length"
+            :total="totalElements"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
             @current-change="handleCurrentChange"
@@ -393,9 +394,10 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Switch, Plus, Download, View, Operation, Document, 
+  Switch, Plus, Download, Operation, Document, 
   MoreFilled, Delete, Edit, WarningFilled
 } from '@element-plus/icons-vue'
+import { contratPersonnelService, type ContratPersonnel as ContratPersonnelType } from '@/services/contrat-personnel.service'
 
 interface DepartPersonnel {
   id: number
@@ -432,6 +434,8 @@ const currentPage = ref(1)
 const pageSize = ref(20)
 const sortBy = ref('')
 const sortOrder = ref<'asc' | 'desc'>('asc')
+const searchText = ref('')
+const totalElements = ref(0)
 const selectedPersonnel = ref<DepartPersonnel | null>(null)
 const selectedPersonnels = ref<DepartPersonnel[]>([])
 
@@ -463,43 +467,8 @@ const soldePrimes = ref<SoldePrime[]>([
   }
 ])
 
-// Données mockées
-const departPersonnels = ref<DepartPersonnel[]>([
-  {
-    id: 1,
-    matricule: 'EMP001',
-    nomComplet: 'Kouadio Jean',
-    statut: 'actif',
-    sexe: 'M',
-    dateNaissance: '1985-05-15',
-    lieuNaissance: 'Abidjan',
-    situationMatrimoniale: 'Marié',
-    telephone: '07-89-45-12-34',
-    numeroCnps: 'CNPS001234',
-    typeContrat: 'CDD',
-    soldeCalcule: false,
-    nbEnfants: 2,
-    salaireCategoriel: 500000,
-    netAPayer: 425000
-  },
-  {
-    id: 2,
-    matricule: 'EMP002',
-    nomComplet: 'Touré Aminata',
-    statut: 'actif',
-    sexe: 'F',
-    dateNaissance: '1990-08-22',
-    lieuNaissance: 'Yamoussoukro',
-    situationMatrimoniale: 'Célibataire',
-    telephone: '07-45-78-90-12',
-    numeroCnps: 'CNPS005678',
-    typeContrat: 'CDI',
-    soldeCalcule: true,
-    nbEnfants: 1,
-    salaireCategoriel: 350000,
-    netAPayer: 245000
-  }
-])
+// Données
+const departPersonnels = ref<DepartPersonnel[]>([])
 
 const availablePersonnels = ref([
   { id: 3, nomComplet: 'Soro Mohamed' },
@@ -507,11 +476,56 @@ const availablePersonnels = ref([
   { id: 5, nomComplet: 'Bamba Koffi' }
 ])
 
+const mapContratToDepart = (contrat: ContratPersonnelType): DepartPersonnel => {
+  const p = contrat.personnel as any
+  const typeContratStr = typeof contrat.typeContrat === 'object'
+    ? (contrat.typeContrat as any)?.libelle
+    : contrat.typeContrat
+  return {
+    id: contrat.id,
+    matricule: p?.matricule || '',
+    nomComplet: `${p?.nom || ''} ${p?.prenom || ''}`.trim(),
+    statut: p?.statut ? 'actif' : 'inactif',
+    sexe: p?.sexe || '',
+    dateNaissance: p?.dateNaissance || '',
+    lieuNaissance: p?.lieuNaissance || '',
+    situationMatrimoniale: p?.situationMatrimoniale || '',
+    telephone: p?.telephone || '',
+    numeroCnps: p?.numeroCnps || p?.cnps || '',
+    typeContrat: typeContratStr || '',
+    soldeCalcule: (contrat as any).soldeCalcule === true,
+    nbEnfants: p?.nombreEnfant || p?.nombrEnfant || 0,
+    salaireCategoriel: contrat.salaireCategoriel || 0,
+    netAPayer: contrat.netAPayer || 0,
+  }
+}
+
+const loadDepartPersonnels = async () => {
+  loading.value = true
+  try {
+    const response = await contratPersonnelService.getContratsExpires({
+      offset: (currentPage.value - 1) * pageSize.value,
+      limit: pageSize.value,
+      search: searchText.value,
+    })
+    if (response.rows && response.rows.length > 0) {
+      departPersonnels.value = response.rows.map(mapContratToDepart)
+    } else {
+      departPersonnels.value = []
+    }
+    totalElements.value = response.total || 0
+  } catch (error) {
+    console.error('Erreur lors du chargement des départs:', error)
+    ElMessage.error('Erreur lors du chargement des départs')
+    departPersonnels.value = []
+  } finally {
+    loading.value = false
+  }
+}
+
 // Computed properties
 const paginatedPersonnels = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return departPersonnels.value.slice(start, end)
+  return departPersonnels.value
 })
 
 const totalNet = computed(() => {
@@ -551,18 +565,45 @@ const handleSortChange = ({ prop, order }: { prop: string; order: string | null 
 const handleSizeChange = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
+  loadDepartPersonnels()
 }
 
 const handleCurrentChange = (page: number) => {
   currentPage.value = page
+  loadDepartPersonnels()
 }
 
 const exportAllData = () => {
   ElMessage.success('Export des départs en cours...')
 }
 
-const viewPersonnel = (personnel: DepartPersonnel) => {
-  ElMessage.info(`Visualisation de ${personnel.nomComplet}`)
+const retirerEffectif = async (personnel: DepartPersonnel) => {
+  try {
+    await ElMessageBox.confirm(
+      `Voulez-vous vraiment retirer définitivement ${personnel.nomComplet} de l'effectif ?`,
+      'Confirmation',
+      {
+        confirmButtonText: 'Oui, retirer définitivement',
+        cancelButtonText: 'Annuler',
+        type: 'warning',
+      }
+    )
+  } catch {
+    return
+  }
+
+  try {
+    const response = await contratPersonnelService.departDefinitif(personnel.id)
+    if (response.result === 'success' || response.status === true) {
+      ElMessage.success(`${personnel.nomComplet} a été retiré de l'effectif`)
+      await loadDepartPersonnels()
+    } else {
+      ElMessage.error(response.message || 'Erreur lors du retrait de l\'effectif')
+    }
+  } catch (error) {
+    console.error('Erreur lors du retrait définitif:', error)
+    ElMessage.error('Une erreur est survenue lors du retrait')
+  }
 }
 
 const showSoldeModalFunc = (personnel: DepartPersonnel) => {
@@ -633,10 +674,7 @@ const deletePrime = (index: number) => {
 }
 
 onMounted(() => {
-  loading.value = true
-  setTimeout(() => {
-    loading.value = false
-  }, 1000)
+  loadDepartPersonnels()
 })
 </script>
 

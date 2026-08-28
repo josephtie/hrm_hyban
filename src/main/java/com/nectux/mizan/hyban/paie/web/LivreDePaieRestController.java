@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.paie.dto.LivreDePaieDTO;
 import com.nectux.mizan.hyban.paie.service.BulletinPaieService;
@@ -28,6 +29,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/paie/bulletin")
 @CrossOrigin(origins = "*", allowCredentials = "false")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE', 'PAYROLL_EXPORT') or hasRole('ADMIN')")
 public class LivreDePaieRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(LivreDePaieRestController.class);

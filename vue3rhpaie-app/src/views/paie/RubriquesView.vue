@@ -24,9 +24,10 @@
             </label>
             <el-input 
               v-model="form.code" 
-              placeholder="Code de la rubrique"
+              placeholder="Code de la rubrique (alphanumérique)"
               size="large"
               maxlength="10"
+              @input="form.code = form.code.replace(/[^a-zA-Z0-9]/g, '')"
             />
           </div>
 
@@ -74,6 +75,7 @@
               <el-option label="Montant fixe" value="FIXE" />
               <el-option label="Pourcentage" value="POURCENTAGE" />
               <el-option label="Taux variable" value="TAUX_VARIABLE" />
+               <el-option label="Formule " value="FORMULE" />
               <el-option label="Barème" value="BAREME" />
             </el-select>
           </div>
@@ -191,7 +193,7 @@
             <el-button @click="refreshData" circle>
               <el-icon><Refresh /></el-icon>
             </el-button>
-            <el-button @click="toggleForm" type="primary">
+            <el-button @click="toggleForm" type="primary" v-permission="'PARAMETER_UPDATE'">
               <el-icon><Plus /></el-icon>
               Nouvelle Rubrique
             </el-button>
@@ -327,13 +329,13 @@
             <el-table-column label="Actions" width="120" fixed="right">
               <template #default="{ row }">
                 <el-button-group>
-                  <el-button size="small" @click="editRubrique(row)" type="primary">
+                  <el-button size="small" @click="editRubrique(row)" type="primary" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Edit /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="toggleStatut(row)" :type="row.active ? 'warning' : 'success'">
+                  <el-button size="small" @click="toggleStatut(row)" :type="row.active ? 'warning' : 'success'" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><SwitchButton /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="deleteRubrique(row)" type="danger">
+                  <el-button size="small" @click="deleteRubrique(row)" type="danger" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Delete /></el-icon>
                   </el-button>
                 </el-button-group>
@@ -542,6 +544,10 @@ const refreshData = async () => {
 const saveForm = async () => {
   if (!form.code || !form.libelle || !form.typeRubrique || !form.categorie) {
     ElMessage.error('Veuillez renseigner le code, le libellé, la nature et la catégorie')
+    return
+  }
+  if (!/^[a-zA-Z0-9]+$/.test(form.code)) {
+    ElMessage.error('Le code doit être alphanumérique (lettres et chiffres uniquement)')
     return
   }
 

@@ -12,6 +12,8 @@ export interface ContratPersonnel {
   statut: boolean
   depart?: boolean
   observCtrat?: string
+  etatContrat?: string
+  motifCloture?: string
   categorie: { id: number; libelle: string; salaireBase: string | number }
   updatedAt?: string
   updatedBy?: string
@@ -92,6 +94,26 @@ export interface PaginationIdRequest extends PaginationRequest {
 
 export interface IdRequest {
   id: number
+}
+
+export interface ContratDashboard {
+  contratsActifs: number
+  contratsExpires: number
+  echeances: {
+    '90j': number
+    '60j': number
+    '30j': number
+    '15j': number
+  }
+}
+
+export interface ContratHistory {
+  id: number
+  contratId: number
+  typeOperation: string
+  description: string
+  utilisateur: string | null
+  dateOperation: string
 }
 
 class ContratPersonnelService {
@@ -312,6 +334,72 @@ class ContratPersonnelService {
   // Supprimer un contrat
   async deleteContrat(contratId: number): Promise<ContratPersonnelDTO> {
     const response = await api.post(`${this.baseUrl}/deletecontratpersonnel`, { id: contratId })
+    return response.data
+  }
+
+  // Suspendre un contrat
+  async suspendreContrat(contratId: number, observations?: string): Promise<ContratPersonnelDTO> {
+    const response = await api.post(`${this.baseUrl}/contrats/suspendre`, { id: contratId, observations })
+    return response.data
+  }
+
+  // Résilier un contrat
+  async resilierContrat(contratId: number, dateFin: string, motif: string, observations?: string): Promise<ContratPersonnelDTO> {
+    const response = await api.post(`${this.baseUrl}/contrats/resilier`, { id: contratId, dateFin, motif, observations })
+    return response.data
+  }
+
+  // Reprendre un contrat suspendu
+  async reprendreContrat(contratId: number): Promise<ContratPersonnelDTO> {
+    const response = await api.post(`${this.baseUrl}/contrats/reprendre`, { id: contratId })
+    return response.data
+  }
+
+  // Renouveler un contrat
+  async renouvelerContrat(contratId: number, nouvelleDateDebut: string, nouvelleDateFin?: string, observations?: string): Promise<ContratPersonnelDTO> {
+    const response = await api.post(`${this.baseUrl}/contrats/renouveler`, { id: contratId, nouvelleDateDebut, nouvelleDateFin, observations })
+    return response.data
+  }
+
+  // Créer un avenant
+  async creerAvenant(contratId: number, nouvelleDateFin: string, observations?: string): Promise<ContratPersonnelDTO> {
+    const response = await api.post(`${this.baseUrl}/contrats/avenant`, { id: contratId, nouvelleDateFin, observations })
+    return response.data
+  }
+
+  // Récupérer les contrats par échéance (nombre de jours)
+  async getContratsEcheance(jours: number): Promise<ContratPersonnel[]> {
+    const response = await api.get(`${this.baseUrl}/contrats/echeances/${jours}`)
+    return response.data
+  }
+
+  // Récupérer les contrats expirés
+  async getContratsExpiredList(): Promise<ContratPersonnel[]> {
+    const response = await api.get(`${this.baseUrl}/contrats/expired`)
+    return response.data
+  }
+
+  // Récupérer les contrats par état
+  async getContratsByEtat(etat: string): Promise<ContratPersonnel[]> {
+    const response = await api.get(`${this.baseUrl}/contrats/by-etat/${etat}`)
+    return response.data
+  }
+
+  // Récupérer le tableau de bord des contrats
+  async getDashboardContrats(): Promise<ContratDashboard> {
+    const response = await api.get(`${this.baseUrl}/contrats/dashboard`)
+    return response.data
+  }
+
+  // Récupérer l'historique d'un contrat
+  async getContratHistory(contratId: number): Promise<ContratHistory[]> {
+    const response = await api.get(`${this.baseUrl}/contrats/${contratId}/history`)
+    return response.data
+  }
+
+  // Retirer définitivement un personnel de l'effectif
+  async departDefinitif(id: number): Promise<ContratPersonnelDTO> {
+    const response = await api.post(`${this.baseUrl}/departdefinitifpersonnel?id=${id}`)
     return response.data
   }
 }

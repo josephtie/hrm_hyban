@@ -121,7 +121,7 @@
             <el-button @click="refreshData" circle>
               <el-icon><Refresh /></el-icon>
             </el-button>
-            <el-button @click="toggleForm" type="primary">
+            <el-button @click="toggleForm" type="primary" v-permission="'PARAMETER_UPDATE'">
               <el-icon><Plus /></el-icon>
               Nouvel Exercice
             </el-button>
@@ -208,17 +208,18 @@
             <el-table-column label="Actions" width="150" fixed="right">
               <template #default="{ row }">
                 <el-button-group>
-                  <el-button size="small" @click="editExercice(row)" type="primary">
+                  <el-button size="small" @click="editExercice(row)" type="primary" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Edit /></el-icon>
                   </el-button>
                   <el-button 
                     size="small" 
                     @click="toggleCloture(row)" 
                     :type="row.statut === 'OUVERT' ? 'warning' : 'success'"
+                    v-permission="'PARAMETER_UPDATE'"
                   >
                     <el-icon><SwitchButton /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="deleteExercice(row)" type="danger">
+                  <el-button size="small" @click="deleteExercice(row)" type="danger" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Delete /></el-icon>
                   </el-button>
                 </el-button-group>

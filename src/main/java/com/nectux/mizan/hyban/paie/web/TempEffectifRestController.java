@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.TempEffectifRequest;
 import com.nectux.mizan.hyban.common.dto.TempEffectifResponse;
@@ -32,6 +33,7 @@ import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
 
 @RestController
 @RequestMapping("/api/paie/temp-effectif")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE') or hasRole('ADMIN')")
 public class TempEffectifRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(TempEffectifRestController.class);

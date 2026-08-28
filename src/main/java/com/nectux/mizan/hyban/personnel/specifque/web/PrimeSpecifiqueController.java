@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -20,6 +21,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/parametrages")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class PrimeSpecifiqueController {
 
 

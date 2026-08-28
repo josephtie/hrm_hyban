@@ -432,7 +432,56 @@ public class KeycloakUserService {
 
         if (!rolesToAssign.isEmpty()) {
             realm().users().get(userId).roles().realmLevel().add(rolesToAssign);
-            log.info("✅ Rôles de realm {} assignés à l’utilisateur {}", rolesToAssign.stream().map(RoleRepresentation::getName).toList(), userId);
+            log.info("✅ Rôles de realm {} assignés à l'utilisateur {}", rolesToAssign.stream().map(RoleRepresentation::getName).toList(), userId);
+        }
+    }
+
+    public void replaceRealmRoles(String userId, List<String> newRoles) {
+        if (newRoles == null) newRoles = List.of();
+
+        List<String> upperRoles = newRoles.stream()
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .distinct()
+                .toList();
+
+        try {
+            UserResource userResource = realm().users().get(userId);
+
+            List<RoleRepresentation> currentRoles = userResource.roles().realmLevel().listAll();
+            List<String> currentRoleNames = currentRoles.stream()
+                    .map(RoleRepresentation::getName)
+                    .toList();
+
+            List<RoleRepresentation> toRemove = currentRoles.stream()
+                    .filter(r -> !upperRoles.contains(r.getName()))
+                    .toList();
+
+            if (!toRemove.isEmpty()) {
+                userResource.roles().realmLevel().remove(toRemove);
+                log.info("🗑️ Rôles retirés de l'utilisateur {}: {}", userId, toRemove.stream().map(RoleRepresentation::getName).toList());
+            }
+
+            List<RoleRepresentation> toAdd = upperRoles.stream()
+                    .filter(name -> !currentRoleNames.contains(name))
+                    .map(roleName -> {
+                        try {
+                            return realm().roles().get(roleName).toRepresentation();
+                        } catch (NotFoundException e) {
+                            log.warn("⚠️ Rôle de realm '{}' introuvable", roleName);
+                            return null;
+                        }
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            if (!toAdd.isEmpty()) {
+                userResource.roles().realmLevel().add(toAdd);
+                log.info("✅ Rôles ajoutés à l'utilisateur {}: {}", userId, toAdd.stream().map(RoleRepresentation::getName).toList());
+            }
+        } catch (Exception e) {
+            log.error("Erreur lors du remplacement des rôles pour l'utilisateur {}: {}", userId, e.getMessage());
+            throw new RuntimeException("Erreur lors de l'assignation des rôles: " + e.getMessage());
         }
     }
 

@@ -53,6 +53,7 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -76,6 +77,7 @@ import java.math.RoundingMode;
 
 @Controller
 @RequestMapping("/api/paie/bulletin")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE', 'PAYROLL_VALIDATE', 'PAYROLL_CANCEL', 'PAYROLL_EXPORT') or hasRole('ADMIN')")
 public class BulletinPaieController {
 
 	

@@ -5,13 +5,17 @@ import { API_URLS, API_CONFIG } from '@/config/api'
 import router from '@/router'
 
 export interface UserInfo {
-  sub: string
+  sub?: string
   email: string
-  name: string
-  preferred_username: string
-  given_name: string
-  family_name: string
-  roles: string[]
+  name?: string
+  preferred_username?: string
+  given_name?: string
+  family_name?: string
+  roles?: string[]
+  username: string
+  nom: string
+  prenom: string
+  role: string
 }
 
 export interface LoginResponse {
@@ -94,12 +98,19 @@ export const keycloakAuthService = {
       
       const payload = JSON.parse(jsonPayload)
       
+      console.log('🔍 JWT Payload complet:', payload)
+      console.log('🔍 realm_access.roles:', payload.realm_access?.roles)
+      console.log('🔍 resource_access.hrm_frontend.roles:', payload.resource_access?.['hrm_frontend']?.roles)
+      
+      const extractedRole = this.extractRoleFromToken(payload)
+      console.log('🔍 Rôle extrait:', extractedRole)
+      
       return {
         username: payload.preferred_username || payload.sub || 'Unknown',
         email: payload.email || '',
         nom: payload.family_name || payload.given_name || '',
         prenom: payload.given_name || '',
-        role: this.extractRoleFromToken(payload)
+        role: extractedRole
       }
     } catch (error) {
       console.error('Erreur parsing JWT:', error)
@@ -113,23 +124,33 @@ export const keycloakAuthService = {
     }
   },
 
+  // Normaliser les rôles (aligné avec le backend JwtAuthConverter.ROLE_ALIASES)
+  normalizeRole(role: string): string {
+    const upper = role ? role.trim().toUpperCase() : ''
+    const ALIASES: Record<string, string> = {
+      'PAIE': 'DAF',
+      'POINTAGE': 'PTGE'
+    }
+    return ALIASES[upper] || upper
+  },
+
   // Extraire les rôles depuis le token
   extractRoleFromToken(payload: any): string {
+    const PRIORITY: string[] = ['ADMIN', 'DAF', 'RH', 'PTGE', 'USER']
+
     // Priorité aux rôles client
     if (payload.resource_access && payload.resource_access['hrm_frontend']) {
-      const roles = payload.resource_access['hrm_frontend'].roles
-      const role = roles.includes('ADMIN') ? 'ADMIN' : 
-                   roles.includes('RH_MANAGER') ? 'RH_MANAGER' :
-                   roles.includes('USER') ? 'USER' : 'GUEST'
-      return role
+      const roles: string[] = payload.resource_access['hrm_frontend'].roles || []
+      const normalized = roles.map(r => this.normalizeRole(r))
+      const found = PRIORITY.find(r => normalized.includes(r))
+      if (found) return found
     }
 
     // Sinon, utiliser les rôles realm
-    const realmRoles = payload.realm_access?.roles || []
-    const role = realmRoles.includes('ADMIN') ? 'ADMIN' : 
-           realmRoles.includes('RH_MANAGER') ? 'RH_MANAGER' :
-           realmRoles.includes('USER') ? 'USER' : 'GUEST'
-    return role
+    const realmRoles: string[] = payload.realm_access?.roles || []
+    const normalizedRealm = realmRoles.map(r => this.normalizeRole(r))
+    const found = PRIORITY.find(r => normalizedRealm.includes(r))
+    return found || 'GUEST'
   },
 
   // Déconnexion

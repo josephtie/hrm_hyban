@@ -38,7 +38,7 @@
           </div>
           <div class="stat-info">
             <h3>{{ stats.contratsExpirant }}</h3>
-            <p>Contrats expirant ce mois</p>
+            <p>Contrats expirés</p>
           </div>
         </div>
       </el-card>
@@ -154,6 +154,7 @@
                   type="success"
                   size="small"
                   @click="approuverAbsence(scope.row)"
+                  v-permission="'ABSENCE_VALIDATE'"
                 >
                   Approuver
                 </el-button>
@@ -161,6 +162,7 @@
                   type="danger"
                   size="small"
                   @click="refuserAbsence(scope.row)"
+                  v-permission="'ABSENCE_VALIDATE'"
                 >
                   Refuser
                 </el-button>
@@ -385,25 +387,39 @@ const loadContratsEcheance = async () => {
 
 const refreshData = async () => {
   try {
-    const currentMonthRange = getCurrentMonthRange()
-    const [personnels, contratsActifs, contratsExpirant] = await Promise.all([
+    const range = getUpcomingContractRange()
+    const [personnelsResult, contratsActifsResult, contratsEcheanceResult] = await Promise.allSettled([
       personnelRestService.getPersonnels({ page: 0, size: 1 }),
       contratPersonnelService.getContratsActifs({ offset: 0, limit: 1 }),
       contratPersonnelService.getContratsWithFilters({
         offset: 0,
-        limit: 1,
-        expirePeriodStart: currentMonthRange.start,
-        expirePeriodEnd: currentMonthRange.end
+        limit: 1000,
+        expirePeriodStart: range.start,
+        expirePeriodEnd: range.end
       })
     ])
 
+    const personnels = personnelsResult.status === 'fulfilled' ? personnelsResult.value : { total: 0, data: [] }
+    const contratsActifs = contratsActifsResult.status === 'fulfilled' ? contratsActifsResult.value : { total: 0, rows: [] }
+    const contratsEcheanceResp = contratsEcheanceResult.status === 'fulfilled' ? contratsEcheanceResult.value : { rows: [] }
+
+    const echeanceRows = contratsEcheanceResp.rows || contratsEcheanceResp.data || []
+    const expiredCount = echeanceRows.filter((c: any) => {
+      if (c.statut !== true) return false
+      const dateFin = parseDate(c.dateFin)
+      if (!dateFin || Number.isNaN(dateFin.getTime())) return false
+      return getDaysUntil(dateFin) <= 0
+    }).length
+
     stats.value.totalEmployes = Number(personnels.total ?? personnels.data?.length ?? 0)
     stats.value.employesActifs = Number(contratsActifs.total ?? contratsActifs.rows?.length ?? 0)
-    stats.value.contratsExpirant = Number(contratsExpirant.total ?? contratsExpirant.rows?.length ?? 0)
-    await loadMasseSalarialeMoisAnterieur()
-    await loadEffectifsParDirection()
-    await loadRecentActivities()
-    await loadContratsEcheance()
+    stats.value.contratsExpirant = expiredCount
+
+    try { await loadMasseSalarialeMoisAnterieur() } catch (e) { console.error('Erreur masse salariale:', e) }
+    try { await loadEffectifsParDirection() } catch (e) { console.error('Erreur effectifs:', e) }
+    try { await loadRecentActivities() } catch (e) { console.error('Erreur activites:', e) }
+    try { await loadContratsEcheance() } catch (e) { console.error('Erreur contrats echeance:', e) }
+
     ElMessage.success('Données actualisées')
   } catch (error) {
     console.error('Erreur chargement dashboard:', error)

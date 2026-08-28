@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.TypeContratRequest;
 import com.nectux.mizan.hyban.common.dto.TypeContratResponse;
@@ -18,10 +19,11 @@ import com.nectux.mizan.hyban.parametrages.service.TypeContratService;
 
 @RestController
 @RequestMapping("/api/parametrages/types-contrats")
-@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.6:7153", "http://localhost:7200", "http://192.168.1.6:7200", "http://localhost:4200", "http://127.0.0.1:3000"}, 
+@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.7:7153", "http://localhost:7200", "http://192.168.1.7:7200", "http://localhost:4200", "http://127.0.0.1:3000"}, 
              allowedHeaders = "*", 
              methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS, RequestMethod.PATCH},
              allowCredentials = "true")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class TypeContratRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(TypeContratRestController.class);

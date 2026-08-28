@@ -20,7 +20,7 @@ export interface Permission {
   description?: string
 }
 
-export type UserRole = 'ADMIN' | 'RH' | 'RH_MANAGER' | 'USER' | 'VIEWER' | 'GUEST'
+export type UserRole = 'ADMIN' | 'RH' | 'DAF' | 'PTGE' | 'USER' | 'GUEST'
 
 export interface LoginCredentials {
   username: string

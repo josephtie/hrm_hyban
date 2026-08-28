@@ -15,6 +15,7 @@ public class ContratPersonnelRequest {
     private Double indemnitetransport;
     private Double indemniterespons;
     private Double indemniterepresent;
+    private String typeOperation;
 
     // getters/setters
     public Long getId() { return id; }
@@ -45,4 +46,6 @@ public class ContratPersonnelRequest {
     public void setIndemniterespons(Double indemniterespons) { this.indemniterespons = indemniterespons; }
     public Double getIndemniterepresent() { return indemniterepresent; }
     public void setIndemniterepresent(Double indemniterepresent) { this.indemniterepresent = indemniterepresent; }
+    public String getTypeOperation() { return typeOperation; }
+    public void setTypeOperation(String typeOperation) { this.typeOperation = typeOperation; }
 }

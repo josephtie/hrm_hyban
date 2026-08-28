@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.parametrages.dto.PlanningCongeDTO;
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
@@ -33,6 +34,7 @@ import com.nectux.mizan.hyban.utils.DateManager;
 
 @RestController
 @RequestMapping("/api/personnels")
+@PreAuthorize("hasAnyAuthority('LEAVE_READ', 'LEAVE_CREATE', 'LEAVE_UPDATE') or hasRole('ADMIN')")
 public class PlanningCongeController {
 
 	private static final Logger logger = LogManager.getLogger(PlanningCongeController.class);

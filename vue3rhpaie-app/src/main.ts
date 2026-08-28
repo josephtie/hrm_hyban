@@ -17,6 +17,7 @@ import initializeKeycloak from '@/plugins/keycloak'
 
 import App from './App.vue'
 import router from './router'
+import permissionDirective from '@/directives/permission'
 
 const app = createApp(App)
 
@@ -28,6 +29,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
+app.directive('permission', permissionDirective)
 
 // Initialiser Keycloak avant de monter l'app
 initializeKeycloak().then(() => {

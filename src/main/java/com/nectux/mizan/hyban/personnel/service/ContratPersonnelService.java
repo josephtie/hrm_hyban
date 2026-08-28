@@ -9,21 +9,44 @@ import com.nectux.mizan.hyban.personnel.entity.Categorie;
 import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
 import com.nectux.mizan.hyban.personnel.entity.Fonction;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
+import com.nectux.mizan.hyban.personnel.enums.EtatContrat;
+import com.nectux.mizan.hyban.personnel.enums.MotifClotureContrat;
+import com.nectux.mizan.hyban.personnel.enums.TypeOperationContrat;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * 
+ */
 public interface ContratPersonnelService {
 	
 	public ContratPersonnel save(ContratPersonnel contratPersonnel);
 	
 	public ContratPersonnelDTO save(Long id, Long idPersonnel, Long idCategorie, Long idFonction, Long idTypeContrat, String dateDebut, String dateFin, Double netAPayer, Double indemniteLogement, int ancienete, boolean statut, Double sursalaire, Double indemnitetransport, Double indemniterespons, Double indemniterepresent);
+
+	public ContratPersonnelDTO save(Long id, Long idPersonnel, Long idCategorie, Long idFonction, Long idTypeContrat, String dateDebut, String dateFin, Double netAPayer, Double indemniteLogement, int ancienete, boolean statut, Double sursalaire, Double indemnitetransport, Double indemniterespons, Double indemniterepresent, TypeOperationContrat typeOperation);
 	
-	public ContratPersonnelDTO endContract(Long id, String dateFin,String dateMod,Boolean depart,String ObservCtrat);
+	//public ContratPersonnelDTO endContract(Long id, String dateFin,String dateMod,Boolean depart,String ObservCtrat);
+	
+//	public ContratPersonnelDTO endContract(Long id, String dateFin, String dateMod, Boolean depart, String ObservCtrat, MotifClotureContrat motifCloture);
+//
+	public ContratPersonnelDTO endContractNew(Long id, String dateFin, String dateMod, Boolean depart, String ObservCtrat, MotifClotureContrat motifCloture, TypeOperationContrat typeOperation);
+	
+	public ContratPersonnelDTO suspendreContrat(Long id, String observations);
+	
+	public ContratPersonnelDTO resilierContrat(Long id, String dateFin, MotifClotureContrat motif, String observations);
+	
+	public ContratPersonnelDTO reprendreContrat(Long id);
+	
+	public ContratPersonnelDTO renouvelerContrat(Long idAncienContrat, String nouvelleDateDebut, String nouvelleDateFin, String observations,String username);
+	
+	public ContratPersonnelDTO creerAvenant(Long idContrat, String nouvelleDateFin, String observations);
 	
 	public ContratPersonnelDTO updateContractSursalaire(Long id, Double sursalaire);
+	
+	public List<ContratPersonnel> findContratsByEtat(EtatContrat etatContrat);
 	
 	
 	public Boolean delete(Long id);
@@ -77,4 +100,7 @@ public interface ContratPersonnelService {
 
 
     List<ContratPersonnel> rechercherBytypeContrat(TypeContrat annee);
+
+	public ContratPersonnelDTO modifierDateFinContrat(Long id, String nouvelleDateFin, String motif, String username);
+
 }

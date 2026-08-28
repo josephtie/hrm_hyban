@@ -44,7 +44,7 @@ export default defineConfig({
 
       '/api': {
 
-        target: 'http://192.168.1.6:7200',
+        target: 'http://192.168.1.7:7200',
 
         changeOrigin: true,
 
@@ -54,7 +54,7 @@ export default defineConfig({
 
       '/realms': {
 
-        target: 'http://192.168.1.6:8080',
+        target: 'http://192.168.1.7:8083',
 
         changeOrigin: true,
 

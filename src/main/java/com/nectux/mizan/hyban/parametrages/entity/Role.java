@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 
 import org.springframework.security.core.GrantedAuthority;
 
+import java.util.HashSet;
+import java.util.Set;
 
 
 
@@ -11,7 +13,7 @@ import org.springframework.security.core.GrantedAuthority;
 @Table(name="CGECI_RHPAIE_ROLE")
 @SequenceGenerator(name="CGECI_RHPAIE_ROLE_SEQUENCE", sequenceName="CGECI_RHPAIE_ROLE_SEQ", initialValue=1, allocationSize=1)
 @Entity
-public class Role implements GrantedAuthority { // ✅ Implémentation de GrantedAuthority
+public class Role implements GrantedAuthority {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.SEQUENCE, generator="CGECI_RHPAIE_ROLE_SEQUENCE")
@@ -20,7 +22,15 @@ public class Role implements GrantedAuthority { // ✅ Implémentation de Grante
 
 	@Enumerated(EnumType.STRING)
 	@Column(unique = true, nullable = false)
-	private RoleName name; // ✅ Assurez-vous que RoleName est un enum
+	private RoleName name;
+
+	@ManyToMany(fetch = FetchType.EAGER)
+	@JoinTable(
+		name = "CGECI_RHPAIE_ROLE_PERMISSION",
+		joinColumns = @JoinColumn(name = "role_id"),
+		inverseJoinColumns = @JoinColumn(name = "permission_id")
+	)
+	private Set<Permission> permissions = new HashSet<>();
 
 	public Role() {}
 
@@ -44,9 +54,17 @@ public class Role implements GrantedAuthority { // ✅ Implémentation de Grante
 		this.name = name;
 	}
 
+	public Set<Permission> getPermissions() {
+		return permissions;
+	}
+
+	public void setPermissions(Set<Permission> permissions) {
+		this.permissions = permissions;
+	}
+
 	@Override
 	public String getAuthority() {
-		return name.name(); // ✅ Retourne le nom de l'autorité pour Spring Security
+		return name.name();
 	}
 }
 

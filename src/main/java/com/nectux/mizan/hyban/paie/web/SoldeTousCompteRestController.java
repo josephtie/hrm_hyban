@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.SoldeTousCompteRequest;
 import com.nectux.mizan.hyban.common.dto.SoldeTousCompteResponse;
@@ -34,6 +35,7 @@ import com.nectux.mizan.hyban.utils.Utils;
 
 @RestController
 @RequestMapping("/api/depart/solde-tous-comptes")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE', 'PAYROLL_EXPORT') or hasRole('ADMIN')")
 public class SoldeTousCompteRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(SoldeTousCompteRestController.class);

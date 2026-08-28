@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 // import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
@@ -26,6 +27,7 @@ import com.nectux.mizan.hyban.rh.carriere.service.PosteService;
 
 @Controller
 @RequestMapping("/carriere")
+@PreAuthorize("hasAnyAuthority('CARRIERE_READ', 'CARRIERE_CREATE', 'CARRIERE_UPDATE', 'CARRIERE_DELETE') or hasRole('ADMIN')")
 public class PosteController {
 	
 	private static final Logger logger = LogManager.getLogger(PosteController.class);

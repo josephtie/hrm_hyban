@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.PromotionRequest;
 import com.nectux.mizan.hyban.common.dto.PromotionResponse;
@@ -23,6 +24,7 @@ import com.nectux.mizan.hyban.rh.carriere.service.PromotionService;
 
 @RestController
 @RequestMapping("/api/rh/carriere/promotions")
+@PreAuthorize("hasAnyAuthority('CARRIERE_READ', 'CARRIERE_CREATE', 'CARRIERE_UPDATE') or hasRole('ADMIN')")
 public class PromotionRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(PromotionRestController.class);

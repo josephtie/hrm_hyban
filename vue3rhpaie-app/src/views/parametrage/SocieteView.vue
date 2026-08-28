@@ -115,8 +115,37 @@
             </el-radio-group>
           </div>
 
+          <div class="form-group" v-if="isEditing">
+            <label class="form-label">
+              <el-icon class="label-icon"><Picture /></el-icon>
+              Logo de la société
+            </label>
+            <div class="logo-upload-area">
+              <div v-if="logoPreview" class="logo-preview">
+                <img :src="logoPreview" alt="Logo" class="logo-preview-img" />
+              </div>
+              <div v-else class="logo-placeholder">
+                <el-icon size="40"><Picture /></el-icon>
+                <span>Aucun logo</span>
+              </div>
+              <el-upload
+                :auto-upload="false"
+                :show-file-list="false"
+                accept="image/*"
+                :on-change="onLogoChange"
+              >
+                <el-button type="primary" :loading="uploadingLogo">
+                  <el-icon><Upload /></el-icon>&nbsp; {{ logoPreview ? 'Changer le logo' : 'Téléverser un logo' }}
+                </el-button>
+              </el-upload>
+            </div>
+          </div>
+
           <div class="form-actions">
             <el-button @click="closeForm" size="large">Annuler</el-button>
+            <el-button v-if="isEditing && logoFile" type="warning" @click="uploadLogo" size="large" :loading="uploadingLogo">
+              <el-icon><Upload /></el-icon>&nbsp; Enregistrer le logo
+            </el-button>
             <el-button type="primary" @click="saveForm" size="large">
               {{ isEditing ? 'Mettre à jour' : 'Créer' }}
             </el-button>
@@ -255,9 +284,10 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Plus, Edit, Delete, Search, Refresh, Close, OfficeBuilding, Flag,
-  Document, CreditCard, Phone, Message, House, Star
+  Document, CreditCard, Phone, Message, House, Star, Upload, Picture
 } from '@element-plus/icons-vue'
 import { soceterestService, type SocieteRestDto } from '@/services/soceterest.service'
+import { api } from '@/services/api'
 
 interface Societe {
   id: number
@@ -307,8 +337,13 @@ const form = reactive({
   telephone: '',
   email: '',
   adresse: '',
-  principale: false
+  principale: false,
+  urlLogo: ''
 })
+
+const logoPreview = ref<string>('')
+const logoFile = ref<File | null>(null)
+const uploadingLogo = ref(false)
 
 const toggleForm = () => {
   showForm.value = !showForm.value
@@ -332,9 +367,12 @@ const resetForm = () => {
     telephone: '',
     email: '',
     adresse: '',
-    principale: false
+    principale: false,
+    urlLogo: ''
   })
   isEditing.value = false
+  logoPreview.value = ''
+  logoFile.value = null
 }
 
 const loadSocietes = async () => {
@@ -403,6 +441,40 @@ const editSociete = (societe: Societe) => {
   Object.assign(form, societe)
   isEditing.value = true
   showForm.value = true
+  logoPreview.value = societe.urlLogo || ''
+  logoFile.value = null
+}
+
+const onLogoChange = (file: any) => {
+  const rawFile = file.raw || file
+  if (!rawFile) return
+  logoFile.value = rawFile
+  logoPreview.value = URL.createObjectURL(rawFile)
+}
+
+const uploadLogo = async () => {
+  if (!logoFile.value || !form.id) return
+  uploadingLogo.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', logoFile.value)
+    formData.append('id', String(form.id))
+    const { data } = await api.post('/parametrages/societes/upload-logo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    if (data?.result === 'success' || data?.result === 'success') {
+      ElMessage.success('Logo téléversé avec succès')
+      form.urlLogo = data?.urlLogo || form.urlLogo
+      logoFile.value = null
+      await loadSocietes()
+    } else {
+      ElMessage.error(data?.message || 'Erreur lors du téléversement')
+    }
+  } catch (e: any) {
+    ElMessage.error(e?.response?.data?.message || 'Erreur lors du téléversement')
+  } finally {
+    uploadingLogo.value = false
+  }
 }
 
 const togglePrincipale = async (societe: Societe) => {
@@ -633,5 +705,43 @@ onMounted(() => {
 
 .form-group :deep(.el-input__prefix) {
   color: #909399;
+}
+
+.logo-upload-area {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo-preview {
+  width: 80px;
+  height: 80px;
+  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+}
+
+.logo-preview-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.logo-placeholder {
+  width: 80px;
+  height: 80px;
+  border: 1px dashed #dcdfe6;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #c0c4cc;
+  font-size: 12px;
+  gap: 4px;
 }
 </style>

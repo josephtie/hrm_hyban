@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 // import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
 import com.nectux.mizan.hyban.common.dto.TypeDocumentRequest;
@@ -21,6 +22,7 @@ import com.nectux.mizan.hyban.common.dto.IdRequest;
 
 @RestController
 @RequestMapping("/api/parametrages/doc")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class TypeDocumentController {
 
 	private static final Logger logger = LogManager.getLogger(TypeDocumentController.class);

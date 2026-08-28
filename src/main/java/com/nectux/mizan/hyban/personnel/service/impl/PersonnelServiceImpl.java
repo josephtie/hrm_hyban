@@ -20,6 +20,8 @@ import com.nectux.mizan.hyban.personnel.dto.PersonnelDTO;
 import com.nectux.mizan.hyban.personnel.entity.Fonction;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.personnel.entity.Service;
+import com.nectux.mizan.hyban.personnel.enums.EtatContrat;
+import com.nectux.mizan.hyban.personnel.enums.TypeOperationContrat;
 import com.nectux.mizan.hyban.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -172,6 +174,8 @@ public class PersonnelServiceImpl implements PersonnelService {
 			contratPersonnel.setIndemniteTransport(indemniteTransport);
 			//contratPersonnel.setIndemniteResp(indemniteRespons);
 			contratPersonnel.setSursalaire(sursalaire);
+			contratPersonnel.setEtatContrat(EtatContrat.ACTIF);
+			contratPersonnel.setOperationContrat(TypeOperationContrat.CREATION);
 			contratPersonnel = contratPersonnelRepository.save(contratPersonnel);
 			
 			if(contratPersonnel.getTypeContrat().getId()==5L){

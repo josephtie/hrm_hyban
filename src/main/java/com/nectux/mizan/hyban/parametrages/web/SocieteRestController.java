@@ -22,6 +22,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.SocieteVueRequest;
 import com.nectux.mizan.hyban.common.dto.SocieteVueResponse;
@@ -38,10 +39,11 @@ import com.nectux.mizan.hyban.parametrages.service.BanqueService;
 
 @RestController
 @RequestMapping("/api/parametrages/societes")
-@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.6:7153", "http://localhost:7200", "http://192.168.1.6:7200", "http://localhost:4200", "http://127.0.0.1:3000"}, 
+@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.7:7153", "http://localhost:7200", "http://192.168.1.7:7200", "http://localhost:4200", "http://127.0.0.1:3000"}, 
              allowedHeaders = "*", 
              methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS, RequestMethod.PATCH},
              allowCredentials = "true")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class SocieteRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(SocieteRestController.class);
@@ -65,6 +67,7 @@ public class SocieteRestController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('PARAMETER_READ') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueDTO> getSociete(@PathVariable Long id) {
         try {
             Societe societe = societeRepository.findById(id)
@@ -78,6 +81,7 @@ public class SocieteRestController {
     }
 
     @PostMapping("/list")
+    @PreAuthorize("hasAuthority('PARAMETER_READ') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueResponse<Object>> getSocieteList(@RequestBody SocieteVueRequest request) {
         try {
             Integer offset = request.getOffset() == null ? 0 : request.getOffset();
@@ -114,6 +118,7 @@ public class SocieteRestController {
     }
 
     @PostMapping("/save")
+    @PreAuthorize("hasAuthority('PARAMETER_UPDATE') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueResponse<Societe>> saveSociete(@RequestBody SocieteVueRequest request) {
         try {
             SocieteVueResponse<Societe> response = new SocieteVueResponse<>();
@@ -166,6 +171,7 @@ public class SocieteRestController {
     }
 
     @PostMapping("/update")
+    @PreAuthorize("hasAuthority('PARAMETER_UPDATE') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueResponse<Societe>> updateSociete(@RequestBody SocieteVueRequest request) {
         try {
             SocieteVueResponse<Societe> response = new SocieteVueResponse<>();
@@ -218,6 +224,7 @@ public class SocieteRestController {
     }
 
     @PostMapping("/delete")
+    @PreAuthorize("hasAuthority('PARAMETER_UPDATE') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueResponse<Societe>> deleteSociete(@RequestBody IdRequest request) {
         try {
             SocieteVueResponse<Societe> response = new SocieteVueResponse<>();
@@ -242,6 +249,7 @@ public class SocieteRestController {
     }
 
     @PostMapping("/toggle-principale")
+    @PreAuthorize("hasAuthority('PARAMETER_UPDATE') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueResponse<Societe>> togglePrincipale(@RequestBody IdRequest request) {
         try {
             SocieteVueResponse<Societe> response = new SocieteVueResponse<>();
@@ -296,6 +304,7 @@ public class SocieteRestController {
     }
 
     @PostMapping("/upload-logo")
+    @PreAuthorize("hasAuthority('PARAMETER_UPDATE') or hasRole('ADMIN')")
     public ResponseEntity<SocieteVueResponse<Societe>> uploadLogo(MultipartHttpServletRequest uploadfile, HttpServletRequest request) {
         try {
             SocieteVueResponse<Societe> response = new SocieteVueResponse<>();
@@ -343,6 +352,7 @@ public class SocieteRestController {
     }
 
     @GetMapping("/list/all")
+    @PreAuthorize("hasAuthority('PARAMETER_READ') or hasRole('ADMIN')")
     public ResponseEntity<List<SocieteVueDTO>> getAllSocietes() {
         try {
             List<Societe> societes = societeService.findtsmois();
@@ -357,6 +367,7 @@ public class SocieteRestController {
     }
 
     @GetMapping("/months")
+    @PreAuthorize("hasAuthority('PARAMETER_READ') or hasRole('ADMIN')")
     public ResponseEntity<MoisDTO> getMonths() {
         try {
             MoisDTO moisDTO = new MoisDTO();
@@ -371,6 +382,7 @@ public class SocieteRestController {
     }
 
     @GetMapping("/banks")
+    @PreAuthorize("hasAuthority('PARAMETER_READ') or hasRole('ADMIN')")
     public ResponseEntity<Object> getBanks() {
         try {
             return ResponseEntity.ok(banqueService.getBanques());

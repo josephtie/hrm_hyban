@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.StockCongeRequest;
 import com.nectux.mizan.hyban.common.dto.StockCongeResponse;
@@ -23,6 +24,7 @@ import com.nectux.mizan.hyban.parametrages.service.PeriodePaieService;
 
 @RestController
 @RequestMapping("/api/personnel/stock-conges")
+@PreAuthorize("hasAnyAuthority('LEAVE_READ', 'LEAVE_CREATE', 'LEAVE_UPDATE') or hasRole('ADMIN')")
 public class StockCongeRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(StockCongeRestController.class);

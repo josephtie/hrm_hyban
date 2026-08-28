@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.parametrages.service.PeriodePaieService;
@@ -38,6 +39,7 @@ import com.nectux.mizan.hyban.common.dto.IdRequest;
 
 @RestController
 @RequestMapping("/api/personnels/fonctions")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class FonctionController {
 
 	private static final Logger logger = LogManager.getLogger(FonctionController.class);

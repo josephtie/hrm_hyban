@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 //import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
 import com.nectux.mizan.hyban.rh.personnel.dto.EnfantDTO;
@@ -28,6 +29,7 @@ import com.nectux.mizan.hyban.common.dto.EnfantRequest;
 
 @RestController
 @RequestMapping("/api/personnel")
+@PreAuthorize("hasAnyAuthority('EMPLOYEE_READ', 'EMPLOYEE_CREATE', 'EMPLOYEE_UPDATE') or hasRole('ADMIN')")
 public class EnfantController {
 
 	private static final Logger logger = LogManager.getLogger(EnfantController.class);

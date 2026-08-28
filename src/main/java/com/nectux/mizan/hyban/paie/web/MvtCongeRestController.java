@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.MvtCongeRequest;
 import com.nectux.mizan.hyban.common.dto.MvtCongeResponse;
@@ -22,6 +23,7 @@ import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 
 @RestController
 @RequestMapping("/api/personnel/mvt-conges")
+@PreAuthorize("hasAnyAuthority('LEAVE_READ', 'LEAVE_CREATE', 'LEAVE_UPDATE', 'LEAVE_VALIDATE') or hasRole('ADMIN')")
 public class MvtCongeRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(MvtCongeRestController.class);

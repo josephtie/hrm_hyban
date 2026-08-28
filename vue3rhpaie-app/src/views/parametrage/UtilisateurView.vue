@@ -24,9 +24,10 @@
             </label>
             <el-select v-model="form.idRole" placeholder="Rôle de l'utilisateur" size="large">
               <el-option label="Administrateur" value="ADMIN" />
-              <el-option label="DAF" value="PAIE" />
-              <el-option label="RH" value="RH" />
-              <el-option label="Pointage" value="POINTAGE" />
+              <el-option label="DAF (Paie & Finances)" value="DAF" />
+              <el-option label="Ressources Humaines" value="RH" />
+              <el-option label="Pointage" value="PTGE" />
+              <el-option label="Utilisateur standard" value="USER" />
             </el-select>
           </div>
 
@@ -120,7 +121,7 @@
             <el-button @click="refreshData" circle>
               <el-icon><Refresh /></el-icon>
             </el-button>
-            <el-button @click="toggleForm" type="primary">
+            <el-button @click="toggleForm" type="primary" v-permission="'USER_CREATE'">
               <el-icon><Plus /></el-icon>
               Nouvel Utilisateur
             </el-button>
@@ -150,9 +151,10 @@
               clearable
             >
               <el-option label="Administrateur" value="ADMIN" />
-              <el-option label="DAF" value="PAIE" />
+              <el-option label="DAF" value="DAF" />
               <el-option label="RH" value="RH" />
-              <el-option label="Pointage" value="POINTAGE" />
+              <el-option label="Pointage" value="PTGE" />
+              <el-option label="Utilisateur" value="USER" />
             </el-select>
             <el-select
               v-model="filterStatut"
@@ -237,16 +239,19 @@
               </template>
             </el-table-column>
             
-            <el-table-column label="Actions" width="120" fixed="right">
+            <el-table-column label="Actions" width="160" fixed="right">
               <template #default="{ row }">
                 <el-button-group>
-                  <el-button size="small" @click="editUtilisateur(row)" type="primary">
+                  <el-button size="small" @click="editUtilisateur(row)" type="primary" v-permission="'USER_UPDATE'">
                     <el-icon><Edit /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="toggleStatut(row)" :type="row.enabled ? 'warning' : 'success'">
+                  <el-button size="small" @click="openRoleDialog(row)" type="info" v-permission="'ROLE_ASSIGN'">
+                    <el-icon><UserFilled /></el-icon>
+                  </el-button>
+                  <el-button size="small" @click="toggleStatut(row)" :type="row.enabled ? 'warning' : 'success'" v-permission="'USER_UPDATE'">
                     <el-icon><SwitchButton /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="deleteUtilisateur(row)" type="danger">
+                  <el-button size="small" @click="deleteUtilisateur(row)" type="danger" v-permission="'USER_DELETE'">
                     <el-icon><Delete /></el-icon>
                   </el-button>
                 </el-button-group>
@@ -256,6 +261,31 @@
         </div>
       </div>
     </div>
+
+    <!-- Dialogue d'assignation des rôles -->
+    <el-dialog
+      v-model="showRoleDialog"
+      title="Assigner les rôles"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div v-if="selectedUser" style="margin-bottom: 16px;">
+        <p style="margin: 0 0 4px 0; color: #909399; font-size: 13px;">Utilisateur</p>
+        <p style="margin: 0; font-weight: 600; font-size: 15px;">{{ selectedUser.firstName }} {{ selectedUser.lastName }}</p>
+        <p style="margin: 2px 0 0 0; color: #909399; font-size: 13px;">@{{ selectedUser.username }}</p>
+      </div>
+      <el-checkbox-group v-model="selectedRoles" style="display: flex; flex-direction: column; gap: 12px;">
+        <el-checkbox value="ADMIN" label="Administrateur" />
+        <el-checkbox value="DAF" label="DAF (Paie & Finances)" />
+        <el-checkbox value="RH" label="Ressources Humaines" />
+        <el-checkbox value="PTGE" label="Pointage" />
+        <el-checkbox value="USER" label="Utilisateur standard" />
+      </el-checkbox-group>
+      <template #footer>
+        <el-button @click="showRoleDialog = false">Annuler</el-button>
+        <el-button type="primary" @click="saveRoles" :loading="roleLoading">Enregistrer</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -291,6 +321,10 @@ const filterRole = ref('')
 const filterStatut = ref<boolean | null>(null)
 const selectedUtilisateurs = ref<Utilisateur[]>([])
 const utilisateurs = ref<Utilisateur[]>([])
+const showRoleDialog = ref(false)
+const selectedUser = ref<Utilisateur | null>(null)
+const selectedRoles = ref<string[]>([])
+const roleLoading = ref(false)
 
 const filteredUtilisateurs = computed(() => {
   let filtered = utilisateurs.value
@@ -372,13 +406,14 @@ const formatDate = (dateString: string | null) => {
 }
 
 const getRoleColor = (role: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     'ADMIN': 'danger',
-    'PAIE': 'warning',
+    'DAF': 'warning',
     'RH': 'primary',
-    'POINTAGE': 'info'
+    'PTGE': 'info',
+    'USER': 'success'
   }
-  return colors[role as keyof typeof colors] || 'info'
+  return colors[role] || 'info'
 }
 
 const getRoleName = (idRole?: string | number) => {
@@ -532,6 +567,32 @@ const refreshData = async () => {
 
 const handleSelectionChange = (selection: Utilisateur[]) => {
   selectedUtilisateurs.value = selection
+}
+
+const openRoleDialog = (utilisateur: Utilisateur) => {
+  selectedUser.value = utilisateur
+  selectedRoles.value = (utilisateur.roles || []).filter(r => r !== 'default-roles-hyban')
+  showRoleDialog.value = true
+}
+
+const saveRoles = async () => {
+  if (!selectedUser.value) return
+  try {
+    roleLoading.value = true
+    const response = await utilisateurrestService.assignRoles(selectedUser.value.id, selectedRoles.value)
+    if (response.success) {
+      ElMessage.success('Rôles assignés avec succès')
+      await loadUtilisateurs()
+    } else {
+      ElMessage.error(response.message || 'Erreur lors de l\'assignation des rôles')
+    }
+    showRoleDialog.value = false
+  } catch (error) {
+    ElMessage.error('Erreur lors de l\'assignation des rôles')
+    console.error(error)
+  } finally {
+    roleLoading.value = false
+  }
 }
 
 onMounted(() => {

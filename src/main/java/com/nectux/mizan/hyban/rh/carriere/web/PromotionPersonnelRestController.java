@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.PromotionPersonnelRequest;
 import com.nectux.mizan.hyban.common.dto.PromotionPersonnelResponse;
@@ -21,6 +22,7 @@ import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/rh/carriere/promotions-personnel")
+@PreAuthorize("hasAnyAuthority('CARRIERE_READ', 'CARRIERE_CREATE', 'CARRIERE_UPDATE') or hasRole('ADMIN')")
 public class PromotionPersonnelRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(PromotionPersonnelRestController.class);

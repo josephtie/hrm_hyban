@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.CongeRequest;
 import com.nectux.mizan.hyban.common.dto.CongeResponse;
@@ -43,6 +44,7 @@ import net.sf.jasperreports.engine.JRException;
 
 @RestController
 @RequestMapping("/api/conge")
+@PreAuthorize("hasAnyAuthority('LEAVE_READ', 'LEAVE_CREATE', 'LEAVE_UPDATE', 'LEAVE_VALIDATE', 'LEAVE_CANCEL') or hasRole('ADMIN')")
 public class CongeRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(CongeRestController.class);

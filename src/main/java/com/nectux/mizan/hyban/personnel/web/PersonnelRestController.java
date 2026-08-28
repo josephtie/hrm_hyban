@@ -22,6 +22,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.PersonnelVueRequest;
 import com.nectux.mizan.hyban.common.dto.PersonnelVueResponse;
@@ -36,6 +37,7 @@ import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 
 @RestController
 @RequestMapping("/api/personnels/personnel")
+@PreAuthorize("hasAnyAuthority('EMPLOYEE_READ', 'EMPLOYEE_CREATE', 'EMPLOYEE_UPDATE', 'EMPLOYEE_DELETE', 'EMPLOYEE_EXPORT') or hasRole('ADMIN')")
 
 //@CrossOrigin(origins = {"http://localhost:7153", "http://192.168.1.4:7153", "http://192.168.1.4:8080", "http://192.168.1.4:7156", "http://192.168.1.4:7157", "http://192.168.1.4:7158", "http://192.168.1.4:7159", "http://192.168.1.4:7160", "http://192.168.1.4:7161", "http://192.168.1.4:7162", "http://192.168.1.4:7163", "http://192.168.1.4:7164", "http://192.168.1.4:7165", "http://192.168.1.4:7166", "http://192.168.1.4:7167", "http://192.168.1.4:7168", "http://192.168.1.4:7169", "http://192.168.1.4:7170", "http://192.168.1.4:7171", "http://192.168.1.4:7172", "http://192.168.1.4:7173", "http://192.168.1.4:7174", "http://192.168.1.4:7175", "http://192.168.1.4:7176", "http://192.168.1.4:7177", "http://192.168.1.4:7178", "http://192.168.1.4:7179", "http://192.168.1.4:7180", "http://192.168.1.4:7181", "http://192.168.1.4:7182", "http://192.168.1.4:7183", "http://192.168.1.4:7184", "http://192.168.1.4:7185", "http://192.168.1.4:7186", "http://192.168.1.4:7187", "http://192.168.1.4:7188", "http://192.168.1.4:7189", "http://192.168.1.4:7190", "http://192.168.1.4:7191", "http://192.168.1.4:7192", "http://192.168.1.4:7193", "http://192.168.1.4:7194", "http://192.168.1.4:7195", "http://192.168.1.4:7196", "http://192.168.1.4:7197", "http://192.168.1.4:7198", "http://192.168.1.4:7199"},
 //        allowCredentials = "true"

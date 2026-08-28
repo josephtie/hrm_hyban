@@ -282,6 +282,26 @@ class UtilisateurRestService {
   async getById(id: string): Promise<ApiResponse<UtilisateurRestDto>> {
     return this.getUtilisateurById(id)
   }
+
+  async assignRoles(userId: string, roles: string[]): Promise<ApiResponse<UtilisateurRestDto>> {
+    try {
+      const response = await api.put(`/users/${userId}/roles`, { roles })
+      const data = response.data
+
+      return {
+        success: true,
+        data: data as UtilisateurRestDto,
+        message: 'Rôles assignés avec succès'
+      }
+    } catch (error) {
+      console.error('Error assigning roles:', error)
+      return {
+        success: false,
+        data: {} as UtilisateurRestDto,
+        message: 'Erreur lors de l\'assignation des rôles'
+      }
+    }
+  }
 }
 
 export const utilisateurrestService = new UtilisateurRestService()

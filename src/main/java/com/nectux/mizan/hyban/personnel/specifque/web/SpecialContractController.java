@@ -14,11 +14,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/personnels/specifique/special-contracts")
+@PreAuthorize("hasAnyAuthority('CONTRACT_READ', 'CONTRACT_CREATE', 'CONTRACT_UPDATE') or hasRole('ADMIN')")
 public class SpecialContractController {
     private static final Logger logger = LoggerFactory.getLogger(SpecialContractController.class);
     private final SpecialContractService service;
@@ -42,8 +44,11 @@ public class SpecialContractController {
     @GetMapping("/employee/{employeeId}")
     public SpecialContractDTO byEmployee(@PathVariable Long employeeId) {
         SpecialContractDTO specialContractDTO=new SpecialContractDTO();
-        specialContractDTO.setRow(service.findByEmployee(employeeId).get(0));
-        specialContractDTO.setRows(service.findByEmployee(employeeId));
+        var contracts = service.findByEmployee(employeeId);
+        if (!contracts.isEmpty()) {
+            specialContractDTO.setRow(contracts.get(0));
+        }
+        specialContractDTO.setRows(contracts);
         specialContractDTO.setResult("success");
         specialContractDTO.setStatus(true);
         return specialContractDTO;

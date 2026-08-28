@@ -33,10 +33,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/rh/carriere/affectations")
+@PreAuthorize("hasAnyAuthority('CARRIERE_READ', 'CARRIERE_CREATE', 'CARRIERE_UPDATE', 'CARRIERE_DELETE') or hasRole('ADMIN')")
 public class AffectationRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(AffectationRestController.class);

@@ -2,17 +2,20 @@ package com.nectux.mizan.hyban.personnel.service.impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
+import com.nectux.mizan.hyban.personnel.entity.*;
+import com.nectux.mizan.hyban.personnel.repository.*;
 import jakarta.persistence.criteria.Predicate;
 
 import com.nectux.mizan.hyban.paie.repository.PrimePersonnelRepository;
 import com.nectux.mizan.hyban.parametrages.entity.TypeContrat;
 import com.nectux.mizan.hyban.parametrages.repository.TypeContratRepository;
-import com.nectux.mizan.hyban.personnel.entity.Categorie;
 import com.nectux.mizan.hyban.utils.DifferenceDate;
 
 import org.apache.logging.log4j.LogManager;
@@ -20,26 +23,26 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import jakarta.persistence.EntityManager;
 
 import com.nectux.mizan.hyban.paie.entity.LivreDePaie;
 import com.nectux.mizan.hyban.paie.entity.PrimePersonnel;
 
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.personnel.dto.ContratPersonnelDTO;
-import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
-import com.nectux.mizan.hyban.personnel.entity.Fonction;
-import com.nectux.mizan.hyban.personnel.entity.Personnel;
-import com.nectux.mizan.hyban.personnel.repository.CategorieRepository;
-import com.nectux.mizan.hyban.personnel.repository.ContratPersonnelRepository;
-import com.nectux.mizan.hyban.personnel.repository.FonctionRepository;
-import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
+import com.nectux.mizan.hyban.personnel.enums.EtatContrat;
+import com.nectux.mizan.hyban.personnel.enums.MotifClotureContrat;
+import com.nectux.mizan.hyban.personnel.enums.TypeOperationContrat;
 import com.nectux.mizan.hyban.personnel.service.ContratPersonnelService;
 import com.nectux.mizan.hyban.utils.DateManager;
 import com.nectux.mizan.hyban.utils.Utils;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 
 @Transactional
 @Service("contratPersonnelService")
@@ -51,9 +54,14 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 	@Autowired CategorieRepository categorieRepository;
 	@Autowired PersonnelRepository personnelRepository;
 	@Autowired
+	ContratDateFinHistoriqueRepository  contratDateFinHistoriqueRepository;
+	@Autowired
     TypeContratRepository typeContratRepository;
 	@Autowired ContratPersonnelRepository contratPersonnelRepository;
 	@Autowired private PrimePersonnelRepository primePersonnelRepository;
+	@Autowired private ContratHistoryRepository contratHistoryRepository;
+	@Autowired private JdbcTemplate jdbcTemplate;
+	@PersistenceContext private EntityManager entityManager;
 	
 	@Override
 	@Transactional(rollbackFor = Exception.class)
@@ -65,6 +73,12 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 	@Override
 	public ContratPersonnelDTO save(Long id, Long idPersonnel, Long idCategorie, Long idFonction, Long idTypeContrat,
 									String dateDebut, String dateFin, Double netAPayer, Double indemniteLogement, int ancienete, boolean statut,Double sursalaire,Double indemnitetransport,Double indemniterespons,Double indemniterepresent) {
+		return save(id, idPersonnel, idCategorie, idFonction, idTypeContrat, dateDebut, dateFin, netAPayer, indemniteLogement, ancienete, statut, sursalaire, indemnitetransport, indemniterespons, indemniterepresent, null);
+	}
+
+	@Override
+	public ContratPersonnelDTO save(Long id, Long idPersonnel, Long idCategorie, Long idFonction, Long idTypeContrat,
+									String dateDebut, String dateFin, Double netAPayer, Double indemniteLogement, int ancienete, boolean statut,Double sursalaire,Double indemnitetransport,Double indemniterespons,Double indemniterepresent, TypeOperationContrat typeOperation) {
 		// TODO Auto-generated method stub
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
 		try{
@@ -93,8 +107,18 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 			//contratPersonnel.setStatut(statut);
 			contratPersonnel.setStatut(true);
 			contratPersonnel.setDepart(false);
-			
+			contratPersonnel.setEtatContrat(EtatContrat.ACTIF);
+			//contratPersonnel.setOperationContrat(typeOperation.);
+
+			// Déterminer le type d'opération pour l'historique
+			TypeOperationContrat histType = (typeOperation != null) ? typeOperation : TypeOperationContrat.MODIFICATION;
+			contratPersonnel.setOperationContrat(histType);
+			String histLabel = (id != null) ? histType.getLibelle() + " du contrat" : "Création du contrat";
 			contratPersonnel = contratPersonnelRepository.save(contratPersonnel);
+			
+
+			contratHistoryRepository.save(new ContratHistory(contratPersonnel.getId(), histType, histLabel, null));
+			
 			if(contratPersonnel.getTypeContrat().getId()==4L){
 				contratPersonnel.getPersonnel().setStage(true);
 				contratPersonnel.getPersonnel().setFonctionnaire(false);
@@ -515,42 +539,629 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 		return contratPersonnelDTO;
 	}
 
+
+
+	//@Override
+	//public ContratPersonnelDTO endContract(Long id, String dateFin, String dateMod, Boolean depart, String ObservCtrat, MotifClotureContrat motifCloture) {
+	//	return endContract(id, dateFin, dateMod, depart, ObservCtrat, motifCloture, null,null);
+	//}
 	@Override
-	public ContratPersonnelDTO endContract(Long id, String dateFin, String dateMod, Boolean depart, String ObservCtrat) {
+	@Transactional(rollbackFor = Exception.class)
+	public ContratPersonnelDTO endContractNew(
+			Long id,
+			String dateFin,
+			String dateMod,
+			Boolean depart,
+			String observCtrat,
+			MotifClotureContrat motifCloture,
+			TypeOperationContrat typeOperation) {
+
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
+
 		try {
-			if (dateFin == null || dateFin.isEmpty()) {
-				throw new Exception("Date de fin du contrat invalide.");
+
+			// ============================================================
+			// 1. VALIDATION DES PARAMETRES
+			// ============================================================
+
+			if (id == null) {
+				throw new IllegalArgumentException("L'identifiant du contrat est obligatoire.");
 			}
-			ContratPersonnel contratPersonnel = contratPersonnelRepository.findById(id)
-				.orElseThrow(() -> new EntityNotFoundException("Contrat not found for id " + id));
-			contratPersonnel.setDateMod(DateManager.stringToDate(dateMod, "dd/MM/yyyy"));
-			contratPersonnel.setDateFin(DateManager.stringToDate(dateFin, "dd/MM/yyyy"));
-			contratPersonnel.setObservCtrat(ObservCtrat);
-			contratPersonnel.setDepart(false);
-			contratPersonnel.setStatut(false);
-			contratPersonnel.setSoldeCalcule(false);
-			
-			if (Boolean.TRUE.equals(depart)) {
-				contratPersonnel.setDepart(true);
-				contratPersonnel.setStatut(true);
-				contratPersonnel.getPersonnel().setRetraitEffect(false);
-				contratPersonnel.getPersonnel().setStatut(true);
-				contratPersonnel.setSoldeCalcule(false);
-				personnelRepository.save(contratPersonnel.getPersonnel());
+
+			if (dateFin == null || dateFin.trim().isEmpty()) {
+				throw new IllegalArgumentException("Date de fin du contrat invalide.");
 			}
-			
-			contratPersonnel = contratPersonnelRepository.save(contratPersonnel);
+
+			// ============================================================
+			// 2. RECUPERATION DU CONTRAT
+			// ============================================================
+
+			ContratPersonnel contratPersonnel =
+					contratPersonnelRepository.findById(id)
+							.orElseThrow(() ->
+									new EntityNotFoundException(
+											"Contrat introuvable pour l'id : " + id));
+
+			// ============================================================
+			// 3. MISE A JOUR DES INFORMATIONS GENERALES
+			// ============================================================
+
+			contratPersonnel.setDateFin(
+					DateManager.stringToDate(dateFin, "dd/MM/yyyy")
+			);
+
+			if (dateMod != null && !dateMod.trim().isEmpty()) {
+				contratPersonnel.setDateMod(
+						DateManager.stringToDate(dateMod, "dd/MM/yyyy")
+				);
+			}
+
+			contratPersonnel.setObservCtrat(observCtrat);
+
+			// Le solde doit être recalculé après une modification/clôture
+			contratPersonnel.setSoldeCalcule(Boolean.FALSE);
+
+			// ============================================================
+			// 4. MEMORISER L'OPERATION
+			// ============================================================
+
+			if (typeOperation != null) {
+				contratPersonnel.setOperationContrat(typeOperation);
+			} else {
+				// Si aucune opération n'est fournie,
+				// on considère l'opération comme une clôture.
+				contratPersonnel.setOperationContrat(
+						TypeOperationContrat.CLOTURE
+				);
+			}
+
+			// ============================================================
+			// 5. MEMORISER LE MOTIF DE CLOTURE
+			// ============================================================
+
+			if (motifCloture != null) {
+				contratPersonnel.setMotifCloture(motifCloture);
+			}
+
+			// ============================================================
+			// 6. DETERMINATION DU DEPART
+			// ============================================================
+			//
+			// TRUE  = départ définitif du salarié
+			// FALSE = le salarié reste dans l'entreprise
+			//
+			// On utilise Boolean.TRUE.equals() pour éviter les problèmes
+			// lorsque depart == null.
+			// ============================================================
+
+			boolean departDefinitif = Boolean.TRUE.equals(depart);
+
+			contratPersonnel.setDepart(departDefinitif);
+
+			// ============================================================
+			// 7. DEPART DEFINITIF
+			// ============================================================
+
+			if (departDefinitif) {
+
+				contratPersonnel.setDepart(Boolean.TRUE);
+
+				// Le contrat est terminé
+				contratPersonnel.setStatut(Boolean.TRUE);
+				contratPersonnel.setEtatContrat(EtatContrat.TERMINE);
+
+				// Le salarié quitte définitivement l'entreprise
+				if (contratPersonnel.getPersonnel() != null) {
+
+					contratPersonnel.getPersonnel()
+							.setRetraitEffect(Boolean.FALSE);
+
+					contratPersonnel.getPersonnel()
+							.setStatut(Boolean.TRUE);
+				}
+
+			}
+
+			// ============================================================
+			// 8. PAS DE DEPART DEFINITIF
+			// ============================================================
+
+			else {
+
+				// Très important :
+				// le salarié ne quitte pas définitivement l'entreprise.
+				contratPersonnel.setDepart(Boolean.FALSE);
+
+				if (typeOperation == null) {
+
+					contratPersonnel.setStatut(Boolean.FALSE);
+					contratPersonnel.setEtatContrat(
+							EtatContrat.INACTIF
+					);
+
+				} else {
+
+					switch (typeOperation) {
+
+						// ------------------------------------------------
+						// SUSPENSION
+						// ------------------------------------------------
+
+						case SUSPENSION:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.SUSPENDU
+							);
+
+							break;
+
+						// ------------------------------------------------
+						// CLOTURE
+						// ------------------------------------------------
+
+						case CLOTURE:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.TERMINE
+							);
+
+							break;
+
+						// ------------------------------------------------
+						// RESILIATION
+						// ------------------------------------------------
+
+						case RESILIATION:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.RESILIE
+							);
+
+							break;
+
+						// ------------------------------------------------
+						// MODIFICATION
+						// ------------------------------------------------
+
+						case MODIFICATION:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.INACTIF
+							);
+
+							break;
+
+						// ------------------------------------------------
+						// RENOUVELLEMENT
+						// ------------------------------------------------
+
+						case RENOUVELLEMENT:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.INACTIF
+							);
+
+							break;
+
+						// ------------------------------------------------
+						// AVENANT
+						// ------------------------------------------------
+
+						case AVENANT:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.INACTIF
+							);
+
+							break;
+
+						// ------------------------------------------------
+						// PAR DEFAUT
+						// ------------------------------------------------
+
+						default:
+
+							contratPersonnel.setDepart(Boolean.FALSE);
+							contratPersonnel.setStatut(Boolean.FALSE);
+							contratPersonnel.setEtatContrat(
+									EtatContrat.INACTIF
+							);
+
+							break;
+					}
+				}
+			}
+
+			// ============================================================
+			// 9. LOG AVANT ENREGISTREMENT
+			// ============================================================
+
+			logger.info(
+					">>> AVANT SAVE CONTRAT : id={}, depart={}, statut={}, " +
+							"etatContrat={}, operationContrat={}, motifCloture={}",
+					contratPersonnel.getId(),
+					contratPersonnel.getDepart(),
+					contratPersonnel.getStatut(),
+					contratPersonnel.getEtatContrat(),
+					contratPersonnel.getOperationContrat(),
+					contratPersonnel.getMotifCloture()
+			);
+
+			// ============================================================
+			// 10. ENREGISTREMENT DU CONTRAT
+			// ============================================================
+
+			contratPersonnelRepository.saveAndFlush(contratPersonnel);
+
+			logger.info(
+					">>> APRES SAVE/FLUSH CONTRAT : id={}, depart={}, statut={}, etat={}",
+					contratPersonnel.getId(),
+					contratPersonnel.getDepart(),
+					contratPersonnel.getStatut(),
+					contratPersonnel.getEtatContrat()
+			);
+
+			// ============================================================
+			// 11. VERIFICATION DIRECTE EN BASE
+			// ============================================================
+
+			Boolean dbDepart = jdbcTemplate.queryForObject(
+					"SELECT depart " +
+							"FROM cgeci_rhpaie_contrat_personnel " +
+							"WHERE id = ?",
+					Boolean.class,
+					contratPersonnel.getId()
+			);
+
+			logger.info(
+					">>> DB READ-BACK : id={}, depart={}",
+					contratPersonnel.getId(),
+					dbDepart
+			);
+
+			// ============================================================
+			// 12. ENREGISTREMENT DU PERSONNEL
+			// ============================================================
+
+//			if (contratPersonnel.getPersonnel() != null) {
+//
+//				personnelRepository.saveAndFlush(
+//						contratPersonnel.getPersonnel()
+//				);
+//			}
+
+			// ============================================================
+			// 13. NOUVELLE VERIFICATION DB
+			// ============================================================
+
+			dbDepart = jdbcTemplate.queryForObject(
+					"SELECT depart " +
+							"FROM cgeci_rhpaie_contrat_personnel " +
+							"WHERE id = ?",
+					Boolean.class,
+					contratPersonnel.getId()
+			);
+
+			logger.info(
+					">>> DB READ-BACK APRES PERSONNEL : id={}, depart={}",
+					contratPersonnel.getId(),
+					dbDepart
+			);
+
+			// ============================================================
+			// 14. HISTORIQUE
+			// ============================================================
+
+//			TypeOperationContrat histType =
+//					typeOperation != null
+//							? typeOperation
+//							: TypeOperationContrat.CLOTURE;
+//
+//			String description =
+//					histType.getLibelle()
+//							+ " du contrat"
+//							+ (
+//							motifCloture != null
+//									? " - Motif : "
+//									+ motifCloture.getLibelle()
+//									: ""
+//					);
+//
+//			ContratHistory historique =
+//					new ContratHistory(
+//							contratPersonnel.getId(),
+//							histType,
+//							description,
+//							null
+//					);
+//
+//			contratHistoryRepository.save(historique);
+
+			// ============================================================
+			// 15. REPONSE
+			// ============================================================
+
 			contratPersonnelDTO.setRow(contratPersonnel);
 			contratPersonnelDTO.setResult("success");
-			logger.info(">>>>> " + contratPersonnel.toString() + " MAJ AVEC SUCCES");
+			contratPersonnelDTO.setStatus(Boolean.TRUE);
+
+			logger.info(
+					">>> endContractNew TERMINEE AVEC SUCCES : id={}",
+					contratPersonnel.getId()
+			);
+
 		} catch (Exception ex) {
+
+			logger.error(
+					">>> ERREUR endContractNew : {}",
+					ex.getMessage(),
+					ex
+			);
+
 			contratPersonnelDTO.setResult("failed");
-			logger.error(ex.getMessage());
-			logger.error(">>>>> ERREUR SUR FIN CONTRAT PERSONNEL");
-			ex.printStackTrace();
+			contratPersonnelDTO.setStatus(Boolean.FALSE);
 		}
+
+		logger.info(
+				">>> RETURN endContractNew : result={}",
+				contratPersonnelDTO.getResult()
+		);
+
 		return contratPersonnelDTO;
+	}
+
+	@Override
+	public ContratPersonnelDTO suspendreContrat(Long id, String observations) {
+		ContratPersonnelDTO dto = new ContratPersonnelDTO();
+		try {
+			ContratPersonnel contrat = contratPersonnelRepository.findById(id)
+					.orElseThrow(() -> new EntityNotFoundException("Contrat not found for id " + id));
+			contrat.setEtatContrat(EtatContrat.SUSPENDU);
+			contrat.setStatut(Boolean.FALSE);
+			contrat.setObservCtrat(observations);
+			contrat = contratPersonnelRepository.save(contrat);
+			contratHistoryRepository.save(new ContratHistory(id, TypeOperationContrat.SUSPENSION, "Suspension du contrat" + (observations != null ? " - " + observations : ""), null));
+			dto.setRow(contrat);
+			dto.setResult("success");
+			logger.info(">>>>> Contrat " + id + " suspendu");
+		} catch (Exception ex) {
+			dto.setResult("failed");
+			logger.error(ex.getMessage());
+		}
+		return dto;
+	}
+
+	@Override
+	public ContratPersonnelDTO resilierContrat(Long id, String dateFin, MotifClotureContrat motif, String observations) {
+		ContratPersonnelDTO dto = new ContratPersonnelDTO();
+		try {
+			ContratPersonnel contrat = contratPersonnelRepository.findById(id)
+					.orElseThrow(() -> new EntityNotFoundException("Contrat not found for id " + id));
+			contrat.setDateFin(DateManager.stringToDate(dateFin, "dd/MM/yyyy"));
+			contrat.setStatut(false);
+			contrat.setEtatContrat(EtatContrat.RESILIE);
+			contrat.setMotifCloture(motif);
+			contrat.setObservCtrat(observations);
+			contrat = contratPersonnelRepository.save(contrat);
+			contratHistoryRepository.save(new ContratHistory(id, TypeOperationContrat.RESILIATION, "Résiliation du contrat - Motif: " + motif.getLibelle() + (observations != null ? " - " + observations : ""), null));
+			dto.setRow(contrat);
+			dto.setResult("success");
+			logger.info(">>>>> Contrat " + id + " résilié");
+		} catch (Exception ex) {
+			dto.setResult("failed");
+			logger.error(ex.getMessage());
+		}
+		return dto;
+	}
+
+	@Override
+	public ContratPersonnelDTO reprendreContrat(Long id) {
+		ContratPersonnelDTO dto = new ContratPersonnelDTO();
+		try {
+			ContratPersonnel contrat = contratPersonnelRepository.findById(id)
+					.orElseThrow(() -> new EntityNotFoundException("Contrat not found for id " + id));
+			contrat.setEtatContrat(EtatContrat.ACTIF);
+			contrat.setStatut(true);
+			contrat = contratPersonnelRepository.save(contrat);
+			contratHistoryRepository.save(new ContratHistory(id, TypeOperationContrat.REPRISE, "Reprise du contrat", null));
+			dto.setRow(contrat);
+			dto.setResult("success");
+			logger.info(">>>>> Contrat " + id + " repris");
+		} catch (Exception ex) {
+			dto.setResult("failed");
+			logger.error(ex.getMessage());
+		}
+		return dto;
+	}
+
+	@Override
+	public List<ContratPersonnel> findContratsByEtat(EtatContrat etatContrat) {
+		return contratPersonnelRepository.findByEtatContrat(etatContrat);
+	}
+
+/*	@Override
+	public ContratPersonnelDTO renouvelerContrat(Long idAncienContrat, String nouvelleDateDebut, String nouvelleDateFin, String observations) {
+		ContratPersonnelDTO dto = new ContratPersonnelDTO();
+		try {
+			ContratPersonnel ancien = contratPersonnelRepository.findById(idAncienContrat)
+					.orElseThrow(() -> new EntityNotFoundException("Contrat not found for id " + idAncienContrat));
+
+			ancien.setStatut(false);
+			ancien.setEtatContrat(EtatContrat.TERMINE);
+			ancien.setMotifCloture(MotifClotureContrat.FIN_CDD);
+			ancien.setObservCtrat("Renouvelé - " + (observations != null ? observations : ""));
+			contratPersonnelRepository.save(ancien);
+
+			ContratPersonnel nouveau = new ContratPersonnel();
+			nouveau.setPersonnel(ancien.getPersonnel());
+			nouveau.setCategorie(ancien.getCategorie());
+			nouveau.setFonction(ancien.getFonction());
+			nouveau.setTypeContrat(ancien.getTypeContrat());
+			nouveau.setDateDebut(DateManager.stringToDate(nouvelleDateDebut, "dd/MM/yyyy"));
+			if (nouvelleDateFin != null && !nouvelleDateFin.isEmpty()) {
+				nouveau.setDateFin(DateManager.stringToDate(nouvelleDateFin, "dd/MM/yyyy"));
+			}
+			nouveau.setNetAPayer(ancien.getNetAPayer());
+			nouveau.setIndemniteLogement(ancien.getIndemniteLogement());
+			nouveau.setIndemniteRepresent(ancien.getIndemniteRepresent());
+			nouveau.setIndemniteTransport(ancien.getIndemniteTransport());
+			nouveau.setSursalaire(ancien.getSursalaire());
+			nouveau.setAncienneteInitial(ancien.getAncienneteInitial());
+			nouveau.setStatut(true);
+			nouveau.setDepart(false);
+			nouveau.setEtatContrat(EtatContrat.ACTIF);
+			nouveau.setObservCtrat("Renouvellement du contrat #" + idAncienContrat);
+			nouveau = contratPersonnelRepository.save(nouveau);
+			contratHistoryRepository.save(new ContratHistory(idAncienContrat, TypeOperationContrat.RENOUVELLEMENT, "Renouvellement vers contrat #" + nouveau.getId(), null));
+			contratHistoryRepository.save(new ContratHistory(nouveau.getId(), TypeOperationContrat.CREATION, "Création par renouvellement du contrat #" + idAncienContrat, null));
+
+			dto.setRow(nouveau);
+			dto.setResult("success");
+			logger.info(">>>>> Contrat {} renouvelé en nouveau contrat {}", idAncienContrat, nouveau.getId());
+		} catch (Exception ex) {
+			dto.setResult("failed");
+			logger.error(ex.getMessage());
+		}
+		return dto;
+	}*/
+
+
+	@Override
+	public ContratPersonnelDTO renouvelerContrat(Long idAncienContrat, String nouvelleDateDebut, String nouvelleDateFin, String observations,String username) {
+		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
+
+		try {
+
+			// 1. Vérification de la nouvelle date
+			if (nouvelleDateFin == null || nouvelleDateFin.trim().isEmpty()) {
+				throw new Exception("La nouvelle date de fin est obligatoire.");
+			}
+
+			// 2. Recherche du contrat
+			ContratPersonnel contratPersonnel = contratPersonnelRepository.findById(idAncienContrat)
+					.orElseThrow(() ->
+							new EntityNotFoundException(
+									"Contrat non trouvé pour l'id " + idAncienContrat));
+
+			// 3. Vérification de la date de début
+			if (contratPersonnel.getDateDebut() == null) {
+				throw new Exception(
+						"La date de début du contrat est obligatoire.");
+			}
+
+			// 4. Conversion des dates
+			LocalDate dateDebut = contratPersonnel.getDateDebut()
+					.toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDate();
+
+			LocalDate nouvelleDateFintrt = LocalDate.parse(
+					nouvelleDateFin,
+					DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+			// 5. La date de fin ne peut pas être avant la date de début
+			if (nouvelleDateFintrt.isBefore(dateDebut)) {
+				throw new Exception(
+						"La date de fin ne peut pas être antérieure à la date de début du contrat.");
+			}
+
+			// 6. Date maximale = date début + 2 ans
+			LocalDate dateFinMax = dateDebut.plusYears(2);
+
+			// 7. Contrôle de la durée maximale
+			if (nouvelleDateFintrt.isAfter(dateFinMax)) {
+				throw new Exception(
+						"La durée du contrat ne peut pas dépasser 2 ans. "
+								+ "La date de fin maximale autorisée est le "
+								+ dateFinMax.format(
+								DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+			}
+
+			// 8. Ancienne date de fin
+			java.util.Date ancienneDateFin = contratPersonnel.getDateFin();
+
+			// 9. Conversion LocalDate -> Date
+			java.util.Date nouvelleDateFinDate =
+					java.util.Date.from(
+							nouvelleDateFintrt
+									.atStartOfDay(ZoneId.systemDefault())
+									.toInstant());
+
+			// 10. Historisation
+			ContratDateFinHistorique historique =
+					new ContratDateFinHistorique();
+
+			historique.setContratPersonnel(contratPersonnel);
+			historique.setAncienneDateFin(ancienneDateFin);
+			historique.setNouvelleDateFin(nouvelleDateFinDate);
+			historique.setMotif(observations);
+			historique.setCreatedBy(username);
+
+			contratDateFinHistoriqueRepository.save(historique);
+
+			// 11. Modification du contrat
+			contratPersonnel.setDateFin(nouvelleDateFinDate);
+
+			contratPersonnel =
+					contratPersonnelRepository.save(contratPersonnel);
+
+			// 12. Réponse
+			contratPersonnelDTO.setRow(contratPersonnel);
+			contratPersonnelDTO.setResult("success");
+
+			logger.info(
+					">>>>> Date de fin du contrat {} modifiée par {} — "
+							+ "ancienne: {} nouvelle: {}",
+					contratPersonnel.getId(),
+					username,
+					ancienneDateFin,
+					nouvelleDateFin);
+
+		} catch (Exception ex) {
+
+			contratPersonnelDTO.setResult("failed");
+			contratPersonnelDTO.setMessage(ex.getMessage());
+
+			logger.error(
+					">>>>> ERREUR SUR MODIFICATION DATE DE FIN CONTRAT",
+					ex);
+		}
+
+		return contratPersonnelDTO;
+	}
+	@Override
+	public ContratPersonnelDTO creerAvenant(Long idContrat, String nouvelleDateFin, String observations) {
+		ContratPersonnelDTO dto = new ContratPersonnelDTO();
+		try {
+			ContratPersonnel contrat = contratPersonnelRepository.findById(idContrat)
+					.orElseThrow(() -> new EntityNotFoundException("Contrat not found for id " + idContrat));
+
+			contrat.setDateFin(DateManager.stringToDate(nouvelleDateFin, "dd/MM/yyyy"));
+			String obs = contrat.getObservCtrat();
+			contrat.setObservCtrat((obs != null ? obs + " | " : "") + "Avenant: " + (observations != null ? observations : ""));
+			contrat = contratPersonnelRepository.save(contrat);
+			contratHistoryRepository.save(new ContratHistory(idContrat, TypeOperationContrat.AVENANT, "Avenant - nouvelle date de fin: " + nouvelleDateFin + (observations != null ? " - " + observations : ""), null));
+
+			dto.setRow(contrat);
+			dto.setResult("success");
+			logger.info(">>>>> Avenant créé pour contrat {}", idContrat);
+		} catch (Exception ex) {
+			dto.setResult("failed");
+			logger.error(ex.getMessage());
+		}
+		return dto;
 	}
 
 	@Override
@@ -565,6 +1176,7 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 		contrat.setStatut(false);
 		contrat.setDepart(true);
 		contrat.setSoldeCalcule(true);
+		contrat.setEtatContrat(EtatContrat.TERMINE);
 		contrat.getPersonnel().setStatut(false);
 		contrat.getPersonnel().setRetraitEffect(true);
 		contrat.setDateFin(Utils.stringToDate(dateFinEffective,"dd/MM/yyyy"));
@@ -751,5 +1363,117 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 		}
 		return contratPersonnelDTO;
 	}
+
+
+	@Override
+	@Transactional
+	public ContratPersonnelDTO modifierDateFinContrat(
+			Long id,
+			String nouvelleDateFin,
+			String motif,
+			String username) {
+
+		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
+
+		try {
+
+			// 1. Vérification de la nouvelle date
+			if (nouvelleDateFin == null || nouvelleDateFin.trim().isEmpty()) {
+				throw new Exception("La nouvelle date de fin est obligatoire.");
+			}
+
+			// 2. Recherche du contrat
+			ContratPersonnel contratPersonnel = contratPersonnelRepository.findById(id)
+					.orElseThrow(() ->
+							new EntityNotFoundException(
+									"Contrat non trouvé pour l'id " + id));
+
+			// 3. Vérification de la date de début
+			if (contratPersonnel.getDateDebut() == null) {
+				throw new Exception(
+						"La date de début du contrat est obligatoire.");
+			}
+
+			// 4. Conversion des dates
+			LocalDate dateDebut = contratPersonnel.getDateDebut()
+					.toInstant()
+					.atZone(ZoneId.systemDefault())
+					.toLocalDate();
+
+			LocalDate nouvelleDateFintrt = LocalDate.parse(
+					nouvelleDateFin,
+					DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+			// 5. La date de fin ne peut pas être avant la date de début
+			if (nouvelleDateFintrt.isBefore(dateDebut)) {
+				throw new Exception(
+						"La date de fin ne peut pas être antérieure à la date de début du contrat.");
+			}
+
+			// 6. Date maximale = date début + 2 ans
+			LocalDate dateFinMax = dateDebut.plusYears(2);
+
+			// 7. Contrôle de la durée maximale
+			if (nouvelleDateFintrt.isAfter(dateFinMax)) {
+				throw new Exception(
+						"La durée du contrat ne peut pas dépasser 2 ans. "
+								+ "La date de fin maximale autorisée est le "
+								+ dateFinMax.format(
+								DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+			}
+
+			// 8. Ancienne date de fin
+			java.util.Date ancienneDateFin = contratPersonnel.getDateFin();
+
+			// 9. Conversion LocalDate -> Date
+			java.util.Date nouvelleDateFinDate =
+					java.util.Date.from(
+							nouvelleDateFintrt
+									.atStartOfDay(ZoneId.systemDefault())
+									.toInstant());
+
+			// 10. Historisation
+			ContratDateFinHistorique historique =
+					new ContratDateFinHistorique();
+
+			historique.setContratPersonnel(contratPersonnel);
+			historique.setAncienneDateFin(ancienneDateFin);
+			historique.setNouvelleDateFin(nouvelleDateFinDate);
+			historique.setMotif(motif);
+			historique.setCreatedBy(username);
+
+			contratDateFinHistoriqueRepository.save(historique);
+
+			// 11. Modification du contrat
+			contratPersonnel.setDateFin(nouvelleDateFinDate);
+
+			contratPersonnel =
+					contratPersonnelRepository.save(contratPersonnel);
+
+			// 12. Réponse
+			contratPersonnelDTO.setRow(contratPersonnel);
+			contratPersonnelDTO.setResult("success");
+
+			logger.info(
+					">>>>> Date de fin du contrat {} modifiée par {} — "
+							+ "ancienne: {} nouvelle: {}",
+					contratPersonnel.getId(),
+					username,
+					ancienneDateFin,
+					nouvelleDateFin);
+
+		} catch (Exception ex) {
+
+			contratPersonnelDTO.setResult("failed");
+			contratPersonnelDTO.setMessage(ex.getMessage());
+
+			logger.error(
+					">>>>> ERREUR SUR MODIFICATION DATE DE FIN CONTRAT",
+					ex);
+		}
+
+		return contratPersonnelDTO;
+	}
+
 
 }

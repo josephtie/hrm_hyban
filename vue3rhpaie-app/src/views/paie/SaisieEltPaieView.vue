@@ -11,11 +11,11 @@
           <p class="page-subtitle">Gestion des gains et retenues du personnel</p>
         </div>
         <div class="header-right">
-          <el-button type="success" @click="showPrimeCollectiveModal = true" class="enhanced-button collective-button">
+          <el-button type="success" @click="showPrimeCollectiveModal = true" class="enhanced-button collective-button" v-permission="'PAYROLL_CALCULATE'">
             <el-icon><Gift /></el-icon>
             Prime Collective
           </el-button>
-          <el-button type="primary" @click="showAddModal = true" class="enhanced-button">
+          <el-button type="primary" @click="showAddModal = true" class="enhanced-button" v-permission="'PAYROLL_CALCULATE'">
             <el-icon><Plus /></el-icon>
             Nouvel Élément
           </el-button>
@@ -99,7 +99,7 @@
             <div class="elements-table-section">
               <div class="section-header">
                 <h4>Éléments de Paie</h4>
-                <el-button type="primary" size="small" @click="addNewElement">
+                <el-button type="primary" size="small" @click="addNewElement" v-permission="'PAYROLL_CALCULATE'">
                   <el-icon><Plus /></el-icon>
                   Ajouter un élément
                 </el-button>
@@ -302,13 +302,13 @@
 
             <el-table-column label="Actions" width="150" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" @click="editElement(row)">
+                <el-button type="primary" size="small" @click="editElement(row)" v-permission="'PAYROLL_CALCULATE'">
                   <el-icon><Edit /></el-icon>
                 </el-button>
                 <el-button type="info" size="small" @click="viewElementDetails(row)">
                   <el-icon><View /></el-icon>
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteElement(row)">
+                <el-button type="danger" size="small" @click="deleteElement(row)" v-permission="'PAYROLL_CALCULATE'">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </template>

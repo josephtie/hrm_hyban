@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.CpteVirmtBanqueRequest;
 import com.nectux.mizan.hyban.common.dto.CpteVirmtBanqueResponse;
@@ -25,6 +26,7 @@ import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 
 @RestController
 @RequestMapping("/api/parametrages/cpte-virement")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class CpteVirmtBanqueRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(CpteVirmtBanqueRestController.class);

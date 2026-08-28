@@ -44,19 +44,24 @@ export const roleGuard = (
   next: NavigationGuardNext
 ) => {
   const authStore = useAuthStore()
-  
-  // Vérifier si des rôles sont requis pour cette route
-  if (to.meta.roles && Array.isArray(to.meta.roles)) {
-    const requiredRoles = to.meta.roles as string[]
-    
-    // Vérifier si l'utilisateur a au moins un des rôles requis
-    if (!authStore.hasAnyRole(requiredRoles as any[])) {
-      // Rediriger vers une page d'accès refusé ou le dashboard
-      next({ name: 'access-denied' })
-      return
+
+  // ADMIN a accès à toutes les routes
+  if (authStore.isAdmin()) {
+    next()
+    return
+  }
+
+  // Parcourir toute la hiérarchie de routes (parent + enfants)
+  for (const record of to.matched) {
+    if (record.meta.roles && Array.isArray(record.meta.roles)) {
+      const requiredRoles = record.meta.roles as string[]
+      if (!authStore.hasAnyRole(requiredRoles as any[])) {
+        next({ name: 'access-denied' })
+        return
+      }
     }
   }
-  
+
   next()
 }
 
@@ -70,19 +75,21 @@ export const permissionGuard = (
 ) => {
   const authStore = useAuthStore()
   
-  // Vérifier si des permissions sont requises pour cette route
+  // Vérifier les permission codes (nouveau système RBAC)
+  if (to.meta.permissionCodes && Array.isArray(to.meta.permissionCodes)) {
+    const requiredCodes = to.meta.permissionCodes as string[]
+    
+    if (!authStore.hasAnyPermissionCode(requiredCodes)) {
+      next({ name: 'access-denied' })
+      return
+    }
+  }
+  
+  // Vérifier l'ancien système de permissions (resource/action) — conservé pour compatibilité
   if (to.meta.permissions && Array.isArray(to.meta.permissions)) {
     const requiredPermissions = to.meta.permissions as Array<{resource: string, action: string}>
     
-    // Pour l'ADMIN, donner accès à tout
-    if (authStore.isAdmin()) {
-      next()
-      return
-    }
-    
-    // Vérifier si l'utilisateur a toutes les permissions requises
     if (!authStore.hasAllPermissions(requiredPermissions)) {
-      // Rediriger vers une page d'accès refusé
       next({ name: 'access-denied' })
       return
     }

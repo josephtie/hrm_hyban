@@ -9,12 +9,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.security.Principal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/personnels/specifique")
+@PreAuthorize("hasAnyAuthority('EMPLOYEE_READ', 'EMPLOYEE_CREATE', 'EMPLOYEE_UPDATE') or hasRole('ADMIN')")
 public class EmployeeController {
 
     private final EmployeeService service;

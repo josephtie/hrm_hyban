@@ -84,7 +84,7 @@
             <el-button @click="refreshData" circle>
               <el-icon><Refresh /></el-icon>
             </el-button>
-            <el-button @click="toggleForm" type="primary">
+            <el-button @click="toggleForm" type="primary" v-permission="'PARAMETER_UPDATE'">
               <el-icon><Plus /></el-icon>
               Nouvelle Banque
             </el-button>
@@ -174,13 +174,13 @@
             <el-table-column label="Actions" width="150" fixed="right">
               <template #default="{ row }">
                 <el-button-group>
-                  <el-button size="small" @click="editBanque(row)" type="primary">
+                  <el-button size="small" @click="editBanque(row)" type="primary" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Edit /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="toggleStatut(row)" :type="row.statut ? 'warning' : 'success'">
+                  <el-button size="small" @click="toggleStatut(row)" :type="row.statut ? 'warning' : 'success'" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Star /></el-icon>
                   </el-button>
-                  <el-button size="small" @click="deleteBanque(row)" type="danger">
+                  <el-button size="small" @click="deleteBanque(row)" type="danger" v-permission="'PARAMETER_UPDATE'">
                     <el-icon><Delete /></el-icon>
                   </el-button>
                 </el-button-group>

@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.PersonnelVueResponse;
 import com.nectux.mizan.hyban.personnel.entity.Nationnalite;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/nationalites")
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class NationnaliteController {
 
     private static final Logger logger = LoggerFactory.getLogger(NationnaliteController.class);

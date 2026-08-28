@@ -4,6 +4,7 @@ package com.nectux.mizan.hyban.parametrages.web;
 import com.nectux.mizan.hyban.parametrages.dto.CreateUserRequest;
 import com.nectux.mizan.hyban.parametrages.dto.ResetPasswordRequest;
 import com.nectux.mizan.hyban.parametrages.dto.UserWithRolesDto;
+import com.nectux.mizan.hyban.parametrages.service.AuditLogService;
 import com.nectux.mizan.hyban.parametrages.service.KeycloakUserService;
 import jakarta.ws.rs.NotAuthorizedException;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -21,9 +24,13 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyAuthority('USER_READ', 'USER_CREATE', 'USER_UPDATE', 'USER_DELETE', 'ROLE_ASSIGN') or hasRole('ADMIN')")
 public class UserController {
 
     private final KeycloakUserService keycloakUserService;
+
+    @Autowired
+    private AuditLogService auditLogService;
 
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -112,13 +119,42 @@ public class UserController {
 
 
 
+    @PutMapping("/{userId}/roles")
+    @PreAuthorize("hasAuthority('ROLE_ASSIGN') or hasRole('ADMIN')")
+    public ResponseEntity<UserWithRolesDto> assignRoles(@PathVariable String userId, @RequestBody AssignRolesRequest request) {
+        keycloakUserService.replaceRealmRoles(userId, request.getRoles());
+        UserWithRolesDto updatedUser = keycloakUserService.getUserById(userId);
+
+        String currentUser = getCurrentUsername();
+        auditLogService.log("ASSIGN_USER_ROLES", "USER", userId, currentUser,
+                "Roles assigned to user " + updatedUser.getUserdto().getUsername() + ": " +
+                        (request.getRoles() != null ? String.join(", ", request.getRoles()) : "none"));
+
+        return ResponseEntity.ok(updatedUser);
+    }
+
     @DeleteMapping("/{userId}")
     public ResponseEntity<String> deleteUser(@PathVariable String userId) {
         keycloakUserService.deleteUser(userId);
         return ResponseEntity.ok().build();
        // return ResponseEntity.status(501).body("Service désactivé en profil local");
     }
-    
 
+    public static class AssignRolesRequest {
+        private List<String> roles;
+
+        public List<String> getRoles() {
+            return roles;
+        }
+
+        public void setRoles(List<String> roles) {
+            this.roles = roles;
+        }
+    }
+
+    private String getCurrentUsername() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth != null ? auth.getName() : "system";
+    }
 }
 

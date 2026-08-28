@@ -140,7 +140,9 @@ public class PeriodePaie extends Auditable {
 
 
 	public String getAffiche() {
-		affiche= mois.getMois() +" "+annee.getAnnee();
+		String moisLib = (mois != null) ? mois.getMois() : "";
+		String anneeLib = (annee != null) ? String.valueOf(annee.getAnnee()) : "";
+		affiche = moisLib + " " + anneeLib;
 		return affiche;
 	}
 

@@ -46,12 +46,12 @@ const getEnvVar = (key: string, fallback: string): string => {
 // Configuration principale
 export const API_CONFIG: ApiConfig = {
   // URLs de base - utilise des URLs relatives en développement (via proxy)
-  API_BASE_URL: isDevelopment ? '' : getEnvVar('VITE_API_BASE_URL', 'http://192.168.1.6:7200'),
-  KEYCLOAK_URL: isDevelopment ? '' : getEnvVar('VITE_KEYCLOAK_URL', 'http://192.168.1.6:8080'),
+  API_BASE_URL: isDevelopment ? '' : getEnvVar('VITE_API_BASE_URL', 'http://192.168.1.7:7200'),
+  KEYCLOAK_URL: isDevelopment ? '' : getEnvVar('VITE_KEYCLOAK_URL', 'http://192.168.1.7:8083'),
   
   // Ports
   API_PORT: parseInt(getEnvVar('VITE_API_PORT', '7200')),
-  KEYCLOAK_PORT: parseInt(getEnvVar('VITE_KEYCLOAK_PORT', '8080')),
+  KEYCLOAK_PORT: parseInt(getEnvVar('VITE_KEYCLOAK_PORT', '8083')),
   
   // Configuration Keycloak
   KEYCLOAK: {

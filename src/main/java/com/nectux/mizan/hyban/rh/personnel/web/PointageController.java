@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 // import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
 import com.nectux.mizan.hyban.common.dto.PaginationRequest;
@@ -35,6 +36,7 @@ import com.nectux.mizan.hyban.common.dto.PointageRequest;
 
 @RestController
 @RequestMapping("/api/personnel")
+@PreAuthorize("hasAnyAuthority('POINTAGE_READ', 'POINTAGE_CREATE', 'POINTAGE_UPDATE') or hasRole('ADMIN')")
 public class PointageController {
 
 	private static final Logger logger = LogManager.getLogger(PointageController.class);

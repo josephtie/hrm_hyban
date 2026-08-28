@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.AbsencesPersonnelRequest;
 import com.nectux.mizan.hyban.common.dto.PaginationRequest;
@@ -34,6 +35,7 @@ import com.nectux.mizan.hyban.common.dto.IdRequest;
 
 @RestController
 @RequestMapping("/api/absence")
+@PreAuthorize("hasAnyAuthority('ABSENCE_READ', 'ABSENCE_CREATE', 'ABSENCE_UPDATE', 'ABSENCE_DELETE') or hasRole('ADMIN')")
 public class AbsencesPersonnelController {
 	
 	private static final Logger logger = LogManager.getLogger(AbsencesPersonnelController.class);

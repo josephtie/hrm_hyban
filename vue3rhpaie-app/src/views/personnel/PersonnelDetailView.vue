@@ -14,7 +14,7 @@
             <el-icon><ArrowLeft /></el-icon>
             Retour
           </el-button>
-          <el-button type="primary" @click="editPersonnel">
+          <el-button type="primary" @click="editPersonnel" v-permission="'EMPLOYEE_UPDATE'">
             <el-icon><Edit /></el-icon>
             Modifier
           </el-button>
@@ -103,7 +103,7 @@
           <div class="form-content">
             <!-- Formulaire Contrat -->
             <div v-if="activeTab === 'contracts'">
-              <el-form :model="contractForm" label-width="140px" size="large">
+              <el-form :model="contractForm" label-width="160px" label-position="left" size="large">
                 <div class="form-grid">
                   <el-form-item label="Emploi" required>
                     <el-select v-model="contractForm.emploi" placeholder="Emploi/Fonction" style="width: 100%" :loading="loadingLists" filterable>
@@ -124,6 +124,14 @@
                         :label="typeContrat.libelle" 
                         :value="typeContrat.libelle" 
                       />
+                    </el-select>
+                  </el-form-item>
+
+                  <el-form-item label="Type d'opération" required>
+                    <el-select v-model="contractForm.typeOperation" placeholder="Type d'opération" style="width: 100%">
+                      <el-option label="Modification" value="MODIFICATION" />
+                      <el-option label="Renouvellement" value="RENOUVELLEMENT" />
+                      <el-option label="Avenant" value="AVENANT" />
                     </el-select>
                   </el-form-item>
 
@@ -189,10 +197,7 @@
                     />
                   </el-form-item>
 
-                  <el-form-item 
-                    label="Date fin du contrat" 
-                    v-if="contractForm.type === 'CDD'"
-                  >
+                  <el-form-item label="Date fin du contrat" v-if="contractForm.type !== 'CDI'">
                     <el-date-picker
                       v-model="contractForm.dateFin"
                       type="date"
@@ -200,6 +205,7 @@
                       style="width: 100%"
                       format="DD/MM/YYYY"
                       value-format="YYYY-MM-DD"
+                      clearable
                     />
                   </el-form-item>
 
@@ -1164,6 +1170,7 @@ const contractForm = reactive({
   sursalaire: 0,
   indemniteRepresentation: 0, // Nouveau champ
   ancienneteInitiale: 0, // Nouveau champ
+  typeOperation: 'MODIFICATION', // Type d'opération sur le contrat
   observations: ''
 })
 
@@ -2466,6 +2473,7 @@ const resetForms = () => {
     sursalaire: 0, 
     indemniteRepresentation: 0, 
     ancienneteInitiale: 0, 
+    typeOperation: 'MODIFICATION', 
     observations: '' 
   })
   Object.assign(absenceForm, { id: 0, type: '', dateDebut: '', dateFin: '', motif: '' })
@@ -2597,7 +2605,7 @@ const saveContract = async () => {
     
     // Préparer les données pour l'API - format plat comme attendu par ContratPersonnelRequest
     const contractData = {
-      id: null,  // Pour un nouveau contrat (généré par le backend)
+      id: contractForm.id || null,  // null pour un nouveau contrat, id pour modification
       idPersonnel: personnel.value.id,
       idCategorie: categorieId,
       idFonction: fonctionId,
@@ -2611,7 +2619,8 @@ const saveContract = async () => {
       indemnitetransport: contractForm.indemniteTransport,
       indemniterespons: contractForm.indemniteRepresentation, // Note: indemniterespons dans le backend
       indemniterepresent: contractForm.indemniteRepresentation,
-      statut: true
+      statut: true,
+      typeOperation: contractForm.typeOperation
     }
     
     console.log('📤 Envoi des données au endpoint /api/personnels/savecontratpersonnel:', contractData)
@@ -3688,6 +3697,12 @@ const deleteSpouse = async (spouseId: number) => {
 
 .form-grid .el-form-item {
   margin-bottom: 0;
+}
+
+/* Amélioration de la visibilité des labels */
+.el-form-item__label {
+  font-weight: 600;
+  color: #303133;
 }
 
 /* Style pour les boutons d'action du formulaire */

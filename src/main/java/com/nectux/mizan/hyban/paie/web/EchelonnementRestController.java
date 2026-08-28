@@ -19,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.ContentDisposition;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 
 @RestController
 @RequestMapping("/api/paie/echelonnement")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE') or hasRole('ADMIN')")
 public class EchelonnementRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(EchelonnementRestController.class);

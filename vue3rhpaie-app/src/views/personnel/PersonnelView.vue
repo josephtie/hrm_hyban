@@ -87,11 +87,11 @@
             <el-icon><Refresh /></el-icon>
             Réinitialiser les filtres
           </el-button>
-          <el-button type="primary" @click="exportPersonnel" :loading="exporting">
+          <el-button type="primary" @click="exportPersonnel" :loading="exporting" v-permission="'EMPLOYEE_EXPORT'">
             <el-icon><Download /></el-icon>
             Exporter
           </el-button>
-          <el-button type="success" @click="openWizard">
+          <el-button type="success" @click="openWizard" v-permission="'EMPLOYEE_CREATE'">
             <el-icon><Plus /></el-icon>
             Nouvel Employé
           </el-button>
@@ -179,7 +179,7 @@
                   <el-button @click="viewPersonnel(row)" type="primary" size="small">
                     <el-icon><View /></el-icon>
                   </el-button>
-                  <el-button @click="editPersonnel(row)" type="warning" size="small">
+                  <el-button @click="editPersonnel(row)" type="warning" size="small" v-permission="'EMPLOYEE_UPDATE'">
                     <el-icon><Edit /></el-icon>
                   </el-button>
                 </div>

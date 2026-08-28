@@ -11,7 +11,7 @@
           <p class="page-subtitle">Suivi et gestion des prêts du personnel</p>
         </div>
         <div class="header-right">
-          <el-button type="primary" @click="showAddModal = true" class="enhanced-button">
+          <el-button type="primary" @click="showAddModal = true" class="enhanced-button" v-permission="'PAYROLL_CALCULATE'">
             <el-icon><Plus /></el-icon>
             Nouveau Prêt
           </el-button>
@@ -239,13 +239,13 @@
 
             <el-table-column label="Actions" width="150" fixed="right">
               <template #default="{ row }">
-                <el-button type="primary" size="small" @click="editLoan(row)">
+                <el-button type="primary" size="small" @click="editLoan(row)" v-permission="'PAYROLL_CALCULATE'">
                   <el-icon><Edit /></el-icon>
                 </el-button>
                 <el-button type="info" size="small" @click="viewLoanDetails(row)">
                   <el-icon><View /></el-icon>
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteLoan(row)">
+                <el-button type="danger" size="small" @click="deleteLoan(row)" v-permission="'PAYROLL_CALCULATE'">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </template>

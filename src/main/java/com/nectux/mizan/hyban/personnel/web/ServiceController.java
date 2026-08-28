@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 // import com.nectux.mizan.hyban.parametrages.service.UtilisateurRoleService;
@@ -42,6 +43,7 @@ import com.nectux.mizan.hyban.common.dto.ServiceRequest;
 
 @RestController
 @RequestMapping("/api/personnels")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class ServiceController {
 
 	private static final Logger logger = LogManager.getLogger(ServiceController.class);

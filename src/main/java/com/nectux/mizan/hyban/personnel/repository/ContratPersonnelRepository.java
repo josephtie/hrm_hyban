@@ -14,13 +14,15 @@ import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.rh.absences.entity.Absences;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 
 
-public interface ContratPersonnelRepository extends CrudRepository<ContratPersonnel, Long> , JpaSpecificationExecutor<ContratPersonnel> {
+public interface ContratPersonnelRepository extends JpaRepository<ContratPersonnel, Long>, JpaSpecificationExecutor<ContratPersonnel> {
 	
 	public List<ContratPersonnel> findAll();
 	
@@ -116,6 +118,42 @@ public interface ContratPersonnelRepository extends CrudRepository<ContratPerson
             "     OR LOWER(cp.prenom) LIKE LOWER(CONCAT('%', :search, '%')) " +
             "     OR LOWER(cp.matricule) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<ContratPersonnel> searchContrat(@Param("search") String search, Pageable pageable);
+
+    List<ContratPersonnel> findByEtatContrat(com.nectux.mizan.hyban.personnel.enums.EtatContrat etatContrat);
+
+    @Query("SELECT cp FROM ContratPersonnel cp " +
+            "LEFT JOIN FETCH cp.personnel " +
+            "LEFT JOIN FETCH cp.typeContrat " +
+            "LEFT JOIN FETCH cp.categorie " +
+            "LEFT JOIN FETCH cp.fonction " +
+            "WHERE cp.dateFin IS NOT NULL " +
+            "AND cp.statut = true " +
+            "AND cp.dateFin BETWEEN :dateDebut AND :dateFin " +
+            "ORDER BY cp.dateFin ASC")
+    List<ContratPersonnel> findContratsEcheance(@Param("dateDebut") java.util.Date dateDebut, @Param("dateFin") java.util.Date dateFin);
+
+    @Query("SELECT cp FROM ContratPersonnel cp " +
+            "LEFT JOIN FETCH cp.personnel " +
+            "LEFT JOIN FETCH cp.typeContrat " +
+            "WHERE cp.dateFin IS NOT NULL " +
+            "AND cp.statut = true " +
+            "AND cp.dateFin < :dateReference " +
+            "AND cp.typeContrat.id <> 1 " +
+            "ORDER BY cp.dateFin ASC")
+    List<ContratPersonnel> findContratsExpired(@Param("dateReference") java.util.Date dateReference);
+
+    @Query("SELECT COUNT(cp) FROM ContratPersonnel cp WHERE cp.statut = true AND cp.depart = false")
+    long countContratsActifs();
+
+    @Query("SELECT COUNT(cp) FROM ContratPersonnel cp WHERE cp.dateFin IS NOT NULL AND cp.statut = true AND cp.dateFin < :dateReference AND cp.typeContrat.id <> 1")
+    long countContratsExpired(@Param("dateReference") java.util.Date dateReference);
+
+    @Query("SELECT COUNT(cp) FROM ContratPersonnel cp WHERE cp.dateFin IS NOT NULL AND cp.statut = true AND cp.dateFin BETWEEN :dateDebut AND :dateFin")
+    long countContratsEcheance(@Param("dateDebut") java.util.Date dateDebut, @Param("dateFin") java.util.Date dateFin);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE CGECI_RHPAIE_CONTRAT_PERSONNEL SET depart = :depart, statut = :statut, etat_contrat = :etatContrat, date_fin = :dateFin, date_mod = :dateMod, observ_ctrat = :observCtrat, solde_calcule = :soldeCalcule, motif_cloture = :motifCloture, operation_contrat = :operationContrat WHERE id = :id", nativeQuery = true)
+    void updateContractEnd(@Param("id") Long id, @Param("depart") Boolean depart, @Param("statut") Boolean statut, @Param("etatContrat") String etatContrat, @Param("dateFin") java.util.Date dateFin, @Param("dateMod") java.util.Date dateMod, @Param("observCtrat") String observCtrat, @Param("soldeCalcule") Boolean soldeCalcule, @Param("motifCloture") String motifCloture, @Param("operationContrat") String operationContrat);
 
 
 }

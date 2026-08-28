@@ -2,15 +2,18 @@ package com.nectux.mizan.hyban.personnel.web;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.ArrayList;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 // import com.nectux.mizan.hyban.parametrages.entity.Utilisateur;
 import com.nectux.mizan.hyban.personnel.dto.ContratPersonnelDTO;
+import com.nectux.mizan.hyban.personnel.entity.ContratHistory;
 import com.nectux.mizan.hyban.personnel.entity.ContratPersonnel;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
+import com.nectux.mizan.hyban.personnel.enums.EtatContrat;
+import com.nectux.mizan.hyban.personnel.enums.MotifClotureContrat;
+import com.nectux.mizan.hyban.personnel.enums.TypeOperationContrat;
+import com.nectux.mizan.hyban.personnel.repository.ContratHistoryRepository;
 import com.nectux.mizan.hyban.personnel.repository.ContratPersonnelRepository;
 import com.nectux.mizan.hyban.personnel.service.ContratPersonnelService;
 import com.nectux.mizan.hyban.personnel.service.PersonnelService;
@@ -22,6 +25,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
 import com.nectux.mizan.hyban.parametrages.entity.Societe;
@@ -43,6 +47,7 @@ import com.nectux.mizan.hyban.common.dto.ContratPersonnelFilterRequest;
 
 @RestController
 @RequestMapping("/api/personnels")
+@PreAuthorize("hasAnyAuthority('CONTRACT_READ', 'CONTRACT_CREATE', 'CONTRACT_UPDATE', 'CONTRACT_CLOSE', 'CONTRACT_EXPORT') or hasRole('ADMIN')")
 //@CrossOrigin(
 //    origins = {"http://localhost:7153", "http://192.168.1.4:7153", "http://192.168.1.4:8080", "http://192.168.1.4:7156", "http://192.168.1.4:7157", "http://192.168.1.4:7158", "http://192.168.1.4:7159", "http://192.168.1.4:7160", "http://192.168.1.4:7161", "http://192.168.1.4:7162", "http://192.168.1.4:7163", "http://192.168.1.4:7164", "http://192.168.1.4:7165", "http://192.168.1.4:7166", "http://192.168.1.4:7167", "http://192.168.1.4:7168", "http://192.168.1.4:7169", "http://192.168.1.4:7170", "http://192.168.1.4:7171", "http://192.168.1.4:7172", "http://192.168.1.4:7173", "http://192.168.1.4:7174", "http://192.168.1.4:7175", "http://192.168.1.4:7176", "http://192.168.1.4:7177", "http://192.168.1.4:7178", "http://192.168.1.4:7179", "http://192.168.1.4:7180", "http://192.168.1.4:7181", "http://192.168.1.4:7182", "http://192.168.1.4:7183", "http://192.168.1.4:7184", "http://192.168.1.4:7185", "http://192.168.1.4:7186", "http://192.168.1.4:7187", "http://192.168.1.4:7188", "http://192.168.1.4:7189", "http://192.168.1.4:7190", "http://192.168.1.4:7191", "http://192.168.1.4:7192", "http://192.168.1.4:7193", "http://192.168.1.4:7194", "http://192.168.1.4:7195", "http://192.168.1.4:7196", "http://192.168.1.4:7197", "http://192.168.1.4:7198", "http://192.168.1.4:7199"},
 //    allowCredentials = "true"
@@ -59,6 +64,7 @@ public class ContratPersonnelController {
     @Autowired private SocieteService societeService;
     // @Autowired private UtilisateurRoleService utilisateurRoleService;
     @Autowired private ContratPersonnelRepository contratPersonnelRepository;
+    @Autowired private ContratHistoryRepository contratHistoryRepository;
 
 	@RequestMapping("/contrat")
     public String viewService(org.springframework.ui.ModelMap modelMap, Principal principal) throws IOException {
@@ -298,7 +304,15 @@ public class ContratPersonnelController {
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "/savecontratpersonnel")
 	public @ResponseBody ContratPersonnelDTO saveContratpers(@RequestBody ContratPersonnelRequest req) {
-		return contratPersonnelService.save(req.getId(), req.getIdPersonnel(), req.getIdCategorie(), req.getIdFonction(), req.getIdTypeContrat(), req.getDateDebut(), req.getDateFin(), req.getNetAPayer(), req.getIndemniteLogement(), req.getAncienete(), true, req.getSursalaire(), req.getIndemnitetransport(), req.getIndemniterespons(), req.getIndemniterepresent());
+		TypeOperationContrat typeOperation = null;
+		if (req.getTypeOperation() != null && !req.getTypeOperation().isEmpty()) {
+			try {
+				typeOperation = TypeOperationContrat.valueOf(req.getTypeOperation());
+			} catch (IllegalArgumentException e) {
+				// Valeur non reconnue, on garde typeOperation = null
+			}
+		}
+		return contratPersonnelService.save(req.getId(), req.getIdPersonnel(), req.getIdCategorie(), req.getIdFonction(), req.getIdTypeContrat(), req.getDateDebut(), req.getDateFin(), req.getNetAPayer(), req.getIndemniteLogement(), req.getAncienete(), true, req.getSursalaire(), req.getIndemnitetransport(), req.getIndemniterespons(), req.getIndemniterepresent(), typeOperation);
 	}
 
 	@ResponseStatus(HttpStatus.OK)
@@ -308,8 +322,45 @@ public class ContratPersonnelController {
 		String [] part1 = req.getDateMod().split("-");
 		String date = part[2] + "/" + part[1] + "/" + part[0];
 		String datemod1 = part1[2] + "/" + part1[1] + "/" + part1[0];
-		return contratPersonnelService.endContract(req.getId(), date, datemod1, req.getPermanent(), req.getObservCtrat());
+		
+		MotifClotureContrat motifCloture = null;
+		TypeOperationContrat typeOperation = null;
+		
+		if (Boolean.TRUE.equals(req.getPermanent())) {
+			// permanent=true (départ) : parser observCtrat comme MotifClotureContrat
+			if (req.getObservCtrat() != null && !req.getObservCtrat().isEmpty()) {
+				try {
+					motifCloture = MotifClotureContrat.valueOf(req.getObservCtrat());
+				} catch (IllegalArgumentException e) {
+					// Valeur non reconnue, on garde motifCloture = null
+				}
+			}
+		} else {
+			// permanent=false : parser observCtrat comme TypeOperationContrat
+			if (req.getObservCtrat() != null && !req.getObservCtrat().isEmpty()) {
+				try {
+					typeOperation = TypeOperationContrat.valueOf(req.getObservCtrat());
+				} catch (IllegalArgumentException e) {
+					// Valeur non reconnue, on garde typeOperation = null
+				}
+			}
+		}
+		
+		return contratPersonnelService.endContractNew(req.getId(), date, datemod1, req.getPermanent(), req.getObservCtrat(), motifCloture, typeOperation);
 	}
+
+	@ResponseStatus(HttpStatus.OK)
+	@RequestMapping(value = "/departdefinitifpersonnel", method = RequestMethod.POST)
+	public @ResponseBody ContratPersonnelDTO departdefinitifpersonnel(@RequestParam(value="id", required=true) Long id) throws Exception {
+
+		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
+
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
+		String dateString = sdf.format(new Date());
+		return  contratPersonnelService.departDefinitif(id,dateString);
+
+	}
+
 
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "/updatecontratpersonnelSursal")
@@ -395,6 +446,109 @@ public class ContratPersonnelController {
 		String jour = parties[2];
 
 		return jour + "/" + mois + "/" + annee;
+	}
+
+	// ==================== Endpoints gestion des échéances et états ====================
+
+	@GetMapping("/contrats/echeances/{jours}")
+	public @ResponseBody List<ContratPersonnel> getContratsEcheance(@PathVariable int jours) {
+		java.util.Date now = new java.util.Date();
+		java.util.Calendar cal = java.util.Calendar.getInstance();
+		cal.setTime(now);
+		cal.add(java.util.Calendar.DAY_OF_MONTH, jours);
+		java.util.Date dateFin = cal.getTime();
+		return contratPersonnelRepository.findContratsEcheance(now, dateFin);
+	}
+
+	@GetMapping("/contrats/expired")
+	public @ResponseBody List<ContratPersonnel> getContratsExpired() {
+		return contratPersonnelRepository.findContratsExpired(new java.util.Date());
+	}
+
+	@GetMapping("/contrats/by-etat/{etat}")
+	public @ResponseBody List<ContratPersonnel> getContratsByEtat(@PathVariable String etat) {
+		try {
+			EtatContrat etatContrat = EtatContrat.valueOf(etat.toUpperCase());
+			return contratPersonnelService.findContratsByEtat(etatContrat);
+		} catch (IllegalArgumentException e) {
+			return new ArrayList<>();
+		}
+	}
+
+	@PostMapping(value = "/contrats/suspendre")
+	public @ResponseBody ContratPersonnelDTO suspendreContrat(@RequestBody Map<String, Object> body) {
+		Long id = Long.valueOf(body.get("id").toString());
+		String observations = body.get("observations") != null ? body.get("observations").toString() : null;
+		return contratPersonnelService.suspendreContrat(id, observations);
+	}
+
+	@PostMapping(value = "/contrats/resilier")
+	public @ResponseBody ContratPersonnelDTO resilierContrat(@RequestBody Map<String, Object> body) {
+		Long id = Long.valueOf(body.get("id").toString());
+		String dateFin = body.get("dateFin").toString();
+		MotifClotureContrat motif = MotifClotureContrat.valueOf(body.get("motif").toString().toUpperCase());
+		String observations = body.get("observations") != null ? body.get("observations").toString() : null;
+		return contratPersonnelService.resilierContrat(id, dateFin, motif, observations);
+	}
+
+	@PostMapping(value = "/contrats/reprendre")
+	public @ResponseBody ContratPersonnelDTO reprendreContrat(@RequestBody IdRequest req) {
+		return contratPersonnelService.reprendreContrat(req.getId());
+	}
+
+	@PostMapping(value = "/contrats/renouveler")
+	public @ResponseBody ContratPersonnelDTO renouvelerContrat(@RequestBody Map<String, Object> body,Principal principal) {
+		Long id = Long.valueOf(body.get("id").toString());
+		String nouvelleDateDebut = body.get("nouvelleDateDebut").toString();
+		String nouvelleDateFin = body.get("nouvelleDateFin") != null ? body.get("nouvelleDateFin").toString() : null;
+		String observations = body.get("observations") != null ? body.get("observations").toString() : null;
+		String username = principal != null ? principal.getName() : "system";
+		return contratPersonnelService.renouvelerContrat(id, nouvelleDateDebut, nouvelleDateFin, observations,username);
+	}
+
+	@PostMapping(value = "/contrats/avenant")
+	public @ResponseBody ContratPersonnelDTO creerAvenant(@RequestBody Map<String, Object> body) {
+		Long id = Long.valueOf(body.get("id").toString());
+		String nouvelleDateFin = body.get("nouvelleDateFin").toString();
+		String observations = body.get("observations") != null ? body.get("observations").toString() : null;
+		return contratPersonnelService.creerAvenant(id, nouvelleDateFin, observations);
+	}
+
+	@GetMapping("/contrats/dashboard")
+	public @ResponseBody Map<String, Object> getDashboardContrats() {
+		Map<String, Object> dashboard = new HashMap<>();
+		java.util.Date now = new java.util.Date();
+		java.util.Calendar cal = java.util.Calendar.getInstance();
+
+		dashboard.put("contratsActifs", contratPersonnelRepository.countContratsActifs());
+		dashboard.put("contratsExpires", contratPersonnelRepository.countContratsExpired(now));
+
+		int[] seuils = {90, 60, 30, 15};
+		Map<String, Long> echeances = new HashMap<>();
+		for (int seuil : seuils) {
+			cal.setTime(now);
+			cal.add(java.util.Calendar.DAY_OF_MONTH, seuil);
+			echeances.put(seuil + "j", contratPersonnelRepository.countContratsEcheance(now, cal.getTime()));
+		}
+		dashboard.put("echeances", echeances);
+
+		return dashboard;
+	}
+
+	@GetMapping("/contrats/{id}/history")
+	public @ResponseBody List<ContratHistory> getContratHistory(@PathVariable Long id) {
+		return contratHistoryRepository.findByContratIdOrderByDateOperationDesc(id);
+	}
+
+
+	@ResponseStatus(HttpStatus.OK)
+	@RequestMapping(value = "/modifierdatefincontrat", method = RequestMethod.POST)
+	public @ResponseBody ContratPersonnelDTO modifierDateFinContrat(@RequestParam(value="id", required=true) Long id,
+	                                                                @RequestParam(value="nouvelleDateFin", required=true) String nouvelleDateFin,
+	                                                                @RequestParam(value="motif", required=false) String motif,
+	                                                                Principal principal) {
+		String username = principal != null ? principal.getName() : "system";
+		return contratPersonnelService.modifierDateFinContrat(id, nouvelleDateFin, motif, username);
 	}
 
 }

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.common.dto.AbsencesRequest;
 import com.nectux.mizan.hyban.common.dto.AbsencesResponse;
@@ -24,6 +25,7 @@ import com.nectux.mizan.hyban.rh.absences.service.AbsencesService;
 
 @RestController
 @RequestMapping("/api/rh/absences")
+@PreAuthorize("hasAnyAuthority('ABSENCE_READ', 'ABSENCE_CREATE', 'ABSENCE_UPDATE', 'ABSENCE_DELETE') or hasRole('ADMIN')")
 public class AbsencesRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(AbsencesRestController.class);

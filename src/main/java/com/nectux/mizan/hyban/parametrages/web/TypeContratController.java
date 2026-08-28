@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @Controller
 @RequestMapping("/parametrages")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ') or hasRole('ADMIN')")
 public class TypeContratController {
 	
 	@Autowired

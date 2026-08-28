@@ -37,6 +37,7 @@ import com.nectux.mizan.hyban.common.dto.PaginationRequest;
 import com.nectux.mizan.hyban.common.dto.SocieteRequest;
 import com.nectux.mizan.hyban.common.dto.IdRequest;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -44,6 +45,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 @Controller
 @RequestMapping("/api/parametrages/societe")
+@PreAuthorize("hasAnyAuthority('PARAMETER_READ', 'PARAMETER_UPDATE') or hasRole('ADMIN')")
 public class SocieteController {
 
 	

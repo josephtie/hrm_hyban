@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,6 +24,7 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/paie/debug")
 @CrossOrigin(origins = "*", allowCredentials = "false")
+@PreAuthorize("hasRole('ADMIN')")
 public class PaieDebugRestController {
 
     private static final Logger logger = LoggerFactory.getLogger(PaieDebugRestController.class);

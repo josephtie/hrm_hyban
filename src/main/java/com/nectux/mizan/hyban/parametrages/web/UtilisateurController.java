@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 // import com.nectux.mizan.hyban.parametrages.service.UtilisateurRoleService;
@@ -28,6 +29,7 @@ import com.nectux.mizan.hyban.parametrages.dto.UserWithRolesDto;
 
 @Controller
 @RequestMapping("/api/parametrages/user")
+@PreAuthorize("hasAnyAuthority('USER_READ', 'USER_CREATE', 'USER_UPDATE', 'USER_DELETE', 'ROLE_ASSIGN') or hasRole('ADMIN')")
 public class UtilisateurController {
 	
 	private static final Logger logger = LogManager.getLogger(UtilisateurController.class);

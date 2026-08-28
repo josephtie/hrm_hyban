@@ -17,7 +17,7 @@
             <div class="stat-label">Affichés</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'closed' ? 'Clôturés' : activeTab === 'toRenew' ? 'À renouveler' : activeTab === 'renewal' ? 'Avenants' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
+            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'closed' ? 'Clôturés' : activeTab === 'suspended' ? 'Suspendus' : activeTab === 'toRenew' ? 'À renouveler' : activeTab === 'renewal' ? 'Avenants' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
             <div class="stat-label">Type</div>
           </div>
         </div>
@@ -33,7 +33,7 @@
             <el-button @click="refreshData" circle class="enhanced-button">
               <el-icon><Refresh /></el-icon>
             </el-button>
-            <el-button @click="toggleForm" type="primary" class="enhanced-button">
+            <el-button @click="toggleForm" type="primary" class="enhanced-button" v-permission="'CONTRACT_CREATE'">
               <el-icon><Plus /></el-icon>
               Nouveau Contrat
             </el-button>
@@ -44,8 +44,8 @@
           <el-tab-pane label="Contrats en cours" name="contracts" />
           <el-tab-pane label="Contrats expirés" name="expired" />
           <el-tab-pane label="Contrats clôturés" name="closed" />
+          <el-tab-pane label="Contrats suspendus" name="suspended" />
           <el-tab-pane label="Contrats à renouveler" name="toRenew" />
-          <el-tab-pane label="Avenants / Renouvellements" name="renewal" />
         </el-tabs>
 
         <!-- Barre d'outils améliorée -->
@@ -322,18 +322,22 @@
             </template>
           </el-table-column>
           
-          <el-table-column label="Actions" width="140" fixed="right">
+          <el-table-column label="Actions" min-width="180" fixed="right" align="center">
             <template #default="{ row }">
-              <el-button-group>
-                <el-button size="small" @click="viewContrat(row)" type="primary" title="Voir le contrat">
-                  <el-icon><View /></el-icon>
-                  Voir
+              <div class="action-buttons">
+                <el-button v-if="row.statut && !isCDIContract(row.typeContrat)" size="small" type="warning" circle @click="openSuspendModal(row)" title="Suspendre temporairement le contrat">
+                  <el-icon><VideoPause /></el-icon>
                 </el-button>
-                <el-button size="small" @click="terminateContrat(row)" type="warning" title="Fin du contrat">
+                <el-button v-if="!row.statut && row.observCtrat" size="small" type="success" circle @click="reprendreContrat(row)" title="Reprendre le contrat suspendu">
+                  <el-icon><VideoPlay /></el-icon>
+                </el-button>
+                <el-button v-if="row.statut" size="small" type="danger" circle @click="terminateContrat(row)" title="Mettre fin au contrat">
                   <el-icon><WarningFilled /></el-icon>
-                  Fin
                 </el-button>
-              </el-button-group>
+                <el-button v-if="!isCDIContract(row.typeContrat)" size="small" type="primary" circle @click="openRenewModal(row)" title="Renouveler le contrat">
+                  <el-icon><RefreshRight /></el-icon>
+                </el-button>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -355,6 +359,177 @@
     </div>
   </div>
  </div>
+
+  <!-- Dashboard Widget -->
+  <div v-if="dashboard" class="dashboard-widget enhanced-card">
+    <div class="dashboard-grid">
+      <div class="dashboard-item">
+        <div class="dashboard-value text-gradient">{{ dashboard.contratsActifs }}</div>
+        <div class="dashboard-label">Contrats Actifs</div>
+      </div>
+      <div class="dashboard-item">
+        <div class="dashboard-value" style="color: #f56c6c;">{{ dashboard.contratsExpires }}</div>
+        <div class="dashboard-label">Contrats Expirés</div>
+      </div>
+      <div class="dashboard-item">
+        <div class="dashboard-value" style="color: #e6a23c;">{{ dashboard.echeances['90j'] }}</div>
+        <div class="dashboard-label">Échéance 90j</div>
+      </div>
+      <div class="dashboard-item">
+        <div class="dashboard-value" style="color: #e6a23c;">{{ dashboard.echeances['60j'] }}</div>
+        <div class="dashboard-label">Échéance 60j</div>
+      </div>
+      <div class="dashboard-item">
+        <div class="dashboard-value" style="color: #f56c6c;">{{ dashboard.echeances['30j'] }}</div>
+        <div class="dashboard-label">Échéance 30j</div>
+      </div>
+      <div class="dashboard-item">
+        <div class="dashboard-value" style="color: #f56c6c;">{{ dashboard.echeances['15j'] }}</div>
+        <div class="dashboard-label">Échéance 15j</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Suspendre -->
+  <el-dialog v-model="showSuspendModal" title="Suspendre le contrat" width="500px" destroy-on-close>
+    <div v-if="selectedContrat" class="terminate-form">
+      <el-alert title="Suspension" type="warning" description="Le contrat sera suspendu temporairement." show-icon :closable="false" class="terminate-alert" />
+      <div class="contract-summary">
+        <h4>{{ selectedContrat.personnel?.nom }} {{ selectedContrat.personnel?.prenom }}</h4>
+        <p>Matricule: {{ selectedContrat.personnel?.matricule }}</p>
+      </div>
+      <el-form label-width="120px" class="terminate-form-fields">
+        <el-form-item label="Observations">
+          <el-input v-model="suspendForm.observations" type="textarea" :rows="3" placeholder="Motif de la suspension..." />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="showSuspendModal = false" size="large">Annuler</el-button>
+        <el-button type="warning" @click="confirmSuspendre" :loading="loading" size="large">Confirmer la suspension</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- Modal Résilier -->
+  <el-dialog v-model="showResilierModal" title="Résilier le contrat" width="600px" destroy-on-close>
+    <div v-if="selectedContrat" class="terminate-form">
+      <el-alert title="Résiliation" type="error" description="Cette action est irréversible." show-icon :closable="false" class="terminate-alert" />
+      <div class="contract-summary">
+        <h4>{{ selectedContrat.personnel?.nom }} {{ selectedContrat.personnel?.prenom }}</h4>
+        <p>Matricule: {{ selectedContrat.personnel?.matricule }}</p>
+      </div>
+      <el-form label-width="120px" class="terminate-form-fields">
+        <el-form-item label="Date de fin" required>
+          <el-date-picker v-model="resilierForm.dateFin" type="date" placeholder="Date de fin" style="width: 100%" format="DD/MM/YYYY" value-format="DD/MM/YYYY" clearable />
+        </el-form-item>
+        <el-form-item label="Motif" required>
+          <el-select v-model="resilierForm.motif" placeholder="Sélectionner un motif" style="width: 100%">
+            <el-option label="Fin de CDD" value="FIN_CDD" />
+            <el-option label="Démission" value="DEMISSION" />
+            <el-option label="Licenciement" value="LICENCIEMENT" />
+            <el-option label="Retraite" value="RETRAITE" />
+            <el-option label="Décès" value="DECES" />
+            <el-option label="Autre" value="AUTRE" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="Observations">
+          <el-input v-model="resilierForm.observations" type="textarea" :rows="3" placeholder="Observations..." />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="showResilierModal = false" size="large">Annuler</el-button>
+        <el-button type="danger" @click="confirmResilier" :loading="loading" size="large">Confirmer la résiliation</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- Modal Renouvellement -->
+  <el-dialog v-model="showRenewModal" title="Renouveler le contrat" width="600px" destroy-on-close>
+    <div v-if="selectedContrat" class="terminate-form">
+      <div class="contract-summary">
+        <h4>{{ selectedContrat.personnel?.nom }} {{ selectedContrat.personnel?.prenom }}</h4>
+        <p>Matricule: {{ selectedContrat.personnel?.matricule }}</p>
+        <p>Type: {{ getTypeContratLabel(selectedContrat.typeContrat) }}</p>
+      </div>
+      <el-form label-width="140px" class="terminate-form-fields">
+        <el-form-item label="Nouvelle date début" required>
+          <el-date-picker v-model="renewForm.nouvelleDateDebut" type="date" placeholder="Date de début" style="width: 100%" format="DD/MM/YYYY" value-format="DD/MM/YYYY" clearable />
+        </el-form-item>
+        <el-form-item label="Nouvelle date fin">
+          <el-date-picker v-model="renewForm.nouvelleDateFin" type="date" placeholder="Date de fin (optionnel pour CDI)" style="width: 100%" format="DD/MM/YYYY" value-format="DD/MM/YYYY" clearable />
+        </el-form-item>
+        <el-form-item label="Observations">
+          <el-input v-model="renewForm.observations" type="textarea" :rows="3" placeholder="Observations..." />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="showRenewModal = false" size="large">Annuler</el-button>
+        <el-button type="primary" @click="confirmRenew" :loading="loading" size="large">Confirmer le renouvellement</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- Modal Avenant -->
+  <el-dialog v-model="showAvenantModal" title="Créer un avenant" width="600px" destroy-on-close>
+    <div v-if="selectedContrat" class="terminate-form">
+      <div class="contract-summary">
+        <h4>{{ selectedContrat.personnel?.nom }} {{ selectedContrat.personnel?.prenom }}</h4>
+        <p>Matricule: {{ selectedContrat.personnel?.matricule }}</p>
+        <p>Date fin actuelle: {{ formatDate(selectedContrat.dateFin) }}</p>
+      </div>
+      <el-form label-width="140px" class="terminate-form-fields">
+        <el-form-item label="Nouvelle date fin" required>
+          <el-date-picker v-model="avenantForm.nouvelleDateFin" type="date" placeholder="Nouvelle date de fin" style="width: 100%" format="DD/MM/YYYY" value-format="DD/MM/YYYY" clearable />
+        </el-form-item>
+        <el-form-item label="Observations">
+          <el-input v-model="avenantForm.observations" type="textarea" :rows="3" placeholder="Motif de l'avenant..." />
+        </el-form-item>
+      </el-form>
+    </div>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="showAvenantModal = false" size="large">Annuler</el-button>
+        <el-button type="primary" @click="confirmAvenant" :loading="loading" size="large">Confirmer l'avenant</el-button>
+      </div>
+    </template>
+  </el-dialog>
+
+  <!-- Modal Historique -->
+  <el-dialog v-model="showHistoryModal" title="Historique du contrat" width="700px" destroy-on-close>
+    <div v-if="selectedContrat" class="contract-summary">
+      <h4>{{ selectedContrat.personnel?.nom }} {{ selectedContrat.personnel?.prenom }}</h4>
+      <p>Matricule: {{ selectedContrat.personnel?.matricule }}</p>
+    </div>
+    <el-table :data="contratHistory" v-loading="loadingHistory" style="width: 100%" max-height="400">
+      <el-table-column prop="dateOperation" label="Date" min-width="140">
+        <template #default="{ row }">
+          {{ formatDate(row.dateOperation) }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="typeOperation" label="Opération" min-width="120">
+        <template #default="{ row }">
+          <el-tag :type="getHistoryTagType(row.typeOperation)" size="small">{{ row.typeOperation }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="description" label="Description" min-width="250" />
+      <el-table-column prop="utilisateur" label="Utilisateur" min-width="100">
+        <template #default="{ row }">
+          {{ row.utilisateur || 'Système' }}
+        </template>
+      </el-table-column>
+    </el-table>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="showHistoryModal = false" size="large">Fermer</el-button>
+      </div>
+    </template>
+  </el-dialog>
 
   <!-- Modal Voir le contrat -->
   <el-dialog
@@ -496,20 +671,29 @@
         </el-form-item>
         
         <el-form-item label="Départ">
-          <el-radio-group v-model="terminateForm.depart">
+          <el-radio-group v-model="terminateForm.depart" @change="onDepartChange">
             <el-radio :label="false">Non</el-radio>
             <el-radio :label="true">Oui</el-radio>
           </el-radio-group>
         </el-form-item>
         
-        <el-form-item label="Observation">
-          <el-select v-model="terminateForm.observation" placeholder="Sélectionner une observation" style="width: 100%;">
-            <el-option label="Aucun choix" value="Aucun" />
-            <el-option label="Demission" value="Demission" />
-            <el-option label="Deces" value="Deces" />
-            <el-option label="Fin de contrat" value="Fin de contrat" />
-            <el-option label="Renvoi" value="Renvoi" />
-            <el-option label="Modification" value="Modification" />
+        <el-form-item :label="terminateForm.depart ? 'Motif de clôture' : 'Type d\'opération'">
+          <el-select v-model="terminateForm.observation" placeholder="Sélectionner" style="width: 100%;">
+            <template v-if="terminateForm.depart">
+              <el-option label="Fin de CDD" value="FIN_CDD" />
+              <el-option label="Démission" value="DEMISSION" />
+              <el-option label="Licenciement" value="LICENCIEMENT" />
+              <el-option label="Retraite" value="RETRAITE" />
+              <el-option label="Décès" value="DECES" />
+              <el-option label="Autre" value="AUTRE" />
+            </template>
+            <template v-else>
+              <el-option label="Modification" value="MODIFICATION" />
+              <el-option label="Renouvellement" value="RENOUVELLEMENT" />
+              <el-option label="Avenant" value="AVENANT" />
+              <el-option label="Clôture" value="CLOTURE" />
+              <el-option label="Suspension" value="SUSPENSION" />
+            </template>
           </el-select>
         </el-form-item>
         
@@ -616,10 +800,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   Plus, Edit, Delete, Search, Refresh, Close, Calendar, Clock,
   User, UserFilled, CreditCard, Briefcase, View, Download,
-  Document, WarningFilled
+  Document, WarningFilled, VideoPause, VideoPlay, RefreshRight, Histogram, Timer
 } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
-import { contratPersonnelService, type ContratPersonnel as ContratPersonnelType, type ContratPersonnelFilterRequest } from '@/services/contrat-personnel.service'
+import { contratPersonnelService, type ContratPersonnel as ContratPersonnelType, type ContratPersonnelFilterRequest, type ContratDashboard, type ContratHistory } from '@/services/contrat-personnel.service'
+import { api } from '@/services/api'
 
 interface Personnel {
   id: number
@@ -675,6 +860,34 @@ const showViewModal = ref(false)
 const showTerminateModal = ref(false)
 const selectedContrat = ref<ContratPersonnel | null>(null)
 const terminating = ref(false)
+
+// Variables pour les nouvelles fonctionnalités
+const dashboard = ref<ContratDashboard | null>(null)
+const showSuspendModal = ref(false)
+const showResilierModal = ref(false)
+const showRenewModal = ref(false)
+const showAvenantModal = ref(false)
+const showHistoryModal = ref(false)
+const loadingHistory = ref(false)
+const contratHistory = ref<ContratHistory[]>([])
+
+const suspendForm = reactive({
+  observations: ''
+})
+const resilierForm = reactive({
+  dateFin: '',
+  motif: '',
+  observations: ''
+})
+const renewForm = reactive({
+  nouvelleDateDebut: '',
+  nouvelleDateFin: '',
+  observations: ''
+})
+const avenantForm = reactive({
+  nouvelleDateFin: '',
+  observations: ''
+})
 
 // Variables pour les filtres
 const currentView = ref('all')
@@ -939,6 +1152,13 @@ const getTypeContratLabel = (typeContrat: string | { libelle: string }) => {
   return typeContrat?.libelle || 'N/A'
 }
 
+const isCDIContract = (typeContrat: string | { id: number; libelle: string }) => {
+  if (typeof typeContrat === 'object') {
+    return typeContrat?.id === 1
+  }
+  return typeContrat?.toLowerCase() === 'cdi'
+}
+
 const getTypeContratType = (typeContrat: string | { libelle: string }) => {
   if (typeof typeContrat === 'string') {
     switch (typeContrat?.toLowerCase()) {
@@ -981,10 +1201,15 @@ const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
     const endDate = contrat.dateFin ? parseFlexibleDate(contrat.dateFin) : null
     if (endDate) endDate.setHours(0, 0, 0, 0)
 
-    // Critère "Contrats en cours" : (statut=true ET dateFin >= aujourd'hui) OU (CDI sans date de fin)
-    const isActiveNotExpired = contrat.statut === true && endDate !== null && endDate.getTime() >= today.getTime()
-    const isCDIWithoutEnd = isCDI && !contrat.dateFin
-    if (!isActiveNotExpired && !isCDIWithoutEnd) return false
+    // Critère "Contrats en cours" :
+    // 1. CDI avec statut=true (peu importe dateFin — un CDI n'expire pas)
+    // 2. Contrat sans dateFin avec statut=true (quel que soit le type)
+    // 3. CDD/autres avec statut=true ET dateFin >= aujourd'hui
+    if (contrat.statut !== true) return false
+    const isCDIActive = isCDI
+    const hasNoEndDate = !contrat.dateFin
+    const isActiveNotExpired = endDate !== null && endDate.getTime() >= today.getTime()
+    if (!isCDIActive && !hasNoEndDate && !isActiveNotExpired) return false
 
     if (currentView.value === 'active' && contrat.statut !== true) return false
     if (currentView.value === 'inactive' && contrat.statut !== false) return false
@@ -1067,16 +1292,9 @@ const parseFlexibleDate = (dateStr: string): Date | null => {
 }
 
 const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
   return rows.filter(contrat => {
-    // Critère "Contrats expirés" : statut=true ET dateFin < aujourd'hui
-    if (contrat.statut !== true) return false
-
-    // Filtrer par statut
-    if (expiredView.value === 'active' && contrat.statut !== true) return false
-    if (expiredView.value === 'inactive' && contrat.statut !== false) return false
+    // L'API /personnels/contrats/expired filtre déjà : statut=true, dateFin < today, exclut CDI
+    // On ne garde que les filtres UI côté client
 
     // Filtrer par type de contrat (choix multiple)
     if (expiredFilterTypeContrat.value && expiredFilterTypeContrat.value.length > 0) {
@@ -1100,44 +1318,31 @@ const applyExpiredContractsFilters = (rows: ContratPersonnel[]) => {
       if (!searchable.includes(search)) return false
     }
 
-    // Normaliser la date de fin du contrat
+    // Filtres de date optionnels (période, date max)
     if (!contrat.dateFin) return false
 
     const contractEndDate = parseFlexibleDate(contrat.dateFin)
     if (!contractEndDate) return false
-
     contractEndDate.setHours(0, 0, 0, 0)
 
-    // Date max d'expiration (dateFin <= date choisie)
-    let maxDate: Date | null = null
+    // Date max d'expiration
     if (expireDateMax.value) {
-      maxDate = parseFlexibleDate(expireDateMax.value)
-      if (maxDate) maxDate.setHours(0, 0, 0, 0)
+      const maxDate = parseFlexibleDate(expireDateMax.value)
+      if (maxDate) {
+        maxDate.setHours(0, 0, 0, 0)
+        if (contractEndDate.getTime() > maxDate.getTime()) return false
+      }
     }
 
     // Période d'expiration
-    let startDate: Date | null = null
-    let endDate: Date | null = null
     if (expirePeriodStart.value && expirePeriodEnd.value) {
-      startDate = parseFlexibleDate(expirePeriodStart.value)
-      endDate = parseFlexibleDate(expirePeriodEnd.value)
-      if (startDate) startDate.setHours(0, 0, 0, 0)
-      if (endDate) endDate.setHours(0, 0, 0, 0)
-    }
-
-    // Appliquer les filtres de date (cumulatifs)
-    if (startDate && endDate) {
-      const inPeriod = contractEndDate.getTime() >= startDate.getTime() && contractEndDate.getTime() <= endDate.getTime()
-      if (!inPeriod) return false
-    }
-
-    if (maxDate) {
-      if (contractEndDate.getTime() > maxDate.getTime()) return false
-    }
-
-    // Par défaut: afficher tous les contrats expirés (dateFin < aujourd'hui)
-    if (!maxDate && !startDate && !endDate) {
-      return contractEndDate.getTime() < today.getTime()
+      const startDate = parseFlexibleDate(expirePeriodStart.value)
+      const endDate = parseFlexibleDate(expirePeriodEnd.value)
+      if (startDate && endDate) {
+        startDate.setHours(0, 0, 0, 0)
+        endDate.setHours(0, 0, 0, 0)
+        if (!(contractEndDate.getTime() >= startDate.getTime() && contractEndDate.getTime() <= endDate.getTime())) return false
+      }
     }
 
     return true
@@ -1148,9 +1353,40 @@ const applyClosedContractsFilters = (rows: ContratPersonnel[]) => {
   const search = normalizeText(searchText.value)
 
   return rows.filter(contrat => {
-    // Critère "Contrats clôturés" : statut=false ET (départ=true OU observation de fin de contrat renseignée)
-    const hasEndReason = contrat.depart === true || (contrat.observCtrat && contrat.observCtrat.trim() !== '')
-    if (contrat.statut !== false || !hasEndReason) return false
+    // Critère "Contrats clôturés" : statut=false ET etatContrat in [RESILIE, TERMINE]
+    // (les contrats suspendus ont leur propre onglet)
+    if (contrat.statut !== false) return false
+    const etat = (contrat.etatContrat || '').toUpperCase()
+    if (etat !== 'RESILIE' && etat !== 'TERMINE') {
+      // Fallback si etatContrat non renseigné : utiliser depart=true ou observCtrat sans SUSPENDU
+      const hasEndReason = contrat.depart === true || (contrat.observCtrat && contrat.observCtrat.trim() !== '')
+      if (!hasEndReason) return false
+    }
+
+    if (search) {
+      const searchable = [
+        contrat.personnel?.matricule,
+        contrat.personnel?.nom,
+        contrat.personnel?.prenom,
+        getTypeContratLabel(contrat.typeContrat),
+        getFonctionLabel(contrat.fonction)
+      ].map(normalizeText).join(' ')
+
+      if (!searchable.includes(search)) return false
+    }
+
+    return true
+  })
+}
+
+const applySuspendedContractsFilters = (rows: ContratPersonnel[]) => {
+  const search = normalizeText(searchText.value)
+
+  return rows.filter(contrat => {
+    // Critère "Contrats suspendus" : etatContrat=SUSPENDU
+    // Le backend ne change pas statut lors de la suspension, mais on vérifie etatContrat
+    const etat = (contrat.etatContrat || '').toUpperCase()
+    if (etat !== 'SUSPENDU') return false
 
     if (search) {
       const searchable = [
@@ -1178,9 +1414,11 @@ const applyToRenewContractsFilters = (rows: ContratPersonnel[]) => {
     if (!endDate) return false
     endDate.setHours(0, 0, 0, 0)
 
-    // Critère "Contrats à renouveler" : CDD, statut=true, date de fin entre aujourd'hui et dans 30 jours
-    const isCDD = contractType === 'cdd'
-    if (!isCDD || contrat.statut !== true) return false
+    // Critère "Contrats à renouveler" : type_contrat <> CDI, statut=true, date de fin dans les 30 prochains jours
+    const isCDI = contractType === 'cdi'
+    const typeId = typeof contrat.typeContrat === 'object' ? contrat.typeContrat?.id : null
+    if (isCDI || typeId === 1) return false
+    if (contrat.statut !== true) return false
 
     const diffTime = endDate.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -1280,41 +1518,83 @@ const loadContrats = async () => {
   loading.value = true
   try {
     let response
-    if (['closed', 'toRenew', 'renewal'].includes(activeTab.value)) {
-      // Pour les onglets nécessitant tous les contrats (actifs et inactifs)
+    let filteredRows: ContratPersonnel[]
+
+    if (activeTab.value === 'contracts') {
+      // Utiliser l'API dédiée aux contrats actifs (listcontratpersonnelActifjson)
+      response = await contratPersonnelService.getContratsActifs({
+        offset: currentPage.value * pageSize.value,
+        limit: pageSize.value
+      })
+      // L'API renvoie déjà les contrats actifs paginés, appliquer uniquement les filtres UI
+      filteredRows = applyCurrentContractsFilters(response.rows || response.data || [])
+    } else if (activeTab.value === 'expired') {
+      // Utiliser la même API que le dashboard : getContratsWithFilters avec plage 10 ans → aujourd'hui, limit 1000
+      const now = new Date()
+      const start = new Date()
+      start.setFullYear(start.getFullYear() - 10)
+      const formatDateParam = (d: Date) => {
+        const y = d.getFullYear()
+        const m = String(d.getMonth() + 1).padStart(2, '0')
+        const day = String(d.getDate()).padStart(2, '0')
+        return `${y}-${m}-${day}`
+      }
       response = await contratPersonnelService.getContratsWithFilters({
         offset: 0,
-        limit: 999999
+        limit: 1000,
+        expirePeriodStart: formatDateParam(start),
+        expirePeriodEnd: formatDateParam(now)
       })
+      const expiredRows = response.rows || response.data || []
+      // Filtrer client-side : statut=true ET dateFin <= aujourd'hui (même logique que dashboard)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      filteredRows = expiredRows.filter((contrat: any) => {
+        if (contrat.statut !== true) return false
+        if (!contrat.dateFin) return false
+        const dateFin = parseFlexibleDate(contrat.dateFin)
+        if (!dateFin) return false
+        dateFin.setHours(0, 0, 0, 0)
+        if (dateFin.getTime() > today.getTime()) return false
+        // Appliquer les filtres UI (recherche, type, période)
+        return applyExpiredContractsFilters([contrat]).length > 0
+      })
+    } else if (['closed', 'suspended', 'toRenew', 'renewal'].includes(activeTab.value)) {
+      if (activeTab.value === 'suspended') {
+        // Utiliser l'API dédiée /contrats/by-etat/SUSPENDU
+        const suspendedResponse = await api.get('/personnels/contrats/by-etat/SUSPENDU')
+        const suspendedRows = Array.isArray(suspendedResponse.data) ? suspendedResponse.data : []
+        filteredRows = applySuspendedContractsFilters(suspendedRows)
+      } else {
+        // Pour les onglets nécessitant tous les contrats (actifs et inactifs)
+        response = await contratPersonnelService.getContratsWithFilters({
+          offset: 0,
+          limit: 999999
+        })
+        if (activeTab.value === 'closed') {
+          filteredRows = applyClosedContractsFilters(response.rows || [])
+        } else if (activeTab.value === 'toRenew') {
+          filteredRows = applyToRenewContractsFilters(response.rows || [])
+        } else {
+          filteredRows = applyRenewalFilters(response.rows || [])
+        }
+      }
     } else {
-      // Toujours utiliser getAllContrats comme base pour les onglets en cours et expirés
       response = await contratPersonnelService.getAllContrats({
         offset: 0,
         limit: 999999
       })
-    }
-
-    let filteredRows: ContratPersonnel[]
-
-    if (activeTab.value === 'expired') {
-      // Appliquer les filtres d'expiration côté client
-      filteredRows = applyExpiredContractsFilters(response.rows || [])
-    } else if (activeTab.value === 'closed') {
-      // Appliquer les filtres des contrats clôturés côté client
-      filteredRows = applyClosedContractsFilters(response.rows || [])
-    } else if (activeTab.value === 'toRenew') {
-      // Appliquer les filtres des contrats à renouveler côté client
-      filteredRows = applyToRenewContractsFilters(response.rows || [])
-    } else if (activeTab.value === 'renewal') {
-      // Appliquer les filtres d'avenants/renouvellements côté client
-      filteredRows = applyRenewalFilters(response.rows || [])
-    } else {
-      // Appliquer les filtres des contrats en cours côté client
       filteredRows = applyCurrentContractsFilters(response.rows || [])
     }
 
-    contrats.value = paginateRows(filteredRows)
-    total.value = filteredRows.length
+    if (activeTab.value === 'contracts') {
+      // L'API listcontratpersonnelActifjson gère la pagination côté serveur
+      contrats.value = filteredRows
+      total.value = response.total || filteredRows.length
+    } else {
+      contrats.value = paginateRows(filteredRows)
+      total.value = filteredRows.length
+    }
 
     if (contrats.value.length === 0 && currentPage.value > 0) {
       currentPage.value = 0
@@ -1381,9 +1661,20 @@ const terminateContrat = (contrat: ContratPersonnel) => {
   terminateForm.dateFin = ''
   terminateForm.dateMod = new Date().toISOString().split('T')[0] // Date du jour
   terminateForm.depart = false // Non par défaut
-  terminateForm.observation = 'Aucun'
+  terminateForm.observation = 'MODIFICATION' // TypeOperationContrat par défaut (depart=false)
   terminateForm.motif = ''
   showTerminateModal.value = true
+}
+
+const onDepartChange = (val: boolean) => {
+  // Réinitialiser l'observation selon le choix de départ
+  if (val) {
+    // depart=true : MotifClotureContrat
+    terminateForm.observation = 'FIN_CDD'
+  } else {
+    // depart=false : TypeOperationContrat
+    terminateForm.observation = 'MODIFICATION'
+  }
 }
 
 const confirmTerminate = async () => {
@@ -1729,9 +2020,150 @@ watch([currentPage, pageSize], () => {
   loadContrats()
 })
 
+// Fonctions pour les nouvelles fonctionnalités
+const loadDashboard = async () => {
+  try {
+    dashboard.value = await contratPersonnelService.getDashboardContrats()
+  } catch (error) {
+    console.error('Erreur lors du chargement du dashboard:', error)
+  }
+}
+
+const openSuspendModal = (contrat: ContratPersonnel) => {
+  selectedContrat.value = contrat
+  suspendForm.observations = ''
+  showSuspendModal.value = true
+}
+
+const confirmSuspendre = async () => {
+  if (!selectedContrat.value) return
+  try {
+    loading.value = true
+    await contratPersonnelService.suspendreContrat(selectedContrat.value.id, suspendForm.observations)
+    ElMessage.success('Contrat suspendu avec succès')
+    showSuspendModal.value = false
+    await loadContrats()
+    await loadDashboard()
+  } catch (error: any) {
+    ElMessage.error('Erreur lors de la suspension: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+const reprendreContrat = async (contrat: ContratPersonnel) => {
+  try {
+    await ElMessageBox.confirm(
+      `Reprendre le contrat de ${contrat.personnel?.nom} ${contrat.personnel?.prenom}?`,
+      'Confirmation',
+      { confirmButtonText: 'Oui', cancelButtonText: 'Non', type: 'success' }
+    )
+    loading.value = true
+    await contratPersonnelService.reprendreContrat(contrat.id)
+    ElMessage.success('Contrat repris avec succès')
+    await loadContrats()
+    await loadDashboard()
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElMessage.error('Erreur lors de la reprise: ' + (error.response?.data?.message || error.message))
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+const openRenewModal = (contrat: ContratPersonnel) => {
+  selectedContrat.value = contrat
+  renewForm.nouvelleDateDebut = ''
+  renewForm.nouvelleDateFin = ''
+  renewForm.observations = ''
+  showRenewModal.value = true
+}
+
+const confirmRenew = async () => {
+  if (!selectedContrat.value || !renewForm.nouvelleDateDebut) {
+    ElMessage.error('Veuillez renseigner la date de début')
+    return
+  }
+  try {
+    loading.value = true
+    await contratPersonnelService.renouvelerContrat(
+      selectedContrat.value.id,
+      renewForm.nouvelleDateDebut,
+      renewForm.nouvelleDateFin || undefined,
+      renewForm.observations
+    )
+    ElMessage.success('Contrat renouvelé avec succès')
+    showRenewModal.value = false
+    await loadContrats()
+    await loadDashboard()
+  } catch (error: any) {
+    ElMessage.error('Erreur lors du renouvellement: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+const openAvenantModal = (contrat: ContratPersonnel) => {
+  selectedContrat.value = contrat
+  avenantForm.nouvelleDateFin = ''
+  avenantForm.observations = ''
+  showAvenantModal.value = true
+}
+
+const confirmAvenant = async () => {
+  if (!selectedContrat.value || !avenantForm.nouvelleDateFin) {
+    ElMessage.error('Veuillez renseigner la nouvelle date de fin')
+    return
+  }
+  try {
+    loading.value = true
+    await contratPersonnelService.creerAvenant(
+      selectedContrat.value.id,
+      avenantForm.nouvelleDateFin,
+      avenantForm.observations
+    )
+    ElMessage.success('Avenant créé avec succès')
+    showAvenantModal.value = false
+    await loadContrats()
+  } catch (error: any) {
+    ElMessage.error('Erreur lors de la création de l\'avenant: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+const openHistoryModal = async (contrat: ContratPersonnel) => {
+  selectedContrat.value = contrat
+  showHistoryModal.value = true
+  loadingHistory.value = true
+  try {
+    contratHistory.value = await contratPersonnelService.getContratHistory(contrat.id)
+  } catch (error) {
+    console.error('Erreur lors du chargement de l\'historique:', error)
+    contratHistory.value = []
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+const getHistoryTagType = (typeOperation: string) => {
+  switch (typeOperation) {
+    case 'CREATION': return 'success'
+    case 'CLOTURE': return 'danger'
+    case 'SUSPENSION': return 'warning'
+    case 'RESILIATION': return 'danger'
+    case 'REPRISE': return 'success'
+    case 'RENOUVELLEMENT': return 'primary'
+    case 'AVENANT': return 'info'
+    default: return 'info'
+  }
+}
+
 // Charger au montage
 onMounted(() => {
   loadContrats()
+  loadDashboard()
 })
 </script>
 
@@ -1742,6 +2174,43 @@ onMounted(() => {
   padding: var(--spacing-xl);
   background: var(--bg-secondary);
   min-height: 100vh;
+
+  .dashboard-widget {
+    margin-bottom: 20px;
+    padding: 20px;
+    background: var(--bg-primary, #fff);
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+    }
+
+    .dashboard-item {
+      text-align: center;
+      padding: 12px;
+      border-radius: 8px;
+      background: var(--bg-secondary, #f5f7fa);
+      transition: transform 0.2s;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+    }
+
+    .dashboard-value {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .dashboard-label {
+      font-size: 13px;
+      color: var(--text-secondary, #909399);
+    }
+  }
 }
 
 .page-header {
@@ -1834,6 +2303,23 @@ onMounted(() => {
   flex: 1;
   overflow: auto;
   padding: var(--spacing-lg);
+
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+
+    .el-button {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 500;
+
+      .el-icon {
+        font-size: 14px;
+      }
+    }
+  }
   min-height: 400px;
   
   .el-table {

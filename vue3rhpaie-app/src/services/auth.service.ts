@@ -2,15 +2,20 @@ import axios from 'axios'
 import type { AxiosResponse } from 'axios'
 import type { ApiResponse } from '@/types/auth'
 import { API_URLS, API_CONFIG } from '@/config/api'
+import router from '@/router'
 
 export interface UserInfo {
-  sub: string
+  sub?: string
   email: string
-  name: string
-  preferred_username: string
-  given_name: string
-  family_name: string
-  roles: string[]
+  name?: string
+  preferred_username?: string
+  given_name?: string
+  family_name?: string
+  roles?: string[]
+  username: string
+  nom: string
+  prenom: string
+  role: string
 }
 
 export interface LoginResponse {
@@ -98,28 +103,17 @@ export const keycloakAuthService = {
 
   // Extraire le rôle depuis le token
   extractRoleFromToken(payload: any): string {
-    console.log('Payload JWT:', payload)
-    
+    const PRIORITY: string[] = ['ADMIN', 'DAF', 'RH', 'PTGE', 'USER']
+
     if (payload.resource_access && payload.resource_access['backend_hrm']) {
-      const roles = payload.resource_access['backend_hrm'].roles
-      console.log('Roles from resource_access:', roles)
-      const role = roles.includes('ADMIN') ? 'ADMIN' : 
-                   roles.includes('RH_MANAGER') ? 'RH_MANAGER' :
-                   roles.includes('USER') ? 'USER' : 'GUEST'
-      console.log('Role determined:', role)
-      return role
+      const roles: string[] = payload.resource_access['backend_hrm'].roles || []
+      const found = PRIORITY.find(r => roles.includes(r))
+      if (found) return found
     }
     
-    const realmRoles = payload.realm_access?.roles || []
-    console.log('Roles from realm_access:', realmRoles)
-    
-    // Chercher les rôles métier dans l'ordre de priorité
-    const role = realmRoles.includes('ADMIN') ? 'ADMIN' : 
-                 realmRoles.includes('RH_MANAGER') ? 'RH_MANAGER' :
-                 realmRoles.includes('USER') ? 'USER' : 'GUEST'
-    
-    console.log('Role determined from realm:', role)
-    return role
+    const realmRoles: string[] = payload.realm_access?.roles || []
+    const found = PRIORITY.find(r => realmRoles.includes(r))
+    return found || 'GUEST'
   },
 
   // Déconnexion

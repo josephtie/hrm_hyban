@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import keycloakAuthService from '@/services/keycloak-auth.service'
+import permissionService from '@/services/permission.service'
 import type { 
   User, 
   UserRole, 
@@ -46,10 +47,10 @@ export const useAuthStore = defineStore('auth', () => {
     
     const roleHierarchy: Record<UserRole, number> = {
       'GUEST': 0,
-      'VIEWER': 1,
-      'USER': 2,
+      'USER': 1,
+      'PTGE': 2,
       'RH': 3,
-      'RH_MANAGER': 4,
+      'DAF': 4,
       'ADMIN': 5
     }
     
@@ -101,19 +102,71 @@ export const useAuthStore = defineStore('auth', () => {
     // ADMIN a tous les droits
     if (role === 'ADMIN') return true
     
-    // Permissions spécifiques par rôle
+    // Permissions spécifiques par rôle (alignées sur la matrice backend)
     const rolePermissions: Record<string, string[]> = {
-      'ADMIN': ['*'], // ADMIN a tous les droits
-      'RH_MANAGER': [
-        'personnel:read', 'temps_absences:read', 'bulletins:read', 'etats:read'
+      'ADMIN': ['*'],
+      'DAF': [
+        'personnel:read', 'temps_absences:read',
+        'paie:read', 'paie:write',
+        'bulletins:read', 'bulletins:write',
+        'etats:read', 'etats:write',
+        'rubriques:read', 'rubriques:write',
+        'banques:read', 'banques:write',
+        'cpte-virement:read', 'cpte-virement:write',
+        'depart:read', 'depart:write',
+        'prets:read', 'prets:write',
+        'organisation:read',
+        'referentiels:read'
+      ],
+      'RH': [
+        'personnel:read', 'personnel:write',
+        'temps_absences:read', 'temps_absences:write',
+        'contrats:read', 'contrats:write',
+        'carriere:read', 'carriere:write',
+        'conges:read', 'conges:write',
+        'absences:read', 'absences:write',
+        'formation:read', 'formation:write',
+        'sanctions:read', 'sanctions:write',
+        'referentiels:read', 'referentiels:write',
+        'organisation:read',
+        'paie:read', 'bulletins:read', 'etats:read',
+        'rubriques:read', 'banques:read'
+      ],
+      'PTGE': [
+        'pointage:read', 'pointage:write',
+        'referentiels:read',
+        'personnel:read'
       ],
       'USER': [
         'personnel:read', 'bulletins:read'
-      ]
+      ],
+      'GUEST': []
     }
     
     const requiredPermission = `${resource}:${action}`
-    return rolePermissions[role]?.includes(requiredPermission) || false
+    const perms = rolePermissions[role] || []
+    return perms.includes('*') || perms.includes(requiredPermission)
+  }
+
+  // Charger les permissions depuis le backend
+  const loadUserPermissions = async (role: string): Promise<void> => {
+    try {
+      if (role === 'GUEST') return
+      const data = await permissionService.getPermissionsByRole(role)
+      const permCodes = data.permissions || []
+      if (user.value) {
+        user.value = { ...user.value, permissions: permCodes.map((code: string, index: number) => ({
+          id: String(index),
+          name: code,
+          resource: code.split('_')[0],
+          action: code.split('_')[1] || '',
+          description: code
+        })) }
+        permissionService.setCachedPermissions(permCodes)
+      }
+    } catch (error) {
+      console.warn('Impossible de charger les permissions:', error)
+    }
   }
 
   // Actions d'authentification
@@ -134,6 +187,10 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = response.user as any // Cast temporaire pour compatibilité
         
         console.log('Utilisateur connecté:', user.value) // Debug
+        
+        // Charger les permissions depuis le backend
+        const userRole = (user.value as any)?.role || 'GUEST'
+        await loadUserPermissions(userRole)
         
         ElMessage.success(`Bienvenue ${response.user.username} !`)
         console.log('Login réussi, retour true') // Debug
@@ -183,6 +240,11 @@ export const useAuthStore = defineStore('auth', () => {
         // Vérifier si le token est encore valide
         if (keycloakAuthService.isAuthenticated()) {
           console.log('Auth initialisée avec succès')
+          // Recharger les permissions depuis le backend (le cache est perdu au refresh)
+          const userRole = (user.value as any)?.role || 'GUEST'
+          if (userRole !== 'GUEST') {
+            await loadUserPermissions(userRole)
+          }
         } else {
           console.log('Token expiré, déconnexion')
           await logout()
@@ -229,10 +291,21 @@ export const useAuthStore = defineStore('auth', () => {
     hasAnyPermission,
     hasAllPermissions,
     hasPermissionByRole,
+    hasPermissionCode: (code: string): boolean => {
+      if (!user.value) return false
+      if ((user.value as any).role === 'ADMIN') return true
+      return permissionService.hasPermission(code)
+    },
+    hasAnyPermissionCode: (codes: string[]): boolean => {
+      if (!user.value) return false
+      if ((user.value as any).role === 'ADMIN') return true
+      return permissionService.hasAnyPermission(codes)
+    },
     
     // Actions
     login,
     logout,
-    initializeAuth
+    initializeAuth,
+    loadUserPermissions
   }
 })

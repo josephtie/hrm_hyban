@@ -19,6 +19,7 @@ import net.sf.jasperreports.engine.JRDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/payroll")
+@PreAuthorize("hasAnyAuthority('PAYROLL_READ', 'PAYROLL_CALCULATE') or hasRole('ADMIN')")
 public class PayController {
 
     @Autowired
@@ -36,6 +38,7 @@ public class PayController {
     private PeriodePaieService periodePaieService;
 
     @PostMapping ("/employe/{personnalId}")
+    @PreAuthorize("hasAuthority('PAYROLL_READ') or hasRole('ADMIN')")
     public List<BulletinPaie> getCurrentYearBulletins(@PathVariable Long personnalId) {
        PeriodePaie maperiode=periodePaieService.findPeriodeactive();
         return bulletinPaieService.getCurrentYearBulletins(personnalId,maperiode.getAnnee().getAnnee()).getRows();
@@ -43,6 +46,7 @@ public class PayController {
 
 
     @PostMapping ("/{payrollId}")
+    @PreAuthorize("hasAuthority('PAYROLL_READ') or hasRole('ADMIN')")
     public BulletinPaieDTO getCurrentSelectBulletin(@PathVariable Long payrollId) {
         //PeriodePaie maperiode=periodePaieService.findPeriodeactive();
          BulletinPaieDTO bulletinPaieDTO=new BulletinPaieDTO();

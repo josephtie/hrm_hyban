@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.io.IOException;
 import java.security.Principal;
@@ -31,6 +32,7 @@ import com.nectux.mizan.hyban.common.dto.IdRequest;
 
 @Controller
 @RequestMapping("/formation")
+@PreAuthorize("hasAnyAuthority('FORMATION_READ', 'FORMATION_CREATE', 'FORMATION_UPDATE', 'FORMATION_DELETE') or hasRole('ADMIN')")
 public class FormationPersonnelController {
 	
 	private static final Logger logger = LogManager.getLogger(PosteController.class);

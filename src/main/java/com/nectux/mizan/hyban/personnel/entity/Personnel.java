@@ -495,7 +495,7 @@ public class Personnel   extends Auditable {
 
 	public String getEnSommeil() {
 		if(statut==null)
-			enSommeil = "";
+			return "";
 		if(statut)
 			enSommeil = "NON";
 		else
@@ -512,13 +512,11 @@ public class Personnel   extends Auditable {
 
 	public String getEnCarec() {
 		if(carec==null)
-			enCarec = "";
-		
-		if(carec=true)
+			return "";
+		if(carec)
 			enCarec = "OUI";
-		if(carec=false)
+		else
 			enCarec = "NON";
-		 
 		return enCarec;
 	}
 
