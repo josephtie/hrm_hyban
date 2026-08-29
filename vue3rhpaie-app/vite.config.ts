@@ -60,6 +60,26 @@ export default defineConfig({
 
         secure: false
 
+      },
+
+      '/static': {
+
+        target: 'http://192.168.1.7:7200',
+
+        changeOrigin: true,
+
+        secure: false
+
+      },
+
+      '/uploads': {
+
+        target: 'http://192.168.1.7:7200',
+
+        changeOrigin: true,
+
+        secure: false
+
       }
 
     }

@@ -280,7 +280,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import {
   Expand,
   Fold,
@@ -328,12 +328,7 @@ const emit = defineEmits<Emits>()
 
 const authStore = useAuthStore()
 
-const currentPeriode = computed(() => {
-  const date = new Date()
-  const month = date.getMonth() + 1
-  const year = date.getFullYear()
-  return `${month.toString().padStart(2, '0')}/${year}`
-})
+const currentPeriode = ref<string>('')
 
 const toggleSidebar = () => {
   emit('toggle')
@@ -359,8 +354,23 @@ const loadSocieteLogo = async () => {
   }
 }
 
+const loadActivePeriode = async () => {
+  try {
+    const { data } = await api.get('/parametrages/periodes/active')
+    const periode = data?.row || data
+    if (periode?.affiche) {
+      currentPeriode.value = periode.affiche
+    } else if (periode?.mois && periode?.annee) {
+      currentPeriode.value = `${periode.mois} ${periode.annee}`
+    }
+  } catch (e) {
+    console.error('Erreur chargement période active', e)
+  }
+}
+
 onMounted(() => {
   loadSocieteLogo()
+  loadActivePeriode()
 })
 </script>
 

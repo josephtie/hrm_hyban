@@ -109,6 +109,8 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/swagger-resources/**", "/webjars/**", "/auth/login", "/auth/api/debug/roles").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/static/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
 
                         // --- Administration : utilisateurs, societe (ADMIN) ---
                         // Allow any authenticated user to fetch their own role permissions

@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.http.HttpStatus;
@@ -58,6 +59,9 @@ public class SocieteRestController {
     private MoisService moisService;
     @Autowired
     private BanqueService banqueService;
+
+    @Value("${app.upload-dir:uploads}")
+    private String uploadDir;
 
     public SocieteDTO excelAttribdto = null;
 
@@ -309,19 +313,19 @@ public class SocieteRestController {
         try {
             SocieteVueResponse<Societe> response = new SocieteVueResponse<>();
             
-            String uploadPath = request.getSession().getServletContext().getClass().getResource("") + "\\static\\logo\\";
-            System.out.println(">>> CHEMIN UPLOAD >>>" + uploadPath);
+            String logoPath = Paths.get(uploadDir, "logo").toAbsolutePath().toString();
+            System.out.println(">>> CHEMIN UPLOAD >>>" + logoPath);
             
-            File uploadDir = new File(uploadPath);
-            if (!uploadDir.exists()) {
-                uploadDir.mkdir();
+            File uploadDirFile = new File(logoPath);
+            if (!uploadDirFile.exists()) {
+                uploadDirFile.mkdirs();
             }
 
             Iterator<String> itr = uploadfile.getFileNames();
             MultipartFile mpf = uploadfile.getFile(itr.next());
             
             String filename = mpf.getOriginalFilename();
-            String directory = uploadPath;
+            String directory = logoPath;
             String filepath = Paths.get(directory, filename).toString();
             
             List<Societe> malist = societeService.findtsmois();
