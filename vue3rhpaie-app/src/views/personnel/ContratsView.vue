@@ -360,36 +360,6 @@
   </div>
  </div>
 
-  <!-- Dashboard Widget -->
-  <div v-if="dashboard" class="dashboard-widget enhanced-card">
-    <div class="dashboard-grid">
-      <div class="dashboard-item">
-        <div class="dashboard-value text-gradient">{{ dashboard.contratsActifs }}</div>
-        <div class="dashboard-label">Contrats Actifs</div>
-      </div>
-      <div class="dashboard-item">
-        <div class="dashboard-value" style="color: #f56c6c;">{{ dashboard.contratsExpires }}</div>
-        <div class="dashboard-label">Contrats Expirés</div>
-      </div>
-      <div class="dashboard-item">
-        <div class="dashboard-value" style="color: #e6a23c;">{{ dashboard.echeances['90j'] }}</div>
-        <div class="dashboard-label">Échéance 90j</div>
-      </div>
-      <div class="dashboard-item">
-        <div class="dashboard-value" style="color: #e6a23c;">{{ dashboard.echeances['60j'] }}</div>
-        <div class="dashboard-label">Échéance 60j</div>
-      </div>
-      <div class="dashboard-item">
-        <div class="dashboard-value" style="color: #f56c6c;">{{ dashboard.echeances['30j'] }}</div>
-        <div class="dashboard-label">Échéance 30j</div>
-      </div>
-      <div class="dashboard-item">
-        <div class="dashboard-value" style="color: #f56c6c;">{{ dashboard.echeances['15j'] }}</div>
-        <div class="dashboard-label">Échéance 15j</div>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal Suspendre -->
   <el-dialog v-model="showSuspendModal" title="Suspendre le contrat" width="500px" destroy-on-close>
     <div v-if="selectedContrat" class="terminate-form">
@@ -803,7 +773,7 @@ import {
   Document, WarningFilled, VideoPause, VideoPlay, RefreshRight, Histogram, Timer
 } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx'
-import { contratPersonnelService, type ContratPersonnel as ContratPersonnelType, type ContratPersonnelFilterRequest, type ContratDashboard, type ContratHistory } from '@/services/contrat-personnel.service'
+import { contratPersonnelService, type ContratPersonnel as ContratPersonnelType, type ContratPersonnelFilterRequest, type ContratHistory } from '@/services/contrat-personnel.service'
 import { api } from '@/services/api'
 
 interface Personnel {
@@ -862,7 +832,6 @@ const selectedContrat = ref<ContratPersonnel | null>(null)
 const terminating = ref(false)
 
 // Variables pour les nouvelles fonctionnalités
-const dashboard = ref<ContratDashboard | null>(null)
 const showSuspendModal = ref(false)
 const showResilierModal = ref(false)
 const showRenewModal = ref(false)
@@ -2020,15 +1989,6 @@ watch([currentPage, pageSize], () => {
   loadContrats()
 })
 
-// Fonctions pour les nouvelles fonctionnalités
-const loadDashboard = async () => {
-  try {
-    dashboard.value = await contratPersonnelService.getDashboardContrats()
-  } catch (error) {
-    console.error('Erreur lors du chargement du dashboard:', error)
-  }
-}
-
 const openSuspendModal = (contrat: ContratPersonnel) => {
   selectedContrat.value = contrat
   suspendForm.observations = ''
@@ -2043,7 +2003,6 @@ const confirmSuspendre = async () => {
     ElMessage.success('Contrat suspendu avec succès')
     showSuspendModal.value = false
     await loadContrats()
-    await loadDashboard()
   } catch (error: any) {
     ElMessage.error('Erreur lors de la suspension: ' + (error.response?.data?.message || error.message))
   } finally {
@@ -2062,7 +2021,6 @@ const reprendreContrat = async (contrat: ContratPersonnel) => {
     await contratPersonnelService.reprendreContrat(contrat.id)
     ElMessage.success('Contrat repris avec succès')
     await loadContrats()
-    await loadDashboard()
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error('Erreur lors de la reprise: ' + (error.response?.data?.message || error.message))
@@ -2096,7 +2054,6 @@ const confirmRenew = async () => {
     ElMessage.success('Contrat renouvelé avec succès')
     showRenewModal.value = false
     await loadContrats()
-    await loadDashboard()
   } catch (error: any) {
     ElMessage.error('Erreur lors du renouvellement: ' + (error.response?.data?.message || error.message))
   } finally {
@@ -2163,7 +2120,6 @@ const getHistoryTagType = (typeOperation: string) => {
 // Charger au montage
 onMounted(() => {
   loadContrats()
-  loadDashboard()
 })
 </script>
 
@@ -2174,43 +2130,6 @@ onMounted(() => {
   padding: var(--spacing-xl);
   background: var(--bg-secondary);
   min-height: 100vh;
-
-  .dashboard-widget {
-    margin-bottom: 20px;
-    padding: 20px;
-    background: var(--bg-primary, #fff);
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 16px;
-    }
-
-    .dashboard-item {
-      text-align: center;
-      padding: 12px;
-      border-radius: 8px;
-      background: var(--bg-secondary, #f5f7fa);
-      transition: transform 0.2s;
-
-      &:hover {
-        transform: translateY(-2px);
-      }
-    }
-
-    .dashboard-value {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 4px;
-    }
-
-    .dashboard-label {
-      font-size: 13px;
-      color: var(--text-secondary, #909399);
-    }
-  }
 }
 
 .page-header {

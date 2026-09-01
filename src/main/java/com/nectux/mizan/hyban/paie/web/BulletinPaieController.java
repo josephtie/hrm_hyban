@@ -1623,11 +1623,11 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 				listImprimBulletinPaie.add(ajouterImprimBulletinPaie(listprimepersonnel.get(0).getPrime().getLibelle(),BigDecimal.ZERO,listprimepersonnel.get(0).getMontant(),listprimepersonnel.get(0).getMontant(),BigDecimal.ZERO,null,null));
 			}
 		}
-		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" I.T.S ",BigDecimal.valueOf(1.2),bulletin.getBrutImposable(),BigDecimal.ZERO,bulletin.getIts(),null,null));
-		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" I.G.R ",BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,bulletin.getIgr(),null,null));
-		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" CONTRIBUTION NATIONALE ",BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,bulletin.getCn(),null,null));
-		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" RETRAITE CNPS  ",BigDecimal.ZERO,bulletin.getBasecnps(),BigDecimal.ZERO,bulletin.getCn(),null,null));
-		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" IMPOTS/SALAIRE LOCAL ",BigDecimal.ZERO,bulletin.getBasecnps(),BigDecimal.ZERO,bulletin.getCn(),null,null));
+		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" I.T.S            ",BigDecimal.valueOf(1.2),bulletin.getBrutImposable(),BigDecimal.ZERO,bulletin.getIts(),null,null));
+		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" I.G.R             ",BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,bulletin.getIgr(),null,null));
+		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" CONTRIBUTION NATIONALE         ",BigDecimal.ZERO,BigDecimal.ZERO,BigDecimal.ZERO,bulletin.getCn(),null,null));
+		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" RETRAITE CNPS          ",BigDecimal.ZERO,bulletin.getBasecnps(),BigDecimal.ZERO,bulletin.getCn(),null,null));
+		listImprimBulletinPaie.add(ajouterImprimBulletinPaie(" IMPOTS/SALAIRE LOCAL                ",BigDecimal.ZERO,bulletin.getBasecnps(),BigDecimal.ZERO,bulletin.getCn(),null,null));
 
 		bulletin.setListImprimBulletinPaie(listImprimBulletinPaie);
 
@@ -1854,7 +1854,7 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 				listImprimBulletinPaie.add(imprimBulletinPaieIS);
 
 				ImprimBulletinPaie imprimBulletinPaieCnpsPATRON = new ImprimBulletinPaie();
-				imprimBulletinPaieCnpsPATRON.setLibelle("RETRAITE CNPS/PART PATRONAL ");
+				imprimBulletinPaieCnpsPATRON.setLibelle("RETRAITE CNPS/PART PATRONAL       ");
 				//SSSS	imprimBulletinPaieCnpsPATRON.setTauxPatron(7.70);
 				imprimBulletinPaieCnpsPATRON.setBase(bulletin.getBasecnps());
 				imprimBulletinPaieCnpsPATRON.setRetenuePatron(bulletin.getRetraite());
@@ -1862,28 +1862,28 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
 
 
 				ImprimBulletinPaie imprimBulletinPaiePF = new ImprimBulletinPaie();
-				imprimBulletinPaiePF.setLibelle("PRESTATION FAMILIALE");
+				imprimBulletinPaiePF.setLibelle("PRESTATION FAMILIALE       ");
 				//imprimBulletinPaiePF.setTauxPatron(5.75);
 				imprimBulletinPaiePF.setBase(BigDecimal.valueOf(70000));
 				imprimBulletinPaiePF.setRetenuePatron(bulletin.getPrestationFamiliale());
 				listImprimBulletinPaie.add(imprimBulletinPaiePF);
 
 				ImprimBulletinPaie imprimBulletinPaieAC = new ImprimBulletinPaie();
-				imprimBulletinPaieAC.setLibelle("ACCIDENT DE TRAVAIL");
+				imprimBulletinPaieAC.setLibelle("ACCIDENT DE TRAVAIL        ");
 				imprimBulletinPaieAC.setTauxPatron(BigDecimal.valueOf(2));
 				imprimBulletinPaieAC.setBase(BigDecimal.valueOf(70000));
 				imprimBulletinPaieAC.setRetenuePatron(bulletin.getAccidentTravail());
 				listImprimBulletinPaie.add(imprimBulletinPaieAC);
 
 				ImprimBulletinPaie imprimBulletinPaieTA = new ImprimBulletinPaie();
-				imprimBulletinPaieTA.setLibelle("FDFP -TAXE APPRENTISAGE ");
+				imprimBulletinPaieTA.setLibelle("FDFP -TAXE APPRENTISAGE      ");
 				imprimBulletinPaieTA.setTauxPatron(BigDecimal.valueOf(0.40));
 				imprimBulletinPaieTA.setBase(bulletin.getBrutImposable());
 				imprimBulletinPaieTA.setRetenuePatron(bulletin.getTa());
 				listImprimBulletinPaie.add(imprimBulletinPaieTA);
 
 				ImprimBulletinPaie imprimBulletinPaieFDFP = new ImprimBulletinPaie();
-				imprimBulletinPaieFDFP.setLibelle("FDFP -TAXE A LA FPC ");
+				imprimBulletinPaieFDFP.setLibelle("FDFP -TAXE A LA FPC     M");
 				imprimBulletinPaieFDFP.setTauxPatron(BigDecimal.valueOf(0.6D));
 				imprimBulletinPaieFDFP.setBase(bulletin.getBrutImposable());
 				imprimBulletinPaieFDFP.setRetenuePatron(bulletin.getFpc());

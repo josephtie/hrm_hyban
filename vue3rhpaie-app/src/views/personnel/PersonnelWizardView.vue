@@ -305,7 +305,7 @@
                 />
               </el-form-item>
 
-              <el-form-item label="Contractuel">
+              <el-form-item label="Contractuel" required>
                 <el-radio-group v-model="wizardForm.contractuel">
                   <el-radio :value="true">Oui</el-radio>
                   <el-radio :value="false">Non</el-radio>
