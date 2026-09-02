@@ -77,7 +77,7 @@ export interface PaginationRequest {
 }
 
 export interface ContratPersonnelFilterRequest extends PaginationRequest {
-  statut?: string // "active", "inactive", "expiresOnDate", "expiresInPeriod"
+  statut?: string // "active", "expired", "closed", "suspended", "renewable"
   typeContrat?: string // "CDI", "CDD", "Stage", "Apprentissage" (simple, déprécié)
   typeContrats?: string[] // Liste de types de contrats (choix multiple)
   salaireRange?: string // "low", "medium", "high", "veryhigh"

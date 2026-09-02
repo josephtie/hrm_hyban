@@ -6,7 +6,7 @@ public class ContratPersonnelFilterRequest {
     private Integer offset;
     private Integer limit;
     private String search;
-    private String statut; // "active", "inactive", "expiresOnDate", "expiresInPeriod"
+    private String statut; // "active", "expired", "closed", "suspended", "renewable"
     private String typeContrat; // "CDI", "CDD", "Stage", "Apprentissage" (simple, déprécié)
     private List<String> typeContrats; // Liste de types de contrats (choix multiple)
     private String salaireRange; // "low", "medium", "high", "veryhigh"
@@ -113,4 +113,5 @@ public class ContratPersonnelFilterRequest {
     public void setExpirePeriodEnd(String expirePeriodEnd) {
         this.expirePeriodEnd = expirePeriodEnd;
     }
+
 }

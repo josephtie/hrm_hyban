@@ -17,7 +17,7 @@
             <div class="stat-label">Affichés</div>
           </div>
           <div class="stat-item">
-            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'closed' ? 'Clôturés' : activeTab === 'suspended' ? 'Suspendus' : activeTab === 'toRenew' ? 'À renouveler' : activeTab === 'renewal' ? 'Avenants' : currentView === 'active' ? 'Actifs' : currentView === 'all' ? 'Tous' : 'Inactifs' }}</div>
+            <div class="stat-value">{{ activeTab === 'expired' ? 'Expirés' : activeTab === 'closed' ? 'Clôturés' : activeTab === 'suspended' ? 'Suspendus' : activeTab === 'toRenew' ? 'À renouveler' : 'En cours' }}</div>
             <div class="stat-label">Type</div>
           </div>
         </div>
@@ -65,20 +65,7 @@
             </el-input>
           </div>
           <div class="toolbar-right">
-            <template v-if="activeTab === 'contracts'">
-            <el-select
-              v-model="currentView"
-              placeholder="Type"
-              style="width: 150px"
-              clearable
-              size="large"
-              class="enhanced-input"
-            >
-              <el-option label="Tous les contrats" value="all" />
-              <el-option label="Contrats actifs" value="active" />
-              <el-option label="Contrats inactifs" value="inactive" />
-            </el-select>
-            
+            <template v-if="activeTab !== 'expired'">
             <el-select
               v-model="filterTypeContrat"
               placeholder="Type de contrat"
@@ -104,8 +91,8 @@
             >
               <el-option label="< 100 000" value="low" />
               <el-option label="100 000 - 200 000" value="medium" />
-              <el-option label="200 000 - 300 000" value="high" />
-              <el-option label="> 300 000" value="veryhigh" />
+              <el-option label="200 000 - 350 000" value="high" />
+              <el-option label="&ge; 350 000" value="veryhigh" />
             </el-select>
             
             <el-select
@@ -138,18 +125,6 @@
 
         <div v-if="activeTab === 'expired'" class="toolbar expiration-toolbar">
           <div class="toolbar-left">
-            <el-select
-              v-model="expiredView"
-              placeholder="Type"
-              style="width: 150px"
-              clearable
-              size="large"
-              class="enhanced-input"
-            >
-              <el-option label="Tous les contrats" value="all" />
-              <el-option label="Contrats actifs" value="active" />
-              <el-option label="Contrats inactifs" value="inactive" />
-            </el-select>
             <el-select
               v-model="expiredFilterTypeContrat"
               placeholder="Type de contrat"
@@ -797,6 +772,9 @@ interface ContratPersonnel {
   dateFin: string
   salaireCategoriel: number
   statut: boolean
+  depart?: boolean
+  observCtrat?: string
+  etatContrat?: string
   categorie: { id: number; libelle: string; salaireBase: string | number }
   updatedAt?: string
   updatedBy?: string
@@ -823,9 +801,10 @@ const contrats = ref<ContratPersonnel[]>([])
 const total = ref(0)
 const loading = ref(false)
 const searchText = ref('')
-const currentPage = ref(0)
+// 1-based, comme el-pagination. L'offset envoye au serveur vaut (currentPage - 1) * pageSize.
+const currentPage = ref(1)
 const pageSize = ref(50)
-const activeTab = ref<'contracts' | 'expired' | 'closed' | 'toRenew' | 'renewal'>('contracts')
+const activeTab = ref<'contracts' | 'expired' | 'closed' | 'suspended' | 'toRenew'>('contracts')
 const showViewModal = ref(false)
 const showTerminateModal = ref(false)
 const selectedContrat = ref<ContratPersonnel | null>(null)
@@ -1180,8 +1159,10 @@ const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
     const isActiveNotExpired = endDate !== null && endDate.getTime() >= today.getTime()
     if (!isCDIActive && !hasNoEndDate && !isActiveNotExpired) return false
 
-    if (currentView.value === 'active' && contrat.statut !== true) return false
-    if (currentView.value === 'inactive' && contrat.statut !== false) return false
+    // Cet onglet ne charge que des contrats actifs (statut=true, depart=false).
+    // Le choix "Contrats inactifs" ne peut donc rien retourner ici : l'onglet
+    // "Cloturés" couvre ce cas. "Tous" et "Contrats actifs" sont equivalents.
+    if (currentView.value === 'inactive') return false
 
     if (
       filterTypeContrat.value &&
@@ -1191,10 +1172,12 @@ const applyCurrentContractsFilters = (rows: ContratPersonnel[]) => {
     if (filterCarec.value && String(contrat.personnel?.carec) !== filterCarec.value) return false
 
     const salaire = getSalaireValue(contrat)
+    // Bornes alignees sur ContratPersonnelSpecifications.trancheSalaire cote serveur :
+    // high monte jusqu'a 350 000 et veryhigh demarre a 350 000 inclus.
     if (filterSalaire.value === 'low' && salaire >= 100000) return false
     if (filterSalaire.value === 'medium' && (salaire < 100000 || salaire > 200000)) return false
-    if (filterSalaire.value === 'high' && (salaire < 200000 || salaire > 300000)) return false
-    if (filterSalaire.value === 'veryhigh' && salaire <= 300000) return false
+    if (filterSalaire.value === 'high' && (salaire < 200000 || salaire > 350000)) return false
+    if (filterSalaire.value === 'veryhigh' && salaire < 350000) return false
 
     const search = normalizeText(searchText.value)
     if (search) {
@@ -1471,14 +1454,11 @@ const applyRenewalFilters = (rows: ContratPersonnel[]) => {
 }
 
 const tableRowClassName = ({ row }: { row: ContratPersonnel }) => {
-  if (activeTab.value === 'renewal' && row.statut === true) {
-    return 'active-renewal-row'
-  }
   return ''
 }
 
 const paginateRows = (rows: ContratPersonnel[]) => {
-  const start = currentPage.value * pageSize.value
+  const start = (currentPage.value - 1) * pageSize.value
   return rows.slice(start, start + pageSize.value)
 }
 
@@ -1489,84 +1469,47 @@ const loadContrats = async () => {
     let response
     let filteredRows: ContratPersonnel[]
 
-    if (activeTab.value === 'contracts') {
-      // Utiliser l'API dédiée aux contrats actifs (listcontratpersonnelActifjson)
-      response = await contratPersonnelService.getContratsActifs({
-        offset: currentPage.value * pageSize.value,
-        limit: pageSize.value
-      })
-      // L'API renvoie déjà les contrats actifs paginés, appliquer uniquement les filtres UI
-      filteredRows = applyCurrentContractsFilters(response.rows || response.data || [])
-    } else if (activeTab.value === 'expired') {
-      // Utiliser la même API que le dashboard : getContratsWithFilters avec plage 10 ans → aujourd'hui, limit 1000
-      const now = new Date()
-      const start = new Date()
-      start.setFullYear(start.getFullYear() - 10)
-      const formatDateParam = (d: Date) => {
-        const y = d.getFullYear()
-        const m = String(d.getMonth() + 1).padStart(2, '0')
-        const day = String(d.getDate()).padStart(2, '0')
-        return `${y}-${m}-${day}`
-      }
-      response = await contratPersonnelService.getContratsWithFilters({
-        offset: 0,
-        limit: 1000,
-        expirePeriodStart: formatDateParam(start),
-        expirePeriodEnd: formatDateParam(now)
-      })
-      const expiredRows = response.rows || response.data || []
-      // Filtrer client-side : statut=true ET dateFin <= aujourd'hui (même logique que dashboard)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      filteredRows = expiredRows.filter((contrat: any) => {
-        if (contrat.statut !== true) return false
-        if (!contrat.dateFin) return false
-        const dateFin = parseFlexibleDate(contrat.dateFin)
-        if (!dateFin) return false
-        dateFin.setHours(0, 0, 0, 0)
-        if (dateFin.getTime() > today.getTime()) return false
-        // Appliquer les filtres UI (recherche, type, période)
-        return applyExpiredContractsFilters([contrat]).length > 0
-      })
-    } else if (['closed', 'suspended', 'toRenew', 'renewal'].includes(activeTab.value)) {
-      if (activeTab.value === 'suspended') {
-        // Utiliser l'API dédiée /contrats/by-etat/SUSPENDU
-        const suspendedResponse = await api.get('/personnels/contrats/by-etat/SUSPENDU')
-        const suspendedRows = Array.isArray(suspendedResponse.data) ? suspendedResponse.data : []
-        filteredRows = applySuspendedContractsFilters(suspendedRows)
-      } else {
-        // Pour les onglets nécessitant tous les contrats (actifs et inactifs)
-        response = await contratPersonnelService.getContratsWithFilters({
-          offset: 0,
-          limit: 999999
-        })
-        if (activeTab.value === 'closed') {
-          filteredRows = applyClosedContractsFilters(response.rows || [])
-        } else if (activeTab.value === 'toRenew') {
-          filteredRows = applyToRenewContractsFilters(response.rows || [])
-        } else {
-          filteredRows = applyRenewalFilters(response.rows || [])
-        }
-      }
-    } else {
-      response = await contratPersonnelService.getAllContrats({
-        offset: 0,
-        limit: 999999
-      })
-      filteredRows = applyCurrentContractsFilters(response.rows || [])
+    // Map tab -> statut serveur
+    const statutMap: Record<string, string> = {
+      contracts: 'active',
+      expired: 'expired',
+      closed: 'closed',
+      suspended: 'suspended',
+      toRenew: 'renewable'
+    }
+    const statut = statutMap[activeTab.value] || 'active'
+
+    // Tous les onglets utilisent getContratsWithFilters avec pagination serveur
+    const filterParams: Record<string, unknown> = {
+      offset: (currentPage.value - 1) * pageSize.value,
+      limit: pageSize.value,
+      statut,
+      search: searchText.value?.trim() || undefined,
+      typeContrat: filterTypeContrat.value || undefined,
+      salaireRange: filterSalaire.value || undefined,
+      carec: filterCarec.value ? filterCarec.value === 'true' : undefined
     }
 
-    if (activeTab.value === 'contracts') {
-      // L'API listcontratpersonnelActifjson gère la pagination côté serveur
-      contrats.value = filteredRows
-      total.value = response.total || filteredRows.length
-    } else {
-      contrats.value = paginateRows(filteredRows)
-      total.value = filteredRows.length
+    // L'onglet expired supporte aussi les filtres de date
+    if (activeTab.value === 'expired') {
+      if (expiredFilterTypeContrat.value.length > 0) {
+        filterParams.typeContrat = expiredFilterTypeContrat.value.join(',')
+      }
+      if (expireDateMax.value) filterParams.expireDateMax = expireDateMax.value
+      if (expirePeriodStart.value && expirePeriodEnd.value) {
+        filterParams.expirePeriodStart = expirePeriodStart.value
+        filterParams.expirePeriodEnd = expirePeriodEnd.value
+      }
     }
 
-    if (contrats.value.length === 0 && currentPage.value > 0) {
-      currentPage.value = 0
+    response = await contratPersonnelService.getContratsWithFilters(filterParams as any)
+    filteredRows = response.rows || response.data || []
+
+    contrats.value = filteredRows
+    total.value = response?.total ?? filteredRows.length
+
+    if (contrats.value.length === 0 && currentPage.value > 1) {
+      currentPage.value = 1
       await loadContrats()
     }
   } catch (error: any) {
@@ -1586,7 +1529,7 @@ const refreshData = async () => {
 
 const handleSizeChange = (newSize: number) => {
   pageSize.value = newSize
-  currentPage.value = 0
+  currentPage.value = 1
   loadContrats()
 }
 
@@ -1728,52 +1671,58 @@ const exportContratsXlsx = (contrats: ContratPersonnel[], filename: string) => {
 
 const exportExcel = async () => {
   try {
-    loading.value = true // Indicateur de chargement
+    loading.value = true
     
-    let response
-    let allContrats: ContratPersonnel[]
+    const statutMap: Record<string, string> = {
+      contracts: 'active',
+      expired: 'expired',
+      closed: 'closed',
+      suspended: 'suspended',
+      toRenew: 'renewable'
+    }
+    const statut = statutMap[activeTab.value] || 'active'
 
-    if (['closed', 'toRenew', 'renewal'].includes(activeTab.value)) {
-      response = await contratPersonnelService.getContratsWithFilters({
-        offset: 0,
-        limit: 999999
-      })
-      if (activeTab.value === 'closed') {
-        allContrats = applyClosedContractsFilters(response.rows || [])
-      } else if (activeTab.value === 'toRenew') {
-        allContrats = applyToRenewContractsFilters(response.rows || [])
-      } else {
-        allContrats = applyRenewalFilters(response.rows || [])
+    const filterParams: Record<string, unknown> = {
+      offset: 0,
+      limit: 999999,
+      statut,
+      search: searchText.value?.trim() || undefined,
+      typeContrat: filterTypeContrat.value || undefined,
+      salaireRange: filterSalaire.value || undefined,
+      carec: filterCarec.value ? filterCarec.value === 'true' : undefined
+    }
+
+    if (activeTab.value === 'expired') {
+      if (expiredFilterTypeContrat.value.length > 0) {
+        filterParams.typeContrat = expiredFilterTypeContrat.value.join(',')
       }
-    } else {
-      response = await contratPersonnelService.getAllContrats({
-        offset: 0,
-        limit: 999999
-      })
-      if (activeTab.value === 'contracts') {
-        allContrats = applyCurrentContractsFilters(response.rows || [])
-      } else {
-        allContrats = applyExpiredContractsFilters(response.rows || [])
+      if (expireDateMax.value) filterParams.expireDateMax = expireDateMax.value
+      if (expirePeriodStart.value && expirePeriodEnd.value) {
+        filterParams.expirePeriodStart = expirePeriodStart.value
+        filterParams.expirePeriodEnd = expirePeriodEnd.value
       }
     }
+
+    const response = await contratPersonnelService.getContratsWithFilters(filterParams as any)
+    const allContrats: ContratPersonnel[] = response.rows || response.data || []
 
     let filenamePrefix = 'contrats_en_cours'
     if (activeTab.value === 'expired') filenamePrefix = 'contrats_expires'
     if (activeTab.value === 'closed') filenamePrefix = 'contrats_clotures'
+    if (activeTab.value === 'suspended') filenamePrefix = 'contrats_suspendus'
     if (activeTab.value === 'toRenew') filenamePrefix = 'contrats_a_renouveler'
-    if (activeTab.value === 'renewal') filenamePrefix = 'avenants_renouvellements'
 
     exportContratsXlsx(allContrats, `${filenamePrefix}_${new Date().toISOString().split('T')[0]}.xlsx`)
     
     const message = allContrats.length > 0 
-      ? `✅ Export Excel terminé avec succès - ${allContrats.length} contrat${allContrats.length > 1 ? 's' : ''} exporté${allContrats.length > 1 ? 's' : ''}`
-      : '⚠️ Aucun contrat trouvé pour les filtres sélectionnés'
+      ? `Export Excel terminé - ${allContrats.length} contrat${allContrats.length > 1 ? 's' : ''} exporté${allContrats.length > 1 ? 's' : ''}`
+      : 'Aucun contrat trouvé pour les filtres sélectionnés'
     
     ElMessage.success(message)
   } catch (error: any) {
-    ElMessage.error('❌ Erreur lors de l\'export: ' + (error.response?.data?.message || error.message || 'Erreur inconnue'))
+    ElMessage.error('Erreur lors de l\'export: ' + (error.response?.data?.message || error.message || 'Erreur inconnue'))
   } finally {
-    loading.value = false // Arrêter l'indicateur de chargement
+    loading.value = false
   }
 }
 
@@ -1791,7 +1740,7 @@ const applyExpirationFilters = async () => {
     return
   }
 
-  currentPage.value = 0
+  currentPage.value = 1
   await loadContrats()
 }
 
@@ -1802,7 +1751,7 @@ const searchExpiresOnDate = async () => {
   }
 
   showExpiresOnDateModal.value = false
-  currentPage.value = 0
+  currentPage.value = 1
   await loadContrats()
 
   ElMessage.success(`${contrats.value.length} contrat${contrats.value.length > 1 ? 's' : ''} trouvé${contrats.value.length > 1 ? 's' : ''} expirant au plus tard le ${formatDateForDisplay(expireDateMax.value)}`)
@@ -1815,7 +1764,7 @@ const searchExpiresInPeriod = async () => {
   }
 
   showExpiresInPeriodModal.value = false
-  currentPage.value = 0
+  currentPage.value = 1
   await loadContrats()
 
   ElMessage.success(`${contrats.value.length} contrat${contrats.value.length > 1 ? 's' : ''} trouvé${contrats.value.length > 1 ? 's' : ''} dans la période du ${formatDateForDisplay(expirePeriodStart.value)} au ${formatDateForDisplay(expirePeriodEnd.value)}`)
@@ -1827,7 +1776,7 @@ const clearExpirationFilters = () => {
   expirePeriodEnd.value = ''
   expirationPeriod.value = null
   expiredFilterTypeContrat.value = []
-  currentPage.value = 0
+  currentPage.value = 1
   loadContrats()
   ElMessage.info('Filtres d\'expiration effacés')
 }
@@ -1965,19 +1914,19 @@ const formatSalary = (salary: number | string) => {
 }
 
 // Watchers pour les filtres et la recherche
-watch([searchText, currentView, filterTypeContrat, filterSalaire, filterCarec], () => {
-  currentPage.value = 0
+watch([searchText, filterTypeContrat, filterSalaire, filterCarec], () => {
+  currentPage.value = 1
   loadContrats()
 })
 
-watch([expiredView, expiredFilterTypeContrat, expireDateMax, expirationPeriod], () => {
-  currentPage.value = 0
+watch([expiredFilterTypeContrat, expireDateMax, expirationPeriod], () => {
+  currentPage.value = 1
   syncExpirationPeriod()
   loadContrats()
 })
 
 watch(activeTab, () => {
-  currentPage.value = 0
+  currentPage.value = 1
   loadContrats()
 })
 
@@ -2005,6 +1954,47 @@ const confirmSuspendre = async () => {
     await loadContrats()
   } catch (error: any) {
     ElMessage.error('Erreur lors de la suspension: ' + (error.response?.data?.message || error.message))
+  } finally {
+    loading.value = false
+  }
+}
+
+const confirmResilier = async () => {
+  if (!selectedContrat.value) return
+  if (!resilierForm.dateFin || !resilierForm.motif) {
+    ElMessage.error('La date de fin et le motif sont obligatoires')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `Résilier définitivement le contrat de ${selectedContrat.value.personnel?.nom} ${selectedContrat.value.personnel?.prenom} au ${resilierForm.dateFin} ? Cette action est irréversible.`,
+      'Confirmation de résiliation',
+      { confirmButtonText: 'Résilier', cancelButtonText: 'Annuler', type: 'error' }
+    )
+
+    loading.value = true
+    // Le backend attend une date au format dd/MM/yyyy, ce que produit deja le
+    // value-format du date-picker, et un motif correspondant a MotifClotureContrat.
+    const response = await contratPersonnelService.resilierContrat(
+      selectedContrat.value.id,
+      resilierForm.dateFin,
+      resilierForm.motif,
+      resilierForm.observations
+    )
+
+    // L'endpoint renvoie HTTP 200 avec result="failed" en cas d'echec applicatif.
+    if (String(response?.result) === 'failed') {
+      ElMessage.error('La résiliation a échoué côté serveur')
+      return
+    }
+
+    ElMessage.success('Contrat résilié avec succès')
+    showResilierModal.value = false
+    await loadContrats()
+  } catch (error: any) {
+    if (error === 'cancel') return
+    ElMessage.error('Erreur lors de la résiliation: ' + (error.response?.data?.message || error.message))
   } finally {
     loading.value = false
   }

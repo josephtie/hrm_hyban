@@ -109,6 +109,15 @@ public interface ContratPersonnelRepository extends JpaRepository<ContratPersonn
     //  List<ContratPersonnel> findByTypeContratIdAndStatutTrue(Long id);
 
 
+    /**
+     * @deprecated Cette requete dupliquait la definition d'un "contrat actif" deja portee
+     *             par {@code ContratPersonnelSpecifications}, ce qui avait provoque une
+     *             divergence de resultats avec {@code findAllfilter}. Composer plutot
+     *             {@code actif().and(personnelNonRetire()).and(recherche(...))} et passer
+     *             la Specification a {@link #findAll(org.springframework.data.jpa.domain.Specification, Pageable)}.
+     *             Conservee pour compatibilite ascendante.
+     */
+    @Deprecated
     @Query("SELECT p FROM ContratPersonnel p " +
             "JOIN p.personnel cp "+
             "WHERE p.statut = true " +

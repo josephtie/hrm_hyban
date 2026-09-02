@@ -144,12 +144,9 @@ public class ContratPersonnelController {
 
 		String search = req.getSearch() == null ? null : req.getSearch().trim();
 
-		// Compatibilité ascendante:
-		// - anciens clients peuvent envoyer offset comme index de page (0,1,2...)
-		// - nouveaux clients envoient offset en nombre de lignes ((page-1)*limit)
-		int pageIndex = (rawOffset >= limit) ? (rawOffset / limit) : rawOffset;
-		//PageRequest page = PageRequest.of(pageIndex, limit, Direction.DESC, "id");
-        PageRequest page = PageRequest.of(rawOffset / limit, limit, Direction.DESC, "id");
+		// offset est exprime en nombre de lignes ((page - 1) * limit), comme pour tous
+		// les autres endpoints de contrats.
+		PageRequest page = PageRequest.of(rawOffset / limit, limit, Direction.DESC, "id");
 		ContratPersonnelDTO contratPersonnelDTO = (search == null || search.isEmpty())
 			? contratPersonnelService.loadContratActif(page)
 			: contratPersonnelService.loadContratActif(page, search);
@@ -159,9 +156,17 @@ public class ContratPersonnelController {
 	@ResponseStatus(HttpStatus.OK)
 	@PostMapping(value = "/listcontratpersonnelfilterjson")
 	public @ResponseBody ContratPersonnelDTO getContratListFilterJSON(@RequestBody ContratPersonnelFilterRequest req, Principal principal) {
-		Integer offset = req.getOffset() == null ? 0 : req.getOffset();
-		Integer limit = req.getLimit() == null ? 10 : req.getLimit();
-		PageRequest pageRequest = PageRequest.of(offset , limit, Direction.DESC, "id");
+		int rawOffset = req.getOffset() == null ? 0 : req.getOffset();
+		int limit = req.getLimit() == null ? 10 : req.getLimit();
+		if (limit <= 0) {
+			limit = 10;
+		}
+		if (rawOffset < 0) {
+			rawOffset = 0;
+		}
+
+		// offset est exprime en nombre de lignes ((page - 1) * limit), idem /listcontratpersonnelActifjson
+		PageRequest pageRequest = PageRequest.of(rawOffset / limit, limit, Direction.DESC, "id");
 		
 		// Créer les filtres pour la méthode findAllfilter
 		Map<String, String> filters = new java.util.HashMap<>();

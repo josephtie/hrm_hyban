@@ -11,7 +11,6 @@ import java.util.ArrayList;
 
 import com.nectux.mizan.hyban.personnel.entity.*;
 import com.nectux.mizan.hyban.personnel.repository.*;
-import jakarta.persistence.criteria.Predicate;
 
 import com.nectux.mizan.hyban.paie.repository.PrimePersonnelRepository;
 import com.nectux.mizan.hyban.parametrages.entity.TypeContrat;
@@ -38,6 +37,7 @@ import com.nectux.mizan.hyban.personnel.enums.EtatContrat;
 import com.nectux.mizan.hyban.personnel.enums.MotifClotureContrat;
 import com.nectux.mizan.hyban.personnel.enums.TypeOperationContrat;
 import com.nectux.mizan.hyban.personnel.service.ContratPersonnelService;
+import com.nectux.mizan.hyban.personnel.specification.ContratPersonnelSpecifications;
 import com.nectux.mizan.hyban.utils.DateManager;
 import com.nectux.mizan.hyban.utils.Utils;
 
@@ -253,154 +253,9 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 	@Override
 	public ContratPersonnelDTO findAllfilter(Map<String, String> filters, Pageable pageable) {
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
-		
-		// Construire une requête dynamique avec les filtres
-		Specification<ContratPersonnel> specification = (root, query, criteriaBuilder) -> {
-			List<Predicate> predicates = new ArrayList<>();
-			
-			// Filtre de recherche textuelle (sur nom, prénom, matricule)
-			String search = filters.get("search");
-			if (search != null && !search.trim().isEmpty()) {
-				String searchPattern = "%" + search.toLowerCase() + "%";
-				Predicate searchPredicate = criteriaBuilder.or(
-					criteriaBuilder.like(criteriaBuilder.lower(root.get("personnel").get("nom")), searchPattern),
-					criteriaBuilder.like(criteriaBuilder.lower(root.get("personnel").get("prenom")), searchPattern),
-					criteriaBuilder.like(criteriaBuilder.lower(root.get("personnel").get("matricule")), searchPattern)
-				);
-				predicates.add(searchPredicate);
-			}
-			
-			// Filtre par statut
-			String statut = filters.get("statut");
-			if (statut != null && !statut.trim().isEmpty()) {
-				logger.info(">>>>> FILTRE STATUT REÇU: " + statut);
-				if ("active".equals(statut)) {
-					// Contrats actifs : statut = true ET depart = false (aligné avec loadContratActif)
-					logger.info(">>>>> FILTRE ACTIF - statut=true AND depart=false");
-					predicates.add(criteriaBuilder.and(
-						criteriaBuilder.equal(root.get("statut"), true),
-						criteriaBuilder.equal(root.get("depart"), false)
-					));
-				} else if ("inactive".equals(statut)) {
-					// Contrats inactifs : statut = false uniquement
-					logger.info(">>>>> FILTRE INACTIF - Contrats avec statut = false");
-					predicates.add(criteriaBuilder.equal(root.get("statut"), false));
-				}
-			}
-			
-			// Filtre par type de contrat
-			String typeContrat = filters.get("typeContrat");
-			if (typeContrat != null && !typeContrat.trim().isEmpty()) {
-				if (typeContrat.contains(",")) {
-					java.util.List<String> typeList = java.util.Arrays.stream(typeContrat.split(","))
-						.map(String::trim)
-						.filter(s -> !s.isEmpty())
-						.collect(java.util.stream.Collectors.toList());
-					jakarta.persistence.criteria.CriteriaBuilder.In<String> inClause = criteriaBuilder.in(root.get("typeContrat").get("libelle"));
-					for (String type : typeList) {
-						inClause.value(type);
-					}
-					predicates.add(inClause);
-				} else {
-					predicates.add(criteriaBuilder.equal(root.get("typeContrat").get("libelle"), typeContrat));
-				}
-			}
-			
-			// Filtre par salaire catégoriel
-			String salaireFilter = filters.get("salaireRange");
-			if (salaireFilter != null && !salaireFilter.trim().isEmpty()) {
-				switch (salaireFilter) {
-					case "low":
-						predicates.add(criteriaBuilder.lessThan(root.get("categorie").get("salaireDeBase"), 100000));
-						break;
-					case "medium":
-						predicates.add(criteriaBuilder.between(root.get("categorie").get("salaireDeBase"), 100000, 200000));
-						break;
-					case "high":
-						predicates.add(criteriaBuilder.between(root.get("categorie").get("salaireDeBase"), 200000, 350000));
-						break;
-					case "veryhigh":
-						predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("categorie").get("salaireDeBase"), 350000));
-						break;
-				}
-			}
-			
-			// Filtre pour les contrats expirants
-			String expires = filters.get("expires");
-			if (expires != null && expires.equals("true")) {
-				LocalDate today = LocalDate.now();
-				java.sql.Timestamp sqlToday = java.sql.Timestamp.valueOf(today.atStartOfDay());
-				predicates.add(criteriaBuilder.lessThan(root.get("dateFin"), sqlToday));
-			}
-			
-			// Filtre pour les contrats actifs
-			String active = filters.get("active");
-			if (active != null && active.equals("true")) {
-				LocalDate today = LocalDate.now();
-				java.sql.Timestamp sqlToday = java.sql.Timestamp.valueOf(today.atStartOfDay());
-				predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("dateFin"), sqlToday));
-			}
-			
-			// Filtre pour les contrats qui expirent à une date spécifique
-			String expireDate = filters.get("expireDate");
-			if (expireDate != null && !expireDate.trim().isEmpty()) {
-				try {
-					// Convertir la chaîne en LocalDate puis en Timestamp pour la comparaison
-					LocalDate localExpireDate = LocalDate.parse(expireDate);
-					java.sql.Timestamp sqlExpireDate = java.sql.Timestamp.valueOf(localExpireDate.atStartOfDay());
-					predicates.add(criteriaBuilder.equal(root.get("dateFin"), sqlExpireDate));
-					logger.info(">>>>> FILTRE EXPIRE DATE: " + expireDate + " (converti en Timestamp)");
-				} catch (Exception e) {
-					logger.error(">>>>> ERREUR CONVERSION DATE: " + expireDate, e);
-				}
-			}
-			
-			// Filtre pour les contrats qui expirent au plus tard à une date donnée (dateFin <= date)
-			String expireDateMax = filters.get("expireDateMax");
-			if (expireDateMax != null && !expireDateMax.trim().isEmpty()) {
-				try {
-					LocalDate localExpireDateMax = LocalDate.parse(expireDateMax);
-					java.sql.Timestamp sqlExpireDateMax = java.sql.Timestamp.valueOf(localExpireDateMax.atTime(23, 59, 59));
-					predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("dateFin"), sqlExpireDateMax));
-					logger.info(">>>>> FILTRE EXPIRE DATE MAX: " + expireDateMax + " (converti en Timestamp)");
-				} catch (Exception e) {
-					logger.error(">>>>> ERREUR CONVERSION DATE MAX: " + expireDateMax, e);
-				}
-			}
-			
-			// Filtre pour les contrats qui expirent dans une période
-			String expirePeriodStart = filters.get("expirePeriodStart");
-			String expirePeriodEnd = filters.get("expirePeriodEnd");
-			if (expirePeriodStart != null && !expirePeriodStart.trim().isEmpty() && 
-				expirePeriodEnd != null && !expirePeriodEnd.trim().isEmpty()) {
-				try {
-					// Convertir les chaînes en LocalDate puis en Timestamp pour la comparaison
-					LocalDate localStartDate = LocalDate.parse(expirePeriodStart);
-					LocalDate localEndDate = LocalDate.parse(expirePeriodEnd);
-					java.sql.Timestamp sqlStartDate = java.sql.Timestamp.valueOf(localStartDate.atStartOfDay());
-					java.sql.Timestamp sqlEndDate = java.sql.Timestamp.valueOf(localEndDate.atStartOfDay());
-					predicates.add(criteriaBuilder.between(root.get("dateFin"), sqlStartDate, sqlEndDate));
-					logger.info(">>>>> FILTRE PERIODE: " + expirePeriodStart + " à " + expirePeriodEnd + " (converti en Timestamp)");
-				} catch (Exception e) {
-					logger.error(">>>>> ERREUR CONVERSION PERIODE: " + expirePeriodStart + " - " + expirePeriodEnd, e);
-				}
-			}
-			
-			// Filtre par état contractuel (carec)
-			String carec = filters.get("carec");
-			if (carec != null) {
-				Boolean carecValue = Boolean.parseBoolean(carec);
-				logger.info(">>>>> FILTRE CAREC: " + carecValue);
-				predicates.add(criteriaBuilder.equal(root.get("personnel").get("carec"), carecValue));
-			}
-			
-			// Log de débogage pour diagnostiquer
-			logger.info(">>>>> FILTRES APPLIQUES: " + filters.toString());
-			logger.info(">>>>> NOMBRE DE PREDICATS: " + predicates.size());
-			
-			return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-		};
-		
+
+		Specification<ContratPersonnel> specification = Specification.allOf(construireCriteres(filters));
+
 		Page<ContratPersonnel> page = contratPersonnelRepository.findAll(specification, pageable);
 		logger.info(">>>>> NOMBRE DE CONTRATS TROUVES: " + page.getTotalElements());
 		if (page.getContent().isEmpty()) {
@@ -410,12 +265,135 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 				.map(c -> "ID:" + c.getId() + ", Personnel:" + c.getPersonnel().getNom() + " " + c.getPersonnel().getPrenom() + ", CAREC:" + c.getPersonnel().getCarec())
 				.collect(java.util.stream.Collectors.joining("; ")));
 		}
-		
+
 		contratPersonnelDTO.setResult(true);
 		contratPersonnelDTO.setStatus(true);
 		contratPersonnelDTO.setRows(page.getContent());
 		contratPersonnelDTO.setTotal(page.getTotalElements());
 		return contratPersonnelDTO;
+	}
+
+	/**
+	 * Traduit la map de filtres issue de l'IHM en une liste de criteres composables.
+	 * Un filtre absent, vide ou invalide n'ajoute simplement aucun critere.
+	 */
+	private List<Specification<ContratPersonnel>> construireCriteres(Map<String, String> filters) {
+		List<Specification<ContratPersonnel>> criteres = new ArrayList<>();
+
+		// Recherche textuelle (nom, prénom, matricule)
+		String search = filters.get("search");
+		if (search != null && !search.trim().isEmpty()) {
+			criteres.add(ContratPersonnelSpecifications.recherche(search));
+		}
+
+		// Cycle de vie du contrat — chaque onglet de l'IHM correspond a un statut
+		String statut = filters.get("statut");
+		if (statut != null && !statut.trim().isEmpty()) {
+			logger.info(">>>>> FILTRE STATUT REÇU: " + statut);
+			switch (statut) {
+				case "active":
+					// Contrats en cours : statut=true AND depart=false, tous types confondus
+					criteres.add(ContratPersonnelSpecifications.actif());
+					break;
+				case "expired":
+					// Contrats expires : statut=true AND depart=false AND dateFin < today AND type ≠ CDI
+					criteres.add(ContratPersonnelSpecifications.actif());
+					criteres.add(ContratPersonnelSpecifications.echuAvant(LocalDate.now()));
+					criteres.add(ContratPersonnelSpecifications.nonCDI());
+					break;
+				case "closed":
+					// Contrats clotures : statut=false AND depart=true
+					criteres.add(ContratPersonnelSpecifications.clos());
+					break;
+				case "suspended":
+					// Contrats suspendus : statut=false (depart indifferents)
+					criteres.add(ContratPersonnelSpecifications.suspendu());
+					break;
+				case "renewable":
+					// Contrats a renouveler : statut=true AND depart=false AND type ≠ CDI AND dateFin >= today
+					criteres.add(ContratPersonnelSpecifications.actif());
+					criteres.add(ContratPersonnelSpecifications.nonCDI());
+					criteres.add(ContratPersonnelSpecifications.echeanceFuture(LocalDate.now()));
+					break;
+				default:
+					logger.warn(">>>>> STATUT INCONNU, IGNORE: " + statut);
+					break;
+			}
+		}
+		
+		// Type de contrat : liste separee par des virgules ou libelle unique
+		String typeContrat = filters.get("typeContrat");
+		if (typeContrat != null && !typeContrat.trim().isEmpty()) {
+			if (typeContrat.contains(",")) {
+				List<String> libelles = java.util.Arrays.stream(typeContrat.split(","))
+					.map(String::trim)
+					.filter(s -> !s.isEmpty())
+					.collect(java.util.stream.Collectors.toList());
+				if (!libelles.isEmpty()) {
+					criteres.add(ContratPersonnelSpecifications.typeContratParmi(libelles));
+				}
+			} else {
+				criteres.add(ContratPersonnelSpecifications.typeContratEgal(typeContrat));
+			}
+		}
+
+		// Tranche de salaire categoriel
+		String salaireFilter = filters.get("salaireRange");
+		if (salaireFilter != null && !salaireFilter.trim().isEmpty()) {
+			Specification<ContratPersonnel> tranche = ContratPersonnelSpecifications.trancheSalaire(salaireFilter);
+			if (tranche != null) {
+				criteres.add(tranche);
+			} else {
+				logger.warn(">>>>> TRANCHE SALAIRE INCONNUE, FILTRE IGNORE: " + salaireFilter);
+			}
+		}
+
+		// Echeance a une date precise
+		LocalDate expireDate = parseDate(filters.get("expireDate"), "expireDate");
+		if (expireDate != null) {
+			criteres.add(ContratPersonnelSpecifications.echeanceLe(expireDate));
+		}
+
+		// Echeance au plus tard a une date donnee
+		LocalDate expireDateMax = parseDate(filters.get("expireDateMax"), "expireDateMax");
+		if (expireDateMax != null) {
+			criteres.add(ContratPersonnelSpecifications.echeanceAuPlusTard(expireDateMax));
+		}
+
+		// Echeance dans une periode : les deux bornes doivent etre valides
+		LocalDate debutPeriode = parseDate(filters.get("expirePeriodStart"), "expirePeriodStart");
+		LocalDate finPeriode = parseDate(filters.get("expirePeriodEnd"), "expirePeriodEnd");
+		if (debutPeriode != null && finPeriode != null) {
+			criteres.add(ContratPersonnelSpecifications.echeanceEntre(debutPeriode, finPeriode));
+		}
+
+		// Etat contractuel (CAREC)
+		String carec = filters.get("carec");
+		if (carec != null && !carec.trim().isEmpty()) {
+			boolean carecValue = Boolean.parseBoolean(carec.trim());
+			logger.info(">>>>> FILTRE CAREC: " + carecValue);
+			criteres.add(ContratPersonnelSpecifications.carecEgal(carecValue));
+		}
+
+		logger.info(">>>>> FILTRES APPLIQUES: " + filters);
+		logger.info(">>>>> NOMBRE DE CRITERES: " + criteres.size());
+		return criteres;
+	}
+
+	/**
+	 * Parse une date ISO issue des filtres. Renvoie {@code null} si la valeur est
+	 * absente, vide ou illisible, auquel cas le critere correspondant est ignore.
+	 */
+	private LocalDate parseDate(String valeur, String nomFiltre) {
+		if (valeur == null || valeur.trim().isEmpty()) {
+			return null;
+		}
+		try {
+			return LocalDate.parse(valeur.trim());
+		} catch (Exception e) {
+			logger.error(">>>>> ERREUR CONVERSION DATE (" + nomFiltre + "): " + valeur, e);
+			return null;
+		}
 	}
 
 	@Override
@@ -515,24 +493,45 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
     public ContratPersonnelDTO loadContratActif(Pageable pageable) {
         ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
         try {
+            // Un contrat actif est defini par statut = true ET depart = false, sans
+            // condition sur le retrait d'effectif de l'agent.
             Page<ContratPersonnel> page = contratPersonnelRepository.findByStatutTrueAndDepartFalseOrderByPersonnelNomAscPersonnelPrenomAsc(pageable);
             contratPersonnelDTO.setRows(page.getContent());
             contratPersonnelDTO.setTotal(page.getTotalElements());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.error(">>>>> ERREUR CHARGEMENT CONTRATS ACTIFS", ex);
         }
         return contratPersonnelDTO;
+    }
+
+    /**
+     * Conserve le tri alphabetique nom puis prenom qui etait porte par le nom de la
+     * methode derivee remplacee, quel que soit le tri present dans le Pageable recu.
+     */
+    private Pageable triAlphabetique(Pageable pageable) {
+        return PageRequest.of(
+            pageable.getPageNumber(),
+            pageable.getPageSize(),
+            Sort.by(Sort.Order.asc("personnel.nom"), Sort.Order.asc("personnel.prenom"))
+        );
     }
 
 	@Override
 	public ContratPersonnelDTO loadContratActif(Pageable pageable, String search) {
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
 		try {
-			Page<ContratPersonnel> page = contratPersonnelRepository.searchContrat(search, pageable);
+			// Meme population que la variante sans recherche : statut = true ET
+			// depart = false. Saisir un terme de recherche ne doit pas changer
+			// l'ensemble interroge, seulement le restreindre.
+			Specification<ContratPersonnel> specification = Specification.allOf(
+				ContratPersonnelSpecifications.actif(),
+				ContratPersonnelSpecifications.recherche(search)
+			);
+			Page<ContratPersonnel> page = contratPersonnelRepository.findAll(specification, triAlphabetique(pageable));
 			contratPersonnelDTO.setRows(page.getContent());
 			contratPersonnelDTO.setTotal(page.getTotalElements());
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			logger.error(">>>>> ERREUR RECHERCHE CONTRATS ACTIFS: " + search, ex);
 		}
 		return contratPersonnelDTO;
 	}
