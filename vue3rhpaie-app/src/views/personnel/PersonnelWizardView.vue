@@ -599,7 +599,7 @@ interface WizardForm {
   dateArrivee: Date | null
   dateRetourConge: Date | null
   email: string
-  contractuel: boolean
+  contractuel: boolean | null
   banque: string
   numeroGuichet: string
   numeroCompte: string
@@ -646,7 +646,7 @@ const wizardForm = reactive<WizardForm>({
   nationalite: 'IVOIRIENNE', situationMatrimoniale: 'CELIBATAIRE', nombreEnfants: 0,
   // Step 2
   numeroCNPS: '', residence: '', telephone: '', dateArrivee: null, dateRetourConge: null,
-  email: '', contractuel: false, banque: '', numeroGuichet: '', numeroCompte: '', rib: '',
+  email: '', contractuel: null, banque: '', numeroGuichet: '', numeroCompte: '', rib: '',
   modePaiement: 'VIREMENT_BANCAIRE', division: '', libelleDivision: '',
   // Step 3
   emploi: '', typeContrat: '', categorie: 'A', indemniteLogement: 0, indemniteTransport: 0,
@@ -662,6 +662,10 @@ const goToStep = (step: number) => {
 }
 
 const nextStep = () => {
+  if (currentStep.value === 2 && wizardForm.contractuel === null) {
+    ElMessage.warning("Veuillez indiquer si l'agent est contractuel (Oui/Non)")
+    return
+  }
   if (currentStep.value < 3) {
     currentStep.value++
   }
@@ -1045,7 +1049,7 @@ const finishWizard = async () => {
         numeroGuichet: wizardForm.numeroGuichet || '',
         rib: wizardForm.rib || '',
         ancienneteInitial: wizardForm.ancienneteInitiale, // Utiliser la vraie valeur
-        carec: wizardForm.contractuel, // Utiliser la vraie valeur
+        carec: wizardForm.contractuel ?? false,
         typeEmp: wizardForm.typeEmploye, // Utiliser la vraie valeur
         service: getServiceId(wizardForm.libelleDivision), // Ajouter le service
         situationMedaille: parseInt(wizardForm.medaille), // Convertir string → number
@@ -1090,7 +1094,7 @@ const finishWizard = async () => {
         numeroGuichet: wizardForm.numeroGuichet || '',
         rib: wizardForm.rib || '',
         ancienneteInitial: wizardForm.ancienneteInitiale, // Utiliser la vraie valeur
-        carec: wizardForm.contractuel, // Utiliser la vraie valeur
+        carec: wizardForm.contractuel ?? false,
         typeEmp: wizardForm.typeEmploye, // Utiliser la vraie valeur
         service: getServiceId(wizardForm.libelleDivision), // Ajouter le service
         situationMedaille: parseInt(wizardForm.medaille), // Convertir string → number

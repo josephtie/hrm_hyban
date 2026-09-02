@@ -275,13 +275,11 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 			if (statut != null && !statut.trim().isEmpty()) {
 				logger.info(">>>>> FILTRE STATUT REÇU: " + statut);
 				if ("active".equals(statut)) {
-					// Contrats actifs : dateFin >= aujourd'hui ET statut = true
-					LocalDate today = LocalDate.now();
-					java.sql.Timestamp sqlToday = java.sql.Timestamp.valueOf(today.atStartOfDay());
-					logger.info(">>>>> FILTRE ACTIF - Date du jour: " + today);
+					// Contrats actifs : statut = true ET depart = false (aligné avec loadContratActif)
+					logger.info(">>>>> FILTRE ACTIF - statut=true AND depart=false");
 					predicates.add(criteriaBuilder.and(
-						criteriaBuilder.greaterThanOrEqualTo(root.get("dateFin"), sqlToday),
-						criteriaBuilder.equal(root.get("statut"), true)
+						criteriaBuilder.equal(root.get("statut"), true),
+						criteriaBuilder.equal(root.get("depart"), false)
 					));
 				} else if ("inactive".equals(statut)) {
 					// Contrats inactifs : statut = false uniquement
@@ -434,7 +432,7 @@ public class ContratPersonnelServiceImpl implements ContratPersonnelService {
 	@Override
 	public ContratPersonnelDTO loadContratPersonnelActif(Pageable pageable) {
 		ContratPersonnelDTO contratPersonnelDTO = new ContratPersonnelDTO();
-		Page<ContratPersonnel> page = contratPersonnelRepository.findByStatut(true, pageable);
+		Page<ContratPersonnel> page = contratPersonnelRepository.findByStatutTrueAndDepartFalseOrderByPersonnelNomAscPersonnelPrenomAsc( pageable);
 		contratPersonnelDTO.setRows(page.getContent());
 		contratPersonnelDTO.setTotal(page.getTotalElements());
 		logger.info(new StringBuilder().append(">>>>> CONTRATS PERSONNELS CHARGES AVEC SUCCES").toString());
