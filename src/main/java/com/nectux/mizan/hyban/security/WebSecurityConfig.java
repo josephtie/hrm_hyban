@@ -112,9 +112,14 @@ public class WebSecurityConfig {
                         .requestMatchers("/static/**").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
 
+                        // --- Reporting : accessible a ADMIN, RH, DAF ---
+                        .requestMatchers("/api/reporting/**").hasAnyRole(ADMIN, RH, DAF)
+
                         // --- Administration : utilisateurs, societe (ADMIN) ---
                         // Allow any authenticated user to fetch their own role permissions
                         .requestMatchers(HttpMethod.GET, "/api/permissions/role/**").authenticated()
+                        // Allow any authenticated user to change their own password
+                        .requestMatchers(HttpMethod.PUT, "/api/users/me/password").authenticated()
                         .requestMatchers(ADMINISTRATION).hasRole(ADMIN)
 
                         // --- Exercices / mois : lecture partagee, ecriture ADMIN ---
@@ -164,7 +169,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:7153",
             "http://127.0.0.1:7153",
-            "http://192.168.1.7:7153",
+            "http://192.168.1.14:7153",
             "http://83.171.249.150:7153"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

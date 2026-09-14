@@ -26,6 +26,8 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,6 +40,22 @@ public class KeycloakUserService {
 
     private static final Logger log = LoggerFactory.getLogger(KeycloakUserService.class);
     private static final String DEFAULT_TEMPORARY_PASSWORD = "1234567ml@";
+
+    // Keycloak realm role name → internal role name (for display normalization)
+    private static final Map<String, String> KEYCLOAK_TO_INTERNAL = Map.of(
+            "PAIE", "DAF",
+            "POINTAGE", "PTGE"
+    );
+
+    // Internal role name → Keycloak realm role name (for assignment)
+    private static final Map<String, String> INTERNAL_TO_KEYCLOAK = Map.of(
+            "PTGE", "POINTAGE"
+    );
+
+    private static String normalizeRoleForDisplay(String role) {
+        String upper = role == null ? "" : role.trim().toUpperCase(Locale.ROOT);
+        return KEYCLOAK_TO_INTERNAL.getOrDefault(upper, upper);
+    }
 
     private final Keycloak keycloak;
     private final KeycloakProperties properties;
@@ -419,6 +437,7 @@ public class KeycloakUserService {
                 .map(String::trim)
                 .map(String::toUpperCase)
                 .distinct()
+                .map(roleName -> INTERNAL_TO_KEYCLOAK.getOrDefault(roleName, roleName))
                 .map(roleName -> {
                     try {
                         return realm().roles().get(roleName).toRepresentation();
@@ -439,10 +458,12 @@ public class KeycloakUserService {
     public void replaceRealmRoles(String userId, List<String> newRoles) {
         if (newRoles == null) newRoles = List.of();
 
-        List<String> upperRoles = newRoles.stream()
+        // Convert internal role names to Keycloak realm role names
+        List<String> keycloakRoleNames = newRoles.stream()
                 .map(String::trim)
                 .map(String::toUpperCase)
                 .distinct()
+                .map(roleName -> INTERNAL_TO_KEYCLOAK.getOrDefault(roleName, roleName))
                 .toList();
 
         try {
@@ -453,8 +474,10 @@ public class KeycloakUserService {
                     .map(RoleRepresentation::getName)
                     .toList();
 
+            // Remove roles that are no longer desired (skip default-roles-* and built-in roles)
             List<RoleRepresentation> toRemove = currentRoles.stream()
-                    .filter(r -> !upperRoles.contains(r.getName()))
+                    .filter(r -> !keycloakRoleNames.contains(r.getName()))
+                    .filter(r -> !r.getName().startsWith("default-roles-"))
                     .toList();
 
             if (!toRemove.isEmpty()) {
@@ -462,7 +485,8 @@ public class KeycloakUserService {
                 log.info("🗑️ Rôles retirés de l'utilisateur {}: {}", userId, toRemove.stream().map(RoleRepresentation::getName).toList());
             }
 
-            List<RoleRepresentation> toAdd = upperRoles.stream()
+            // Add roles that are not yet assigned
+            List<RoleRepresentation> toAdd = keycloakRoleNames.stream()
                     .filter(name -> !currentRoleNames.contains(name))
                     .map(roleName -> {
                         try {
@@ -516,7 +540,7 @@ public class KeycloakUserService {
 
         return users.stream().map(user -> {
 
-            // 1️⃣ Récupérer les roles realm
+            // 1️⃣ Récupérer les roles realm (normalisés vers les noms internes)
             List<String> roles = realm()
                     .users()
                     .get(user.getId())
@@ -525,6 +549,7 @@ public class KeycloakUserService {
                     .listAll()
                     .stream()
                     .map(RoleRepresentation::getName)
+                    .map(KeycloakUserService::normalizeRoleForDisplay)
                     .toList();
 
             // 2️⃣ Récupérer la dernière connexion
@@ -566,7 +591,7 @@ public class KeycloakUserService {
 
         return users.stream().map(user -> {
 
-            // 1️⃣ récupérer les roles
+            // 1️⃣ récupérer les roles (normalisés vers les noms internes)
             List<String> roles = realm()
                     .users()
                     .get(user.getId())
@@ -575,6 +600,7 @@ public class KeycloakUserService {
                     .listAll()
                     .stream()
                     .map(RoleRepresentation::getName)
+                    .map(KeycloakUserService::normalizeRoleForDisplay)
                     .toList();
 
             // 2️⃣ dernière connexion
@@ -637,7 +663,7 @@ public class KeycloakUserService {
     public UserWithRolesDto getUserById(String userId) {
         UserRepresentation user = realm().users().get(userId).toRepresentation();
         
-        // Récupérer les rôles de l'utilisateur
+        // Récupérer les rôles de l'utilisateur (normalisés vers les noms internes)
         List<String> roles = realm()
                 .users()
                 .get(user.getId())
@@ -646,6 +672,7 @@ public class KeycloakUserService {
                 .listAll()
                 .stream()
                 .map(RoleRepresentation::getName)
+                .map(KeycloakUserService::normalizeRoleForDisplay)
                 .toList();
         
         // Récupérer la dernière connexion

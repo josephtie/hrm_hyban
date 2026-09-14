@@ -47,13 +47,54 @@
         <router-view />
       </main>
     </div>
+
+    <!-- Modal de changement de mot de passe -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="Changer mon mot de passe"
+      width="450px"
+      :close-on-click-modal="false"
+    >
+      <el-form label-position="top" class="password-form">
+        <el-form-item label="Nouveau mot de passe">
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            placeholder="Nouveau mot de passe"
+            show-password
+            size="large"
+          />
+        </el-form-item>
+        <el-form-item label="Confirmer le mot de passe">
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            placeholder="Confirmer le mot de passe"
+            show-password
+            size="large"
+            @keyup.enter="submitPasswordChange"
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passwordDialogVisible = false">Annuler</el-button>
+        <el-button
+          type="primary"
+          @click="submitPasswordChange"
+          :loading="passwordLoading"
+          :disabled="!passwordForm.newPassword || !passwordForm.confirmPassword"
+        >
+          Mettre à jour
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   UserFilled,
   ArrowDown,
@@ -61,7 +102,8 @@ import {
   Key
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
-import { API_URLS } from '@/config/api'
+import { api } from '@/services/api'
+import { usePasswordDialog } from '@/composables/usePasswordDialog'
 import SidebarMenu from '@/components/navigation/SidebarMenu.vue'
 import TagsView from '@/components/navigation/TagsView.vue'
 
@@ -70,6 +112,36 @@ const route = useRoute()
 const authStore = useAuthStore()
 
 const isCollapsed = ref(false)
+
+const { visible: passwordDialogVisible, open: openPasswordDialog } = usePasswordDialog()
+const passwordLoading = ref(false)
+const passwordForm = reactive({
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const submitPasswordChange = async () => {
+  if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) {
+    ElMessage.error('Le mot de passe doit contenir au moins 6 caractères')
+    return
+  }
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    ElMessage.error('Les mots de passe ne correspondent pas')
+    return
+  }
+  try {
+    passwordLoading.value = true
+    await api.put('/users/me/password', { newPassword: passwordForm.newPassword })
+    ElMessage.success('Mot de passe modifié avec succès')
+    passwordForm.newPassword = ''
+    passwordForm.confirmPassword = ''
+    passwordDialogVisible.value = false
+  } catch (error: any) {
+    ElMessage.error('Erreur lors du changement de mot de passe: ' + (error.response?.data || error.message || 'Erreur inconnue'))
+  } finally {
+    passwordLoading.value = false
+  }
+}
 
 const currentPageTitle = computed(() => {
   return route.meta?.title || 'Tableau de bord'
@@ -89,7 +161,7 @@ const handleUserMenu = async (command: string) => {
       // TODO: Navigate to profile
       break
     case 'account':
-      window.open(API_URLS.KEYCLOAK_ACCOUNT, '_blank')
+      openPasswordDialog()
       break
     case 'settings':
       // TODO: Navigate to settings

@@ -44,7 +44,7 @@ export default defineConfig({
 
       '/api': {
 
-        target: 'http://192.168.1.7:7200',
+        target: 'http://192.168.1.14:7200',
 
         changeOrigin: true,
 
@@ -54,7 +54,7 @@ export default defineConfig({
 
       '/realms': {
 
-        target: 'http://192.168.1.7:8083',
+        target: 'http://192.168.1.14:8083',
 
         changeOrigin: true,
 
@@ -64,7 +64,7 @@ export default defineConfig({
 
       '/static': {
 
-        target: 'http://192.168.1.7:7200',
+        target: 'http://192.168.1.14:7200',
 
         changeOrigin: true,
 
@@ -74,7 +74,7 @@ export default defineConfig({
 
       '/uploads': {
 
-        target: 'http://192.168.1.7:7200',
+        target: 'http://192.168.1.14:7200',
 
         changeOrigin: true,
 

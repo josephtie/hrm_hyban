@@ -3121,7 +3121,7 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
             PrintLs dto = new PrintLs();
             dto.setS1(type);
             dto.setTitle1(type + "s"); // ex : Contractuels
-            dto.setI1(total != null ? total.intValue() : 0);
+            dto.setValue1(total != null ? total : BigDecimal.ZERO);
             listPrint.add(dto);
         }
         return listPrint;

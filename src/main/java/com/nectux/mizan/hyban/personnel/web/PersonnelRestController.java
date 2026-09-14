@@ -1,13 +1,47 @@
 package com.nectux.mizan.hyban.personnel.web;
 
+import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
+import java.security.Principal;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nectux.mizan.hyban.paie.entity.Conge;
+import com.nectux.mizan.hyban.paie.service.BulletinPaieService;
+import com.nectux.mizan.hyban.paie.service.CongeService;
+import com.nectux.mizan.hyban.parametrages.entity.Exercice;
+import com.nectux.mizan.hyban.parametrages.entity.Mois;
+import com.nectux.mizan.hyban.parametrages.entity.PeriodePaie;
+import com.nectux.mizan.hyban.parametrages.entity.PlanningConge;
+import com.nectux.mizan.hyban.parametrages.repository.ExerciceRepository;
+import com.nectux.mizan.hyban.parametrages.repository.PeriodePaieRepository;
+import com.nectux.mizan.hyban.parametrages.repository.TypeContratRepository;
+import com.nectux.mizan.hyban.parametrages.service.*;
+import com.nectux.mizan.hyban.personnel.entity.Service;
+import com.nectux.mizan.hyban.personnel.repository.ContratPersonnelRepository;
+import com.nectux.mizan.hyban.personnel.repository.DocumentTypeRepository;
+import com.nectux.mizan.hyban.personnel.repository.PersonnelRepository;
+import com.nectux.mizan.hyban.personnel.repository.StorageLocationRepository;
+import com.nectux.mizan.hyban.personnel.service.ContratPersonnelService;
+import com.nectux.mizan.hyban.personnel.service.FonctionService;
+import com.nectux.mizan.hyban.personnel.service.ServiceService;
+import com.nectux.mizan.hyban.rh.absences.service.AbsencesService;
+import com.nectux.mizan.hyban.rh.carriere.repository.AffectationRepository;
+import com.nectux.mizan.hyban.rh.carriere.repository.SiteWorkRepository;
+import com.nectux.mizan.hyban.rh.carriere.service.PosteService;
+import com.nectux.mizan.hyban.rh.carriere.service.PromotionService;
+import com.nectux.mizan.hyban.rh.carriere.service.SanctionService;
+import com.nectux.mizan.hyban.utils.DifferenceDate;
+import com.nectux.mizan.hyban.utils.MethodsShared;
+import com.nectux.mizan.hyban.utils.PrintLs;
+import com.nectux.mizan.hyban.utils.Utils;
+import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +54,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,7 +67,6 @@ import com.nectux.mizan.hyban.personnel.dto.ContratPersonnelDTO;
 import com.nectux.mizan.hyban.personnel.dto.EditerPersonnelRequest;
 import com.nectux.mizan.hyban.personnel.entity.Personnel;
 import com.nectux.mizan.hyban.personnel.service.PersonnelService;
-import com.nectux.mizan.hyban.parametrages.service.SocieteService;
 // import com.nectux.mizan.hyban.parametrages.service.UtilisateurService;
 
 @RestController
@@ -51,6 +85,39 @@ public class PersonnelRestController {
     private PersonnelService personnelService;
     @Autowired
     private SocieteService societeService;
+
+
+
+    @Autowired private ExerciceRepository exerciceRepository;
+    @Autowired
+    private DocumentTypeRepository documentTypeRepository;
+    @Autowired
+    private AffectationRepository affectationRepository;
+    @Autowired
+    private StorageLocationRepository storageLocationRepository;
+    @Autowired private PersonnelRepository personnelRepository;
+    @Autowired private SiteWorkRepository siteWorkRepository;
+    @Autowired private MoisService moisService;
+    @Autowired private BulletinPaieService bulletinPaieService;
+    @Autowired private ServiceService serviceService;
+    @Autowired private CongeService congeService;
+    @Autowired private PlanningCongeService planningCongeService;
+    @Autowired private ContratPersonnelService contratPersonnelService;
+    @Autowired private ContratPersonnelRepository contratPersonnelRepository;
+    @Autowired private TypeContratRepository typeContratRepository;
+    //Carriere
+    @Autowired private SanctionService sanctionService;
+    @Autowired private FonctionService fonctionService;
+    @Autowired private PosteService posteService;
+    @Autowired private PromotionService promotionService;
+    @Autowired private PeriodePaieService periodePaieService;
+    @Autowired private BanqueService banqueService;
+    @Autowired private AbsencesService absenceService;
+    @Autowired private PeriodePaieRepository periodePaieRepository;
+
+
+    public MethodsShared methodsShared;
+    public DifferenceDate differenceDate;
     // @Autowired
     // private UtilisateurService utilisateurService;
 
@@ -633,6 +700,445 @@ public class PersonnelRestController {
         } catch (Exception e) {
             logger.error("Erreur lors de la modification du personnel", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+
+
+    @RequestMapping(value = "/effectifPersonnel", method = RequestMethod.GET)
+    @ResponseBody
+    public String deleteUse(@RequestParam(value="id", required=false) Long id, ModelMap modelMap) throws IOException {
+        Exercice anneeRecup = new Exercice();
+        if(id != null){
+            try {
+                anneeRecup = exerciceRepository.findById(id) .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(" annee :::::: "+anneeRecup.toString());
+        List<PrintLs> listPrintDTO = new ArrayList<PrintLs>();
+        if(anneeRecup.getId() != null){
+            Integer anneeEnCours = Integer.valueOf(anneeRecup.getAnnee());
+            for (int i = 0; i < 5; i++) {
+                //System.out.println(" annee :::::: "+anneeEnCours);
+
+                String annee = String.valueOf(anneeEnCours);
+                java.sql.Date dateAnDeb = null;
+                java.sql.Date dateAnFin = null;
+                Date dateAnDeb1 = null;
+                Date dateAnFin1 = null;
+                try {
+                    dateAnDeb1 = Utils.stringToDate("01/01/"+annee, "dd/MM/yyyy");
+                    dateAnFin1 = Utils.stringToDate("31/12/"+annee, "dd/MM/yyyy");
+                    dateAnDeb = new java.sql.Date(dateAnDeb1.getTime());
+                    dateAnFin = new java.sql.Date(dateAnFin1.getTime());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                List<Personnel> listPersonnelHomme = new ArrayList<Personnel>();
+                try{
+                    listPersonnelHomme = personnelService.RechercherListPersonnelParAnnee(dateAnDeb, dateAnFin, "Masculin");
+                    System.out.println("list Personnel : "+listPersonnelHomme.size());
+                } catch(Exception ex){
+                    logger.error(ex.getMessage());
+                    logger.error(Arrays.toString(ex.getStackTrace()));
+                    logger.error("une erreur a ete dectectee lors de la suppression du categorie Personnel");
+                }
+
+                List<Personnel> listPersonnelFemme = new ArrayList<Personnel>();
+                try{
+                    listPersonnelFemme = personnelService.RechercherListPersonnelParAnnee( dateAnDeb, dateAnFin, "Feminin");
+                    System.out.println("list Personnel femme : "+listPersonnelFemme.size());
+
+                } catch(Exception ex){
+
+                }
+                PrintLs printDTO = new PrintLs();
+                printDTO.setI1(listPersonnelHomme.size());
+                printDTO.setS1(annee);
+                printDTO.setTitle1("Homme");
+                printDTO.setI2(listPersonnelFemme.size());
+                printDTO.setS2(annee);
+                printDTO.setTitle2("Femme");
+                listPrintDTO.add(printDTO);
+
+                anneeEnCours = anneeEnCours - 1;
+            }
+
+        }
+        return toJson(listPrintDTO);
+    }
+
+
+    @RequestMapping(value = "/effectifparsite", method = RequestMethod.GET)
+    @ResponseBody
+    public String effectifUse(@RequestParam(value="id", required=false) Long id, ModelMap modelMap) throws IOException {
+
+
+        Exercice anneeRecup = new Exercice();
+        if (id != null) {
+            try {
+                anneeRecup = exerciceRepository.findById(id).orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + id));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        PeriodePaie periode = periodePaieService.findPeriodeactive();
+        if (periode == null) {
+            return toJson(Collections.emptyList());
+        }
+        List<PrintLs> effectifParSite = bulletinPaieService.calculerEffectifParSiteAlaPaie(periode);
+        List<PrintLs> masseSalarialeSite = bulletinPaieService.calculerMasseSalarialeParSite(periode);
+        System.out.println(" annee :::::: " + anneeRecup.toString());
+        Map<String, PrintLs> merged = new HashMap<>();
+        for (PrintLs eff : effectifParSite) {
+            PrintLs item = new PrintLs();
+            item.setS1(eff.getS1()); // le site
+            item.setI1(eff.getI1()); // l'effectif
+            merged.put(eff.getS1(), item);
+        }
+
+        for (PrintLs masse : masseSalarialeSite) {
+            PrintLs item = merged.computeIfAbsent(masse.getS1(), k -> new PrintLs());
+            item.setS1(masse.getS1()); // le site
+            item.setValue1(masse.getValue1()); // la masse salariale
+        }
+
+        return toJson(new ArrayList<>(merged.values()));
+    }
+
+
+    @RequestMapping(value = "/stat/conge", method = RequestMethod.GET)
+    @ResponseBody
+    public String statConge( @RequestParam(value="id", required=false) Long aid, ModelMap modelMap, Principal principal) throws IOException {
+
+
+        List<PrintLs> listPrintDTO = new ArrayList<PrintLs>();
+
+        Exercice annee = new Exercice();
+        if(aid != null){
+            try {
+                annee = exerciceRepository.findById(aid) .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + aid));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(" annee :::::: "+annee.toString());
+        if(annee.getId() != null){
+
+            List<Mois> listMois = new ArrayList<Mois>();
+            try {
+                listMois = moisService.findtsmois();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            for (Mois mois : listMois) {
+
+                //Recherche de la liste des congées d'un mois
+                List<Conge> listconge = new ArrayList<Conge>();
+                try {
+                    listconge = congeService.rechercherByAgenceMoisAnnee( mois, annee);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println("nb conge mois : "+mois.getMois()+" annee : "+annee.getAnnee() +" ::::: "+listconge.size());
+
+                //Recherche de la liste des plagning de congé d'un mois
+                List<PlanningConge> listPlanning = new ArrayList<PlanningConge>();
+                try {
+                    listPlanning = planningCongeService.rechercherByAgenceMoisAnnee(mois, annee);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println("nb conge mois : "+mois.getMois()+" annee : "+annee.getAnnee() +" ::::: "+listconge.size());
+
+                PrintLs printDTO = new PrintLs();
+                printDTO.setI1(listconge.size());
+                printDTO.setS1(mois.getMois());
+                printDTO.setTitle1(annee.getAnnee());
+                printDTO.setI2(listPlanning.size());
+                printDTO.setS2(mois.getMois());
+                printDTO.setTitle2(annee.getAnnee());
+
+                listPrintDTO.add(printDTO);
+            }
+
+        }
+
+
+        //return new ModelAndView("redirect:../../../rhp/personnel/processing/listpersonnal?uid="+utilisateurCourant.getUid());
+        return toJson(listPrintDTO);
+    }
+
+    @RequestMapping(value = "/stat/effectifPersonnelRetraite", method = RequestMethod.GET)
+    @ResponseBody
+    public String SatRetraite( @RequestParam(value="id", required=false) Long aid, ModelMap modelMap) throws IOException {
+
+
+
+        Exercice  anneeRecup = new Exercice();
+        if(aid != null){
+            try {
+                anneeRecup = exerciceRepository.findById(aid) .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + aid));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(" annee :::::: "+anneeRecup.toString());
+
+        List<PrintLs> listPrintDTO = new ArrayList<PrintLs>();
+
+        if(anneeRecup.getId() != null){
+
+            Integer anneeEnCours = Integer.valueOf(anneeRecup.getAnnee());
+
+            Integer nbHommeRetraitAn1 = 0;
+            Integer nbFemmeRetraitAn1 = 0;
+
+            Integer nbHommeRetraitAn2 = 0;
+            Integer nbFemmeRetraitAn2 = 0;
+
+            Integer nbHommeRetraitAn3 = 0;
+            Integer nbFemmeRetraitAn3 = 0;
+
+            Integer nbHommeRetraitAn4 = 0;
+            Integer nbFemmeRetraitAn4 = 0;
+
+            Integer nbHommeRetraitAn5 = 0;
+            Integer nbFemmeRetraitAn5 = 0;
+
+            String annee = String.valueOf(anneeEnCours);
+            java.sql.Date dateAnDeb = null;	dateAnDeb = null;
+            try {
+                Date dateAnDeb11 = null;
+
+                dateAnDeb11= Utils.stringToDate("01/01/"+annee, "dd/MM/yyyy");
+                dateAnDeb =new java.sql.Date(dateAnDeb11.getTime());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            List<Personnel> listPersonnelHomme = new ArrayList<Personnel>();
+            try{
+                listPersonnelHomme = personnelService.RechercherListPersonnelParAnnee( "Masculin");
+                System.out.println("list Personnel homme : "+listPersonnelHomme.size());
+            } catch(Exception ex){
+                logger.error(ex.getMessage());
+            }
+            for (Personnel personnel : listPersonnelHomme) {
+                Date datNaiss = personnel.getDateNaissance();
+                double age = differenceDate.valAge(dateAnDeb, datNaiss);
+                System.out.println("Age de homme est : "+age);
+
+                if(age > 59){
+                    nbHommeRetraitAn1 = nbHommeRetraitAn1 + 1;
+                }else{
+
+                    if(age > 58){
+                        nbHommeRetraitAn2 = nbHommeRetraitAn2 + 1;
+                    }else{
+
+                        if(age > 57){
+                            nbHommeRetraitAn3 = nbHommeRetraitAn3 + 1;
+                        }else{
+                            if(age > 56){
+                                nbHommeRetraitAn4 = nbHommeRetraitAn4 + 1;
+                            }else{
+                                if(age > 55){
+                                    nbHommeRetraitAn5 = nbHommeRetraitAn5 + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            List<Personnel> listPersonnelFemme = new ArrayList<Personnel>();
+            try{
+                listPersonnelFemme = personnelService.RechercherListPersonnelParAnnee( "Feminin");
+                System.out.println("list Personnel femme : "+listPersonnelFemme.size());
+            } catch(Exception ex){
+                logger.error(ex.getMessage());
+            }
+            for (Personnel personnel : listPersonnelFemme) {
+                Date datNaiss = personnel.getDateNaissance();
+                double age = differenceDate.valAge(dateAnDeb, datNaiss);
+                System.out.println("Age de femme est : "+age);
+
+                if(age > 59){
+                    nbFemmeRetraitAn1 = nbFemmeRetraitAn1 + 1;
+                }else{
+
+                    if(age > 58){
+                        nbFemmeRetraitAn2 = nbFemmeRetraitAn2 + 1;
+                    }else{
+
+                        if(age > 57){
+                            nbFemmeRetraitAn3 = nbFemmeRetraitAn3 + 1;
+                        }else{
+                            if(age > 56){
+                                nbFemmeRetraitAn4 = nbFemmeRetraitAn4 + 1;
+                            }else{
+                                if(age > 55){
+                                    nbFemmeRetraitAn5 = nbFemmeRetraitAn5 + 1;
+                                }
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            PrintLs printDTO = new PrintLs();
+            printDTO.setI1(nbHommeRetraitAn1);
+            printDTO.setS1(annee);
+            printDTO.setTitle1("Homme");
+            printDTO.setI2(nbFemmeRetraitAn1);
+            printDTO.setS2(annee);
+            printDTO.setTitle2("Femme");
+
+            listPrintDTO.add(printDTO);
+
+            PrintLs printDTO2 = new PrintLs();
+            printDTO2.setI1(nbHommeRetraitAn2);
+            printDTO2.setS1(String.valueOf(anneeEnCours+1));
+            printDTO2.setTitle1("Homme");
+            printDTO2.setI2(nbFemmeRetraitAn2);
+            printDTO2.setS2(String.valueOf(anneeEnCours+1));
+            printDTO2.setTitle2("Femme");
+
+            listPrintDTO.add(printDTO2);
+
+            PrintLs printDTO3 = new PrintLs();
+            printDTO3.setI1(nbHommeRetraitAn3);
+            printDTO3.setS1(String.valueOf(anneeEnCours+2));
+            printDTO3.setTitle1("Homme");
+            printDTO3.setI2(nbFemmeRetraitAn3);
+            printDTO3.setS2(String.valueOf(anneeEnCours+2));
+            printDTO3.setTitle2("Femme");
+
+            listPrintDTO.add(printDTO3);
+
+            PrintLs printDTO4 = new PrintLs();
+            printDTO4.setI1(nbHommeRetraitAn4);
+            printDTO4.setS1(String.valueOf(anneeEnCours+3));
+            printDTO4.setTitle1("Homme");
+            printDTO4.setI2(nbFemmeRetraitAn4);
+            printDTO4.setS2(String.valueOf(anneeEnCours+3));
+            printDTO4.setTitle2("Femme");
+
+            listPrintDTO.add(printDTO4);
+
+            PrintLs printDTO5 = new PrintLs();
+            printDTO5.setI1(nbHommeRetraitAn5);
+            printDTO5.setS1(String.valueOf(anneeEnCours+4));
+            printDTO5.setTitle1("Homme");
+            printDTO5.setI2(nbFemmeRetraitAn5);
+            printDTO5.setS2(String.valueOf(anneeEnCours+4));
+            printDTO5.setTitle2("Femme");
+
+            listPrintDTO.add(printDTO5);
+
+        }
+
+
+
+        //return new ModelAndView("redirect:../../../rhp/personnel/processing/listpersonnal?uid="+utilisateurCourant.getUid());
+        return toJson(listPrintDTO);
+    }
+    @RequestMapping(value = "/stat/moyenAge", method = RequestMethod.GET)
+    @ResponseBody
+    public String statMoyenneAge( @RequestParam(value="aid", required=false) Long aid, ModelMap modelMap, Principal principal) throws IOException {
+
+
+        Exercice anneeRecup = new Exercice();
+        if(aid != null){
+            try {
+                anneeRecup = exerciceRepository.findById(aid) .orElseThrow(() -> new EntityNotFoundException("Pret not found for id " + aid));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println(" annee :::::: "+anneeRecup.toString());
+
+        List<PrintLs> listPrintDTO = new ArrayList<PrintLs>();
+
+        if(anneeRecup.getId() != null){
+
+            Integer anneeEnCours = Integer.valueOf(anneeRecup.getAnnee());
+            String annee = String.valueOf(anneeEnCours);
+            java.sql.Date dateAnDeb = null;
+
+            try {
+                Date dateAnDeb11 = null;
+
+                dateAnDeb11= Utils.stringToDate("01/01/"+annee, "dd/MM/yyyy");
+                dateAnDeb =new java.sql.Date(dateAnDeb11.getTime());
+                //dateAnDeb = Utils.stringToDate().stringToDateSql("01/01/"+annee, "dd/MM/yyyy");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            //Recherche du nombre de direction
+            List<Service> listDirection = new ArrayList<Service>();
+            try {
+                listDirection = serviceService.findByTypeServiceId(1L);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            System.out.println("####### Nb direction :::::: "+listDirection.size());
+
+            for (Service direction : listDirection) {
+                //Recherche de la liste du personnel pour une direction
+                List<Personnel> listPers = new ArrayList<Personnel>();
+                try {
+                    listPers = personnelService.RechercherListPersonnelParDirection(direction);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                System.out.println("####### Nb personnel par direction :::::: "+direction.getLibelle()+" nbre :"+listPers.size());
+
+                double somAge = 0;
+                //calculer l'age de chaque personnel
+                for (Personnel personnel : listPers) {
+                    Date datNaiss = personnel.getDateNaissance();
+                    double age = differenceDate.valAge(dateAnDeb, datNaiss);
+                    System.out.println("Age de homme est : "+age);
+                    somAge = somAge + age;
+                }
+                double moyAge = 0;
+
+                if(listPers.size() != 0)
+                    moyAge = somAge / listPers.size();
+
+                PrintLs printDTO = new PrintLs();
+                printDTO.setI1((int)moyAge);
+                printDTO.setS1(anneeRecup.getAnnee());
+                printDTO.setTitle1(direction.getLibelle());
+
+                listPrintDTO.add(printDTO);
+            }
+
+
+        }
+
+        //return new ModelAndView("redirect:../../../rhp/personnel/processing/listpersonnal?uid="+utilisateurCourant.getUid());
+        return toJson(listPrintDTO);
+    }
+
+
+    private String toJson(List<PrintLs> listPrintDTO) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String value = mapper.writeValueAsString(listPrintDTO);
+            return value;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

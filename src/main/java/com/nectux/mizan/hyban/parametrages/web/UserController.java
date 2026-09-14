@@ -140,6 +140,19 @@ public class UserController {
        // return ResponseEntity.status(501).body("Service désactivé en profil local");
     }
 
+    @PutMapping("/me/password")
+    public ResponseEntity<String> changeMyPassword(@RequestBody ChangePasswordRequest request) {
+        String userId = getCurrentUsername();
+        if (userId == null || userId.equals("system")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utilisateur non authentifié");
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+            return ResponseEntity.badRequest().body("Le nouveau mot de passe est obligatoire");
+        }
+        keycloakUserService.changePassword(userId, request.getNewPassword());
+        return ResponseEntity.ok("Mot de passe modifié avec succès");
+    }
+
     public static class AssignRolesRequest {
         private List<String> roles;
 
@@ -149,6 +162,18 @@ public class UserController {
 
         public void setRoles(List<String> roles) {
             this.roles = roles;
+        }
+    }
+
+    public static class ChangePasswordRequest {
+        private String newPassword;
+
+        public String getNewPassword() {
+            return newPassword;
+        }
+
+        public void setNewPassword(String newPassword) {
+            this.newPassword = newPassword;
         }
     }
 

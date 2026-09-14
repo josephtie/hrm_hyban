@@ -1,10 +1,18 @@
 <template>
   <div class="dashboard">
     <div class="dashboard-header">
-      <h1>Tableau de bord</h1>
-      <p>Bienvenue {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}</p>
+      <div class="dashboard-header-left">
+        <h1>Tableau de bord</h1>
+        <p>Bienvenue {{ authStore.user?.firstName }} {{ authStore.user?.lastName }}</p>
+      </div>
+      <div class="dashboard-header-right">
+        <el-tag :type="getRoleTagType(authStore.user?.role)" size="large">{{ authStore.user?.role }}</el-tag>
+        <span class="dashboard-username">{{ authStore.user?.username }}</span>
+      </div>
     </div>
-    
+
+ 
+
     <!-- Statistiques principales -->
     <div class="stats-grid">
       <el-card class="stat-card">
@@ -172,11 +180,12 @@
         </el-card>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import {
   User,
@@ -186,9 +195,11 @@ import {
   Refresh,
   Plus,
   Edit,
-  Calendar
+  Calendar,
+  Key
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { usePasswordDialog } from '@/composables/usePasswordDialog'
 import { Chart, registerables } from 'chart.js'
 import { api } from '@/services/api'
 import { personnelRestService } from '@/services/personnel.service'
@@ -197,12 +208,23 @@ import { contratPersonnelService } from '@/services/contrat-personnel.service'
 Chart.register(...registerables)
 
 const authStore = useAuthStore()
+const { open: openPasswordModal } = usePasswordDialog()
 
 // Références
 const effectifsChart = ref<HTMLCanvasElement>()
 const effectifsChartInstance = ref<Chart | null>(null)
 
-// Données mockées
+const getRoleTagType = (role: string): string => {
+  const types: Record<string, string> = {
+    'ADMIN': 'danger',
+    'DAF': 'warning',
+    'RH': 'success',
+    'PTGE': 'info',
+    'USER': ''
+  }
+  return types[role] || ''
+}
+
 const stats = ref({
   totalEmployes: 0,
   employesActifs: 0,
@@ -212,7 +234,7 @@ const stats = ref({
 
 const effectifsParDirection = ref<{ libelle: string; effectif: number }[]>([])
 
- const recentActivities = ref<any[]>([])
+const recentActivities = ref<any[]>([])
 
 const contratsEcheance = ref<any[]>([])
 
@@ -233,7 +255,6 @@ const absencesEnAttente = ref([
   }
 ])
 
-// Méthodes
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
@@ -492,9 +513,12 @@ onMounted(() => {
 .dashboard-header {
   margin-bottom: 30px;
   width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.dashboard-header h1 {
+.dashboard-header-left h1 {
   margin: 0 0 8px 0;
   color: #303133;
   font-size: 2rem;
@@ -505,6 +529,101 @@ onMounted(() => {
   margin: 0;
   color: #606266;
   font-size: 1rem;
+}
+
+.dashboard-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dashboard-username {
+  font-size: 1rem;
+  color: #303133;
+  font-weight: 500;
+}
+
+.profile-card {
+  margin-bottom: 30px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-info h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #303133;
+}
+
+.profile-role {
+  color: #909399;
+  font-size: 0.85rem;
+}
+
+.profile-body {
+  display: flex;
+  gap: 30px;
+  align-items: stretch;
+}
+
+.profile-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-label {
+  font-size: 0.8rem;
+  color: #909399;
+  font-weight: 500;
+}
+
+.profile-value {
+  font-size: 1rem;
+  color: #303133;
+}
+
+.profile-actions {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-form {
+  max-width: 400px;
+}
+
+@media (max-width: 768px) {
+  .profile-body {
+    flex-direction: column;
+  }
 }
 
 .stats-grid {

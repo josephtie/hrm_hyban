@@ -3,21 +3,23 @@
     <div class="page-header">
       <h1>Reporting & Tableaux de bord</h1>
       <p>Analyses et rapports sur les données RH et de paie</p>
+      <el-tag v-if="currentPeriodeLabel" type="info" size="large" style="margin-left: 12px;">
+        {{ currentPeriodeLabel }}
+      </el-tag>
     </div>
 
     <el-row :gutter="24">
       <el-col :span="6">
-        <el-card class="kpi-card">
+        <el-card class="kpi-card" v-loading="loading.kpis">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: #e7f5ff; color: #1890ff;">
               <el-icon><User /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-number">156</div>
+              <div class="kpi-number">{{ kpis.effectifTotal ?? '—' }}</div>
               <div class="kpi-label">Effectif total</div>
               <div class="kpi-trend">
-                <el-icon><CaretTop /></el-icon>
-                <span>+5% ce mois</span>
+                <span>H: {{ kpis.effectifHommes ?? 0 }} / F: {{ kpis.effectifFemmes ?? 0 }}</span>
               </div>
             </div>
           </div>
@@ -25,17 +27,16 @@
       </el-col>
 
       <el-col :span="6">
-        <el-card class="kpi-card">
+        <el-card class="kpi-card" v-loading="loading.kpis">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: #f6ffed; color: #52c41a;">
               <el-icon><Money /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-number">485K€</div>
-              <div class="kpi-label">Masse salariale</div>
+              <div class="kpi-number">{{ formatMasseSalariale(kpis.masseSalariale) }}</div>
+              <div class="kpi-label">Masse salariale (période active)</div>
               <div class="kpi-trend">
-                <el-icon><CaretTop /></el-icon>
-                <span>+2.3% ce mois</span>
+                <span>Période #{{ kpis.periodeActive ?? 'N/A' }}</span>
               </div>
             </div>
           </div>
@@ -43,17 +44,16 @@
       </el-col>
 
       <el-col :span="6">
-        <el-card class="kpi-card">
+        <el-card class="kpi-card" v-loading="loading.kpis">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: #fff2e8; color: #fa8c16;">
               <el-icon><Clock /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-number">95.2%</div>
-              <div class="kpi-label">Taux de présence</div>
+              <div class="kpi-number">{{ kpis.contractuels ?? 0 }}</div>
+              <div class="kpi-label">Contractuels</div>
               <div class="kpi-trend">
-                <el-icon><CaretBottom /></el-icon>
-                <span>-0.8% ce mois</span>
+                <span>Stag.: {{ kpis.stagiaires ?? 0 }} | Fct.: {{ kpis.fonctionnaires ?? 0 }} | Cons.: {{ kpis.consultants ?? 0 }}</span>
               </div>
             </div>
           </div>
@@ -61,17 +61,16 @@
       </el-col>
 
       <el-col :span="6">
-        <el-card class="kpi-card">
+        <el-card class="kpi-card" v-loading="loading.retraite">
           <div class="kpi-content">
             <div class="kpi-icon" style="background: #fff1f0; color: #ff4d4f;">
               <el-icon><SwitchButton /></el-icon>
             </div>
             <div class="kpi-info">
-              <div class="kpi-number">8.5%</div>
-              <div class="kpi-label">Taux de turnover</div>
+              <div class="kpi-number">{{ retraiteTotal }}</div>
+              <div class="kpi-label">Proches de la retraite</div>
               <div class="kpi-trend">
-                <el-icon><CaretBottom /></el-icon>
-                <span>-1.2% ce mois</span>
+                <span>H: {{ retraiteHommes }} / F: {{ retraiteFemmes }}</span>
               </div>
             </div>
           </div>
@@ -79,13 +78,52 @@
       </el-col>
     </el-row>
 
-    <el-tabs v-model="activeTab" style="margin-top: 24px;">
+    <el-tabs v-model="activeTab" style="margin-top: 24px;" @tab-change="onTabChange">
+      <el-tab-pane label="Dashboard DG" name="dg-dashboard">
+        <el-row :gutter="24">
+          <el-col :span="24">
+            <el-card v-loading="loading.masseSalarialeEvo">
+              <template #header>
+                <span>Évolution de la masse salariale (année active)</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="masseSalarialeEvoChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24" style="margin-top: 24px;">
+          <el-col :span="12">
+            <el-card v-loading="loading.coutsPersonnel">
+              <template #header>
+                <span>Répartition des coûts du personnel</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="coutsPersonnelChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+
+          <el-col :span="12">
+            <el-card v-loading="loading.typeContrat">
+              <template #header>
+                <span>Effectif total par statut</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="typeContratChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </el-tab-pane>
+
       <el-tab-pane label="Tableau de bord" name="dashboard">
         <el-row :gutter="24">
           <el-col :span="12">
-            <el-card>
+            <el-card v-loading="loading.effectifAnnuel">
               <template #header>
-                <span>Évolution de l'effectif</span>
+                <span>Évolution de l'effectif (5 dernières années)</span>
               </template>
               <div class="chart-container">
                 <canvas ref="staffChart"></canvas>
@@ -94,12 +132,12 @@
           </el-col>
 
           <el-col :span="12">
-            <el-card>
+            <el-card v-loading="loading.typeContrat">
               <template #header>
-                <span>Répartition par département</span>
+                <span>Répartition par type de contrat</span>
               </template>
               <div class="chart-container">
-                <canvas ref="departmentChart"></canvas>
+                <canvas ref="typeContratChart"></canvas>
               </div>
             </el-card>
           </el-col>
@@ -107,9 +145,9 @@
 
         <el-row :gutter="24" style="margin-top: 24px;">
           <el-col :span="12">
-            <el-card>
+            <el-card v-loading="loading.masseTypeContrat">
               <template #header>
-                <span>Masse salariale mensuelle</span>
+                <span>Masse salariale par type de contrat</span>
               </template>
               <div class="chart-container">
                 <canvas ref="salaryChart"></canvas>
@@ -118,12 +156,25 @@
           </el-col>
 
           <el-col :span="12">
-            <el-card>
+            <el-card v-loading="loading.effectifSite">
               <template #header>
-                <span>Taux d'absentéisme</span>
+                <span>Effectif par site</span>
               </template>
               <div class="chart-container">
-                <canvas ref="absenceChart"></canvas>
+                <canvas ref="siteChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24" style="margin-top: 24px;">
+          <el-col :span="24">
+            <el-card v-loading="loading.masseSite">
+              <template #header>
+                <span>Masse salariale par site</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="masseSiteChart"></canvas>
               </div>
             </el-card>
           </el-col>
@@ -132,47 +183,61 @@
 
       <el-tab-pane label="Rapports RH" name="hr-reports">
         <el-row :gutter="24">
-          <el-col :span="8">
-            <el-card class="report-card">
-              <div class="report-content">
-                <div class="report-icon" style="background: #e7f5ff; color: #1890ff;">
-                  <el-icon><Document /></el-icon>
-                </div>
-                <div class="report-info">
-                  <div class="report-title">Effectifs au 31/03</div>
-                  <div class="report-desc">État des effectifs par catégorie</div>
-                  <el-button type="primary" size="small">Générer</el-button>
-                </div>
+          <el-col :span="12">
+            <el-card v-loading="loading.effectifMensuel">
+              <template #header>
+                <span>Évolution des effectifs (mois de l'année active)</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="effectifMensuelChart"></canvas>
               </div>
             </el-card>
           </el-col>
 
-          <el-col :span="8">
-            <el-card class="report-card">
-              <div class="report-content">
-                <div class="report-icon" style="background: #f6ffed; color: #52c41a;">
-                  <el-icon><TrendCharts /></el-icon>
-                </div>
-                <div class="report-info">
-                  <div class="report-title">Analyse turnover</div>
-                  <div class="report-desc">Analyse des départs et arrivées</div>
-                  <el-button type="primary" size="small">Générer</el-button>
-                </div>
+          <el-col :span="12">
+            <el-card v-loading="loading.agePyramid">
+              <template #header>
+                <span>Pyramide des âges</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="agePyramidChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24" style="margin-top: 24px;">
+          <el-col :span="12">
+            <el-card v-loading="loading.anciennete">
+              <template #header>
+                <span>Ancienneté des employés</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="ancienneteChart"></canvas>
               </div>
             </el-card>
           </el-col>
 
-          <el-col :span="8">
-            <el-card class="report-card">
-              <div class="report-content">
-                <div class="report-icon" style="background: #fff2e8; color: #fa8c16;">
-                  <el-icon><Calendar /></el-icon>
-                </div>
-                <div class="report-info">
-                  <div class="report-title">Planning congés</div>
-                  <div class="report-desc">État des congés par service</div>
-                  <el-button type="primary" size="small">Générer</el-button>
-                </div>
+          <el-col :span="12">
+            <el-card v-loading="loading.conge">
+              <template #header>
+                <span>Statistiques des congés par mois</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="congeChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24" style="margin-top: 24px;">
+          <el-col :span="24">
+            <el-card v-loading="loading.retraite">
+              <template #header>
+                <span>Personnel proche de la retraite</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="retraiteChart"></canvas>
               </div>
             </el-card>
           </el-col>
@@ -189,7 +254,7 @@
             <el-table-column prop="trend" label="Tendance">
               <template #default="scope">
                 <el-tag :type="scope.row.trend === 'positive' ? 'success' : 'danger'">
-                  {{ scope.row.trend === 'positive' ? '↗ Positif' : '↘ Négatif' }}
+                  {{ scope.row.trend === 'positive' ? 'Positif' : 'Négatif' }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -199,47 +264,50 @@
 
       <el-tab-pane label="Rapports de paie" name="payroll-reports">
         <el-row :gutter="24">
-          <el-col :span="8">
-            <el-card class="report-card">
-              <div class="report-content">
-                <div class="report-icon" style="background: #e7f5ff; color: #1890ff;">
-                  <el-icon><Money /></el-icon>
-                </div>
-                <div class="report-info">
-                  <div class="report-title">État des charges</div>
-                  <div class="report-desc">Détail des cotisations sociales</div>
-                  <el-button type="primary" size="small">Générer</el-button>
-                </div>
+          <el-col :span="24">
+            <el-card v-loading="loading.netPaye">
+              <template #header>
+                <span>Évolution du net payé (année active)</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="netPayeChart"></canvas>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="24" style="margin-top: 24px;">
+          <el-col :span="12">
+            <el-card v-loading="loading.brutNetCharges">
+              <template #header>
+                <span>Brut vs Net vs Charges (période active)</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="brutNetChargesChart"></canvas>
               </div>
             </el-card>
           </el-col>
 
-          <el-col :span="8">
-            <el-card class="report-card">
-              <div class="report-content">
-                <div class="report-icon" style="background: #f6ffed; color: #52c41a;">
-                  <el-icon><PieChart /></el-icon>
-                </div>
-                <div class="report-info">
-                  <div class="report-title">Analytique salaire</div>
-                  <div class="report-desc">Répartition des salaires</div>
-                  <el-button type="primary" size="small">Générer</el-button>
-                </div>
+          <el-col :span="12">
+            <el-card v-loading="loading.primes">
+              <template #header>
+                <span>Répartition des primes (période active)</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="primesChart"></canvas>
               </div>
             </el-card>
           </el-col>
+        </el-row>
 
-          <el-col :span="8">
-            <el-card class="report-card">
-              <div class="report-content">
-                <div class="report-icon" style="background: #fff2e8; color: #fa8c16;">
-                  <el-icon><DataAnalysis /></el-icon>
-                </div>
-                <div class="report-info">
-                  <div class="report-title">Coût du personnel</div>
-                  <div class="report-desc">Analyse des coûts globaux</div>
-                  <el-button type="primary" size="small">Générer</el-button>
-                </div>
+        <el-row :gutter="24" style="margin-top: 24px;">
+          <el-col :span="24">
+            <el-card v-loading="loading.retenues">
+              <template #header>
+                <span>Analyse des retenues (période active)</span>
+              </template>
+              <div class="chart-container">
+                <canvas ref="retenuesChart"></canvas>
               </div>
             </el-card>
           </el-col>
@@ -247,31 +315,31 @@
 
         <el-card style="margin-top: 24px;">
           <template #header>
-            <span>Statistiques de paie</span>
+            <span>Statistiques de paie (période active)</span>
           </template>
           <el-row :gutter="24">
             <el-col :span="6">
               <div class="stat-item">
-                <div class="stat-number">3 250€</div>
-                <div class="stat-label">Salaire moyen</div>
+                <div class="stat-number">{{ kpis.effectifTotal ?? '—' }}</div>
+                <div class="stat-label">Effectif total</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="stat-item">
-                <div class="stat-number">2 850€</div>
-                <div class="stat-label">Salaire médian</div>
+                <div class="stat-number">{{ formatMasseSalariale(kpis.masseSalariale) }}</div>
+                <div class="stat-label">Masse salariale</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="stat-item">
-                <div class="stat-number">42.5%</div>
-                <div class="stat-label">Taux de charges</div>
+                <div class="stat-number">{{ kpis.contractuels ?? 0 }}</div>
+                <div class="stat-label">Contractuels</div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="stat-item">
-                <div class="stat-number">485K€</div>
-                <div class="stat-label">Masse salariale/mois</div>
+                <div class="stat-number">{{ kpis.stagiaires ?? 0 }}</div>
+                <div class="stat-label">Stagiaires</div>
               </div>
             </el-col>
           </el-row>
@@ -320,12 +388,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Chart, registerables } from 'chart.js'
-import { 
-  User, Money, Clock, SwitchButton, CaretTop, CaretBottom,
-  Document, TrendCharts, Calendar, PieChart, DataAnalysis, Download
+import {
+  User, Money, Clock, SwitchButton,
+  PieChart, DataAnalysis, Download
 } from '@element-plus/icons-vue'
+import { reportingService, type ReportingKpis, type PrintLs } from '@/services/reporting.service'
+import { api } from '@/services/api'
+
+Chart.register(...registerables)
 
 interface SocialIndicator {
   indicator: string
@@ -334,7 +406,7 @@ interface SocialIndicator {
   trend: 'positive' | 'negative'
 }
 
-interface Export {
+interface ExportItem {
   id: number
   name: string
   type: string
@@ -343,30 +415,824 @@ interface Export {
   status: string
 }
 
-const activeTab = ref('dashboard')
+const activeTab = ref('dg-dashboard')
+
+const currentExerciceId = ref<number | null>(null)
+const currentPeriodeLabel = ref('')
+
+const loadActivePeriode = async () => {
+  try {
+    const { data } = await api.get('/parametrages/periodes/active')
+    const periode = data?.row || data
+    if (periode?.affiche) {
+      currentPeriodeLabel.value = periode.affiche
+    } else if (periode?.mois && periode?.annee) {
+      currentPeriodeLabel.value = `${periode.mois} ${periode.annee}`
+    }
+    if (periode?.annee?.id) {
+      currentExerciceId.value = periode.annee.id
+    }
+  } catch (e) {
+    console.error('Erreur chargement période active:', e)
+  }
+}
+
+const onTabChange = (tabName: string) => {
+  nextTick(() => {
+    setTimeout(() => {
+      if (tabName === 'hr-reports') {
+        renderCongeChart(congeData.value)
+        renderRetraiteChart(retraiteData.value)
+      }
+    }, 100)
+  })
+}
+
+const kpis = ref<ReportingKpis>({
+  effectifTotal: 0,
+  effectifHommes: 0,
+  effectifFemmes: 0,
+  masseSalariale: 0,
+  contractuels: 0,
+  stagiaires: 0,
+  fonctionnaires: 0,
+  consultants: 0,
+  periodeActive: null,
+})
+
+const retraiteHommes = ref(0)
+const retraiteFemmes = ref(0)
+const retraiteTotal = ref(0)
+
+const congeData = ref<PrintLs[]>([])
+const retraiteData = ref<PrintLs[]>([])
+
+const loading = ref({
+  kpis: false,
+  effectifAnnuel: false,
+  typeContrat: false,
+  masseTypeContrat: false,
+  effectifSite: false,
+  masseSite: false,
+  conge: false,
+  retraite: false,
+  agePyramid: false,
+  anciennete: false,
+  effectifMensuel: false,
+  netPaye: false,
+  brutNetCharges: false,
+  primes: false,
+  retenues: false,
+  masseSalarialeEvo: false,
+  coutsPersonnel: false,
+})
 
 const socialIndicators = ref<SocialIndicator[]>([
-  { indicator: 'Taux de turnover', value: '8.5%', target: '< 10%', trend: 'positive' },
-  { indicator: 'Taux d\'absentéisme', value: '4.8%', target: '< 5%', trend: 'positive' },
-  { indicator: 'Taux de satisfaction', value: '78%', target: '> 80%', trend: 'negative' },
-  { indicator: 'Taux de formation', value: '65%', target: '> 70%', trend: 'negative' },
+  { indicator: 'Taux de turnover', value: '—', target: '< 10%', trend: 'positive' },
+  { indicator: 'Taux d\'absentéisme', value: '—', target: '< 5%', trend: 'positive' },
+  { indicator: 'Taux de satisfaction', value: '—', target: '> 80%', trend: 'negative' },
+  { indicator: 'Taux de formation', value: '—', target: '> 70%', trend: 'negative' },
 ])
 
-const exports = ref<Export[]>([
+const exports = ref<ExportItem[]>([
   { id: 1, name: 'Effectifs Mars 2024', type: 'RH', format: 'Excel', date: '01/04/2024', status: 'Terminé' },
   { id: 2, name: 'Paie Q1 2024', type: 'Paie', format: 'PDF', date: '05/04/2024', status: 'En cours' },
   { id: 3, name: 'Analytique Annuel 2023', type: 'Analytique', format: 'CSV', date: '15/01/2024', status: 'Terminé' },
 ])
 
-Chart.register(...registerables)
+// Chart refs
+const staffChart = ref<HTMLCanvasElement>()
+const typeContratChart = ref<HTMLCanvasElement>()
+const salaryChart = ref<HTMLCanvasElement>()
+const siteChart = ref<HTMLCanvasElement>()
+const masseSiteChart = ref<HTMLCanvasElement>()
+const congeChart = ref<HTMLCanvasElement>()
+const retraiteChart = ref<HTMLCanvasElement>()
+const agePyramidChart = ref<HTMLCanvasElement>()
+const ancienneteChart = ref<HTMLCanvasElement>()
+const effectifMensuelChart = ref<HTMLCanvasElement>()
+const netPayeChart = ref<HTMLCanvasElement>()
+const brutNetChargesChart = ref<HTMLCanvasElement>()
+const primesChart = ref<HTMLCanvasElement>()
+const retenuesChart = ref<HTMLCanvasElement>()
+const masseSalarialeEvoChart = ref<HTMLCanvasElement>()
+const coutsPersonnelChart = ref<HTMLCanvasElement>()
 
-onMounted(() => {
-  initCharts()
+// Chart instances
+let charts: Chart[] = []
+
+onMounted(async () => {
+  await nextTick()
+  await loadActivePeriode()
+  await loadAllData()
 })
 
-const initCharts = () => {
-  // Chart.js sera initialisé ici
-  // Pour l'instant, nous utilisons des placeholders
+onBeforeUnmount(() => {
+  charts.forEach(c => c.destroy())
+  charts = []
+})
+
+const toNumber = (v: any): number => {
+  if (v == null) return 0
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+const formatMasseSalariale = (value: any): string => {
+  const num = toNumber(value)
+  if (num === 0) return '—'
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(1) + 'M'
+  if (num >= 1_000) return (num / 1_000).toFixed(1) + 'K'
+  return num.toFixed(0)
+}
+
+const loadAllData = async () => {
+  await Promise.all([
+    loadKpis(),
+    loadEffectifAnnuel(),
+    loadTypeContrat(),
+    loadMasseSalarialeTypeContrat(),
+    loadEffectifParSite(),
+    loadMasseSalarialeParSite(),
+    loadCongeStat(),
+    loadRetraiteStat(),
+    loadPyramideAges(),
+    loadAnciennete(),
+    loadEffectifMensuel(),
+    loadNetPayeEvolution(),
+    loadBrutNetCharges(),
+    loadRepartitionPrimes(),
+    loadAnalyseRetenues(),
+    loadMasseSalarialeEvolution(),
+    loadCoutsPersonnel(),
+  ])
+}
+
+const loadKpis = async () => {
+  loading.value.kpis = true
+  try {
+    const data = await reportingService.getKpis()
+    kpis.value = {
+      effectifTotal: toNumber(data.effectifTotal),
+      effectifHommes: toNumber(data.effectifHommes),
+      effectifFemmes: toNumber(data.effectifFemmes),
+      masseSalariale: toNumber(data.masseSalariale),
+      contractuels: toNumber(data.contractuels),
+      stagiaires: toNumber(data.stagiaires),
+      fonctionnaires: toNumber(data.fonctionnaires),
+      consultants: toNumber(data.consultants),
+      periodeActive: data.periodeActive ?? null,
+    }
+  } catch (e) {
+    console.error('Failed to load KPIs:', e)
+  } finally {
+    loading.value.kpis = false
+  }
+}
+
+const loadEffectifAnnuel = async () => {
+  loading.value.effectifAnnuel = true
+  try {
+    const data = await reportingService.getEffectifAnnuel(currentExerciceId.value ?? undefined)
+    await nextTick()
+    renderStaffChart(data)
+  } catch (e) {
+    console.error('Failed to load effectif annuel:', e)
+  } finally {
+    loading.value.effectifAnnuel = false
+  }
+}
+
+const loadTypeContrat = async () => {
+  loading.value.typeContrat = true
+  try {
+    const data = await reportingService.getTypeContratStat()
+    await nextTick()
+    renderTypeContratChart(data)
+  } catch (e) {
+    console.error('Failed to load type contrat stat:', e)
+  } finally {
+    loading.value.typeContrat = false
+  }
+}
+
+const loadMasseSalarialeTypeContrat = async () => {
+  loading.value.masseTypeContrat = true
+  try {
+    const data = await reportingService.getMasseSalarialeParTypeContrat()
+    await nextTick()
+    renderSalaryChart(data)
+  } catch (e) {
+    console.error('Failed to load masse salariale par type contrat:', e)
+  } finally {
+    loading.value.masseTypeContrat = false
+  }
+}
+
+const loadEffectifParSite = async () => {
+  loading.value.effectifSite = true
+  try {
+    const data = await reportingService.getEffectifParSite()
+    await nextTick()
+    renderSiteChart(data)
+  } catch (e) {
+    console.error('Failed to load effectif par site:', e)
+  } finally {
+    loading.value.effectifSite = false
+  }
+}
+
+const loadMasseSalarialeParSite = async () => {
+  loading.value.masseSite = true
+  try {
+    const data = await reportingService.getMasseSalarialeParSite()
+    await nextTick()
+    renderMasseSiteChart(data)
+  } catch (e) {
+    console.error('Failed to load masse salariale par site:', e)
+  } finally {
+    loading.value.masseSite = false
+  }
+}
+
+const loadCongeStat = async () => {
+  loading.value.conge = true
+  try {
+    const data = await reportingService.getCongeStat(currentExerciceId.value ?? undefined)
+    congeData.value = data
+    await nextTick()
+    renderCongeChart(data)
+  } catch (e) {
+    console.error('Failed to load conge stat:', e)
+  } finally {
+    loading.value.conge = false
+  }
+}
+
+const loadRetraiteStat = async () => {
+  loading.value.retraite = true
+  try {
+    const data = await reportingService.getRetraiteStat(currentExerciceId.value ?? undefined)
+    retraiteData.value = data
+    if (data.length > 0) {
+      retraiteHommes.value = toNumber(data[0].i1)
+      retraiteFemmes.value = toNumber(data[0].i2)
+      retraiteTotal.value = retraiteHommes.value + retraiteFemmes.value
+    }
+    await nextTick()
+    renderRetraiteChart(data)
+  } catch (e) {
+    console.error('Failed to load retraite stat:', e)
+  } finally {
+    loading.value.retraite = false
+  }
+}
+
+const loadPyramideAges = async () => {
+  loading.value.agePyramid = true
+  try {
+    const data = await reportingService.getPyramideAges()
+    await nextTick()
+    renderAgePyramidChart(data)
+  } catch (e) {
+    console.error('Failed to load pyramide ages:', e)
+  } finally {
+    loading.value.agePyramid = false
+  }
+}
+
+const loadAnciennete = async () => {
+  loading.value.anciennete = true
+  try {
+    const data = await reportingService.getAnciennete()
+    await nextTick()
+    renderAncienneteChart(data)
+  } catch (e) {
+    console.error('Failed to load anciennete:', e)
+  } finally {
+    loading.value.anciennete = false
+  }
+}
+
+const loadEffectifMensuel = async () => {
+  loading.value.effectifMensuel = true
+  try {
+    const data = await reportingService.getEffectifMensuel()
+    await nextTick()
+    renderEffectifMensuelChart(data)
+  } catch (e) {
+    console.error('Failed to load effectif mensuel:', e)
+  } finally {
+    loading.value.effectifMensuel = false
+  }
+}
+
+const loadNetPayeEvolution = async () => {
+  loading.value.netPaye = true
+  try {
+    const data = await reportingService.getNetPayeEvolution()
+    await nextTick()
+    renderNetPayeChart(data)
+  } catch (e) {
+    console.error('Failed to load net paye evolution:', e)
+  } finally {
+    loading.value.netPaye = false
+  }
+}
+
+const loadBrutNetCharges = async () => {
+  loading.value.brutNetCharges = true
+  try {
+    const data = await reportingService.getBrutNetCharges()
+    await nextTick()
+    renderBrutNetChargesChart(data)
+  } catch (e) {
+    console.error('Failed to load brut net charges:', e)
+  } finally {
+    loading.value.brutNetCharges = false
+  }
+}
+
+const loadRepartitionPrimes = async () => {
+  loading.value.primes = true
+  try {
+    const data = await reportingService.getRepartitionPrimes()
+    await nextTick()
+    renderPrimesChart(data)
+  } catch (e) {
+    console.error('Failed to load repartition primes:', e)
+  } finally {
+    loading.value.primes = false
+  }
+}
+
+const loadAnalyseRetenues = async () => {
+  loading.value.retenues = true
+  try {
+    const data = await reportingService.getAnalyseRetenues()
+    await nextTick()
+    renderRetenuesChart(data)
+  } catch (e) {
+    console.error('Failed to load analyse retenues:', e)
+  } finally {
+    loading.value.retenues = false
+  }
+}
+
+const loadMasseSalarialeEvolution = async () => {
+  loading.value.masseSalarialeEvo = true
+  try {
+    const data = await reportingService.getMasseSalarialeEvolution()
+    await nextTick()
+    renderMasseSalarialeEvoChart(data)
+  } catch (e) {
+    console.error('Failed to load masse salariale evolution:', e)
+  } finally {
+    loading.value.masseSalarialeEvo = false
+  }
+}
+
+const loadCoutsPersonnel = async () => {
+  loading.value.coutsPersonnel = true
+  try {
+    const data = await reportingService.getCoutsPersonnel()
+    await nextTick()
+    renderCoutsPersonnelChart(data)
+  } catch (e) {
+    console.error('Failed to load couts personnel:', e)
+  } finally {
+    loading.value.coutsPersonnel = false
+  }
+}
+
+// ==================== Chart renderers ====================
+
+const destroyChart = (canvas: HTMLCanvasElement | undefined) => {
+  if (!canvas) return
+  const existing = Chart.getChart(canvas)
+  if (existing) existing.destroy()
+}
+
+const renderStaffChart = (data: PrintLs[]) => {
+  destroyChart(staffChart.value)
+  if (!staffChart.value || data.length === 0) return
+
+  const chart = new Chart(staffChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [
+        {
+          label: 'Hommes',
+          data: data.map(d => toNumber(d.i1)),
+          backgroundColor: '#1890ff',
+        },
+        {
+          label: 'Femmes',
+          data: data.map(d => toNumber(d.i2)),
+          backgroundColor: '#eb2f96',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderTypeContratChart = (data: PrintLs[]) => {
+  destroyChart(typeContratChart.value)
+  if (!typeContratChart.value || data.length === 0) return
+
+  const colors = ['#1890ff', '#52c41a', '#fa8c16', '#ff4d4f', '#722ed1']
+  const chart = new Chart(typeContratChart.value, {
+    type: 'pie',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        data: data.map(d => toNumber(d.i1)),
+        backgroundColor: colors.slice(0, data.length),
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+    },
+  })
+  charts.push(chart)
+}
+
+const renderSalaryChart = (data: PrintLs[]) => {
+  destroyChart(salaryChart.value)
+  if (!salaryChart.value || data.length === 0) return
+
+  const chart = new Chart(salaryChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Masse salariale',
+        data: data.map(d => toNumber(d.value1)),
+        backgroundColor: '#52c41a',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderSiteChart = (data: PrintLs[]) => {
+  destroyChart(siteChart.value)
+  if (!siteChart.value || data.length === 0) return
+
+  const chart = new Chart(siteChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Effectif',
+        data: data.map(d => toNumber(d.i1)),
+        backgroundColor: '#fa8c16',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderMasseSiteChart = (data: PrintLs[]) => {
+  destroyChart(masseSiteChart.value)
+  if (!masseSiteChart.value || data.length === 0) return
+
+  const chart = new Chart(masseSiteChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Masse salariale',
+        data: data.map(d => toNumber(d.value1)),
+        backgroundColor: '#722ed1',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderCongeChart = (data: PrintLs[]) => {
+  destroyChart(congeChart.value)
+  if (!congeChart.value || data.length === 0) return
+
+  const chart = new Chart(congeChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [
+        {
+          label: 'Congés',
+          data: data.map(d => toNumber(d.i1)),
+          backgroundColor: '#1890ff',
+        },
+        {
+          label: 'Planning congés',
+          data: data.map(d => toNumber(d.i2)),
+          backgroundColor: '#52c41a',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderRetraiteChart = (data: PrintLs[]) => {
+  destroyChart(retraiteChart.value)
+  if (!retraiteChart.value || data.length === 0) return
+
+  const chart = new Chart(retraiteChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => `Retraite ${d.s1 ?? ''}`),
+      datasets: [
+        {
+          label: 'Hommes',
+          data: data.map(d => toNumber(d.i1)),
+          backgroundColor: '#1890ff',
+        },
+        {
+          label: 'Femmes',
+          data: data.map(d => toNumber(d.i2)),
+          backgroundColor: '#eb2f96',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderAgePyramidChart = (data: PrintLs[]) => {
+  destroyChart(agePyramidChart.value)
+  if (!agePyramidChart.value || data.length === 0) return
+
+  const chart = new Chart(agePyramidChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [
+        {
+          label: 'Hommes',
+          data: data.map(d => toNumber(d.i1)),
+          backgroundColor: '#1890ff',
+        },
+        {
+          label: 'Femmes',
+          data: data.map(d => -toNumber(d.i2)),
+          backgroundColor: '#eb2f96',
+        },
+      ],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          stacked: true,
+          ticks: {
+            callback: (val: any) => Math.abs(val),
+          },
+        },
+        y: { stacked: true },
+      },
+      plugins: {
+        tooltip: {
+          callbacks: {
+            label: (ctx: any) => `${ctx.dataset.label}: ${Math.abs(ctx.parsed.x)}`,
+          },
+        },
+      },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderAncienneteChart = (data: PrintLs[]) => {
+  destroyChart(ancienneteChart.value)
+  if (!ancienneteChart.value || data.length === 0) return
+
+  const chart = new Chart(ancienneteChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Effectif',
+        data: data.map(d => toNumber(d.i1)),
+        backgroundColor: '#722ed1',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderEffectifMensuelChart = (data: PrintLs[]) => {
+  destroyChart(effectifMensuelChart.value)
+  if (!effectifMensuelChart.value || data.length === 0) return
+
+  const chart = new Chart(effectifMensuelChart.value, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Effectif',
+        data: data.map(d => toNumber(d.i1)),
+        borderColor: '#1890ff',
+        backgroundColor: 'rgba(24, 144, 255, 0.1)',
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderNetPayeChart = (data: PrintLs[]) => {
+  destroyChart(netPayeChart.value)
+  if (!netPayeChart.value || data.length === 0) return
+
+  const chart = new Chart(netPayeChart.value, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Net payé',
+        data: data.map(d => toNumber(d.value1)),
+        borderColor: '#52c41a',
+        backgroundColor: 'rgba(82, 196, 26, 0.1)',
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderBrutNetChargesChart = (data: PrintLs[]) => {
+  destroyChart(brutNetChargesChart.value)
+  if (!brutNetChargesChart.value || data.length === 0) return
+
+  const chart = new Chart(brutNetChargesChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Montant',
+        data: data.map(d => toNumber(d.value1)),
+        backgroundColor: ['#faad14', '#52c41a', '#ff4d4f'],
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderPrimesChart = (data: PrintLs[]) => {
+  destroyChart(primesChart.value)
+  if (!primesChart.value || data.length === 0) return
+
+  const chart = new Chart(primesChart.value, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        data: data.map(d => toNumber(d.value1)),
+        backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#722ed1', '#eb2f96'],
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' },
+      },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderRetenuesChart = (data: PrintLs[]) => {
+  destroyChart(retenuesChart.value)
+  if (!retenuesChart.value || data.length === 0) return
+
+  const chart = new Chart(retenuesChart.value, {
+    type: 'bar',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Retenues',
+        data: data.map(d => toNumber(d.value1)),
+        backgroundColor: '#fa541c',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderMasseSalarialeEvoChart = (data: PrintLs[]) => {
+  destroyChart(masseSalarialeEvoChart.value)
+  if (!masseSalarialeEvoChart.value || data.length === 0) return
+
+  const chart = new Chart(masseSalarialeEvoChart.value, {
+    type: 'line',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        label: 'Masse salariale',
+        data: data.map(d => toNumber(d.value1)),
+        borderColor: '#faad14',
+        backgroundColor: 'rgba(250, 173, 20, 0.1)',
+        fill: true,
+        tension: 0.3,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { beginAtZero: true } },
+    },
+  })
+  charts.push(chart)
+}
+
+const renderCoutsPersonnelChart = (data: PrintLs[]) => {
+  destroyChart(coutsPersonnelChart.value)
+  if (!coutsPersonnelChart.value || data.length === 0) return
+
+  const chart = new Chart(coutsPersonnelChart.value, {
+    type: 'doughnut',
+    data: {
+      labels: data.map(d => d.s1 ?? ''),
+      datasets: [{
+        data: data.map(d => toNumber(d.value1)),
+        backgroundColor: ['#1890ff', '#52c41a', '#faad14', '#ff4d4f', '#722ed1'],
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'right' },
+      },
+    },
+  })
+  charts.push(chart)
 }
 
 const getExportStatusType = (status: string) => {
@@ -378,7 +1244,7 @@ const getExportStatusType = (status: string) => {
   }
 }
 
-const deleteExport = (exportItem: Export) => {
+const deleteExport = (exportItem: ExportItem) => {
   const index = exports.value.findIndex(e => e.id === exportItem.id)
   if (index > -1) {
     exports.value.splice(index, 1)
@@ -445,7 +1311,7 @@ const deleteExport = (exportItem: Export) => {
 
 .kpi-trend {
   font-size: 12px;
-  color: #52c41a;
+  color: #909399;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -498,10 +1364,7 @@ const deleteExport = (exportItem: Export) => {
 
 .chart-container {
   height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #909399;
+  position: relative;
 }
 
 .stat-item {

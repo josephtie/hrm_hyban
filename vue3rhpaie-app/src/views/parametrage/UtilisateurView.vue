@@ -81,6 +81,20 @@
             />
           </div>
 
+          <div class="form-group" v-if="!isEditing">
+            <label class="form-label">
+              <el-icon class="label-icon"><Key /></el-icon>
+              Mot de passe
+            </label>
+            <el-input
+              v-model="form.password"
+              type="password"
+              placeholder="Mot de passe initial"
+              size="large"
+              show-password
+            />
+          </div>
+
           <div class="form-group">
             <label class="form-label">
               <el-icon class="label-icon"><House /></el-icon>
@@ -460,6 +474,10 @@ const saveForm = async () => {
   if (!form.nomComplet?.trim() || !form.username?.trim() || !form.idRole) {
     ElMessage.error('Veuillez renseigner le nom complet, le username et le rôle')
     return
+  }
+
+  if (!isEditing.value && !form.password?.trim()) {
+    ElMessage.warning('Aucun mot de passe saisi — le mot de passe par défaut sera utilisé: 1234567ml@')
   }
 
   try {
