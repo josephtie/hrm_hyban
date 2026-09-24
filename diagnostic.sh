@@ -6,7 +6,7 @@ echo "================================"
 echo ""
 
 # Définir les variables
-BACKEND_IP="192.168.1.7"
+BACKEND_IP="192.168.1.3"
 BACKEND_PORT="7200"
 FRONTEND_PORT="7153"
 KEYCLOAK_PORT="8080"
@@ -81,10 +81,10 @@ echo "-----------------------------------------------"
 # Vérifier .env.development
 if [ -f ".env.development" ]; then
     api_url=$(grep "VITE_API_URL" .env.development | cut -d'=' -f2)
-    if [ "$api_url" == "http://192.168.1.7:7200/api" ]; then
+    if [ "$api_url" == "http://192.168.1.3:7200/api" ]; then
         echo "✅ .env.development: VITE_API_URL correct"
     else
-        echo "❌ .env.development: VITE_API_URL = $api_url (devrait être http://192.168.1.7:7200/api)"
+        echo "❌ .env.development: VITE_API_URL = $api_url (devrait être http://192.168.1.3:7200/api)"
     fi
 else
     echo "❌ .env.development non trouvé"
@@ -92,11 +92,11 @@ fi
 
 # Vérifier application.properties
 if [ -f "application.properties" ]; then
-    cors=$(grep "spring.web.cors.allowed-origins" application.properties | grep "192.168.1.7:7153")
+    cors=$(grep "spring.web.cors.allowed-origins" application.properties | grep "192.168.1.3:7153")
     if [ -n "$cors" ]; then
-        echo "✅ application.properties: CORS inclut 192.168.1.7:7153"
+        echo "✅ application.properties: CORS inclut 192.168.1.3:7153"
     else
-        echo "❌ application.properties: CORS ne contient pas 192.168.1.7:7153"
+        echo "❌ application.properties: CORS ne contient pas 192.168.1.3:7153"
     fi
 else
     echo "⚠️ application.properties non trouvé dans le répertoire courant"

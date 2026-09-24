@@ -169,7 +169,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:7153",
             "http://127.0.0.1:7153",
-            "http://192.168.1.14:7153",
+            "http://192.168.1.3:7153",
             "http://83.171.249.150:7153"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

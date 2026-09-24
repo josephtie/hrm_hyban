@@ -52,7 +52,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.PersistenceContext;
 
 @Transactional
 @Service("bulletinPaieService")
@@ -74,6 +76,8 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
     @Autowired private SocieteService societeService;
     @Autowired private TempEffectifRepository tempeffectifRepository;
     @Autowired private PlanningCongeRepository planningCongeRepository;
+
+    @PersistenceContext private EntityManager entityManager;
 
     List<LivreDePaie> livredepaieList=null;
     List<LivreDePaieSpeciale> livreDePaieSpeciales=null;
@@ -430,6 +434,10 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
         }
 
         bulletinPaieRepository.deleteAll(bulletinPaieRepository.findByPeriodePaie(periodePaie));
+        // Flusher les DELETE puis vider le contexte : sinon les entités "removed"
+        // restent en session et saveAll() lève NonUniqueObjectException sur les mêmes ids
+        entityManager.flush();
+        entityManager.clear();
         bulletinPaieRepository.saveAll(bullList);
     }
 
@@ -2644,6 +2652,8 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
         }
 
         bulletinPaieRepository.deleteAll(bulletinPaieRepository.findByPeriodePaie(periodePaie));
+        entityManager.flush();
+        entityManager.clear();
 
         bulletinPaieRepository.saveAll(bullList);
 

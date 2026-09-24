@@ -71,10 +71,10 @@ spring.web.cors.allowed-origins=http://localhost:7100,http://192.168.1.2:7100,ht
 server.port=7200
 
 # CORS
-spring.web.cors.allowed-origins=http://localhost:7153,http://192.168.1.7:7153,http://localhost:7200,http://localhost:4200,http://127.0.0.1:3000
+spring.web.cors.allowed-origins=http://localhost:7153,http://192.168.1.3:7153,http://localhost:7200,http://localhost:4200,http://127.0.0.1:3000
 
 # Keycloak
-spring.security.oauth2.resourceserver.jwt.issuer-uri=http://192.168.1.7:8080/realms/hyban
+spring.security.oauth2.resourceserver.jwt.issuer-uri=http://192.168.1.3:8080/realms/hyban
 ```
 
 #### `application-prod.properties` (Production)
@@ -111,7 +111,7 @@ Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remot
 
 ### Erreur de Connexion API
 ```
-Network Error: GET http://192.168.1.7:7200/api/...
+Network Error: GET http://192.168.1.3:7200/api/...
 ```
 **Solution**: 
 # Vérifier la connectivité réseau: `ping 192.168.1.2`
@@ -145,7 +145,7 @@ DELETE /api/{resource}/{id}         # Supprimer
 ```bash
 cd backend_rhpaie
 mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=local"
-# Accès: http://192.168.1.7:7200/api
+# Accès: http://192.168.1.3:7200/api
 ```
 
 ### Frontend
@@ -153,21 +153,21 @@ mvn spring-boot:run -Dspring-boot.run.arguments="--spring.profiles.active=local"
 cd vue3rhpaie-app
 npm install
 npm run dev
-# Accès: http://192.168.1.7:7153
+# Accès: http://192.168.1.3:7153
 ```
 
 ### Keycloak
 ```bash
-# Vérifier sur http://192.168.1.7:8080
+# Vérifier sur http://192.168.1.3:8080
 ```
 
 ## ✅ Checklist de Vérification
 
-- [ ] Fichiers `.env` utilisent `192.168.1.7`
-- [ ] `application.properties` CORS inclut `192.168.1.7:7153`
-- [ ] `vite.config.ts` proxy pointe vers `192.168.1.7:7200`
-- [ ] Keycloak accessible sur `192.168.1.7:8080`
-- [ ] Ping vers `192.168.1.7` fonctionne
+- [ ] Fichiers `.env` utilisent `192.168.1.3`
+- [ ] `application.properties` CORS inclut `192.168.1.3:7153`
+- [ ] `vite.config.ts` proxy pointe vers `192.168.1.3:7200`
+- [ ] Keycloak accessible sur `192.168.1.3:8080`
+- [ ] Ping vers `192.168.1.3` fonctionne
 - [ ] Backend répond sur port `7200`
 - [ ] Frontend démarre sur port `7153`
 - [ ] Token Keycloak généré et stocké
