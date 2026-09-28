@@ -5,7 +5,7 @@ Write-Host "================================" -ForegroundColor Cyan
 Write-Host ""
 
 # Définir les variables
-$BACKEND_IP = "192.168.1.3"
+$BACKEND_IP = "192.168.1.8"
 $BACKEND_PORT = 7200
 $FRONTEND_PORT = 7153
 $KEYCLOAK_PORT = 8080
@@ -106,9 +106,9 @@ if (Test-Path ".env.development") {
 if (Test-Path "application.properties") {
     $appProps = Get-Content "application.properties" -Raw
     if ($appProps -match "192\.168\.1\.7:7153") {
-        Write-Host "✅ application.properties: CORS inclut 192.168.1.3:7153" -ForegroundColor Green
+        Write-Host "✅ application.properties: CORS inclut 192.168.1.8:7153" -ForegroundColor Green
     } else {
-        Write-Host "❌ application.properties: CORS ne contient pas 192.168.1.3:7153" -ForegroundColor Red
+        Write-Host "❌ application.properties: CORS ne contient pas 192.168.1.8:7153" -ForegroundColor Red
     }
 } else {
     Write-Host "⚠️ application.properties non trouvé dans le répertoire courant" -ForegroundColor Yellow

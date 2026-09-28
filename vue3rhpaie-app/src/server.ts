@@ -13,7 +13,7 @@ app.use(express.json())
 app.use(cors())
 
 const PORT = 3000
-const BASE_URL = `http://192.168.1.3:${PORT}`
+const BASE_URL = `http://192.168.1.8:${PORT}`
 
 // Exposer les fichiers générés
 app.use('/files', express.static(path.join(__dirname, '../generation')))
