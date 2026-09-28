@@ -582,19 +582,29 @@ public class LivreDePaie {
         return valretour;
     }
 
-
     private void calculITS() {
 
-        BigDecimal ricf = BigDecimal.valueOf(CalculRICF.getRICF(nombrePart));
-
-        BigDecimal itsBrut = arrondiPaiement(
-                calculerITS(brutImposable, true)
+        BigDecimal ricfAnnuel = BigDecimal.valueOf(
+                CalculRICF.getRICF(nombrePart)
         );
 
-        this.its = itsBrut
-                .subtract(ricf.divide(BigDecimal.valueOf(12), 2, RoundingMode.HALF_UP))
+        BigDecimal ricfMensuel = ricfAnnuel.divide(
+                BigDecimal.valueOf(12),
+                2,
+                RoundingMode.HALF_UP
+        );
+
+        BigDecimal itsBrut = calculerITS(
+                brutImposable,
+                true
+        );
+
+        BigDecimal itsNet = itsBrut
+                .subtract(ricfMensuel)
                 .max(BigDecimal.ZERO);
-        this.is=its;
+
+        this.its = arrondiPaiement(itsNet);
+        this.is = this.its;
     }
 
     public BigDecimal calculCNPS(BigDecimal baseCnps) {
@@ -676,8 +686,8 @@ public class LivreDePaie {
         this.totalRetenueFiscale =
                 arrondi(
                         safe(its)
-                                .add(safe(cn))
-                                .add(safe(igr))
+//                                .add(safe(cn))
+//                                .add(safe(igr))
                 );
     }
     private void calculChargesPatronales() {
