@@ -1,6 +1,7 @@
 package com.nectux.mizan.hyban.paie.web;
 
 import com.nectux.mizan.hyban.paie.dto.BulletinPaieDTO;
+import com.nectux.mizan.hyban.paie.dto.SimulationPaieRequest;
 import com.nectux.mizan.hyban.paie.entity.LivreDePaie;
 import com.nectux.mizan.hyban.paie.entity.LivreDePaieSpeciale;
 import org.slf4j.Logger;
@@ -43,6 +44,9 @@ public class LivreDePaieRestController {
 
     @Autowired
     private PeriodePaieService periodePaieService;
+
+    @Autowired
+    private com.nectux.mizan.hyban.personnel.service.CategorieService categorieService;
 
     /**
      * Génère et enregistre les bulletins de paie pour la période demandée.
@@ -103,6 +107,117 @@ public class LivreDePaieRestController {
 //    }
 
 
+    /**
+     * Génère et enregistre les bulletins de paie pour une sélection de personnels.
+     * Seuls les bulletins des personnels sélectionnés sont remplacés pour la période.
+     *
+     * REST Endpoint : POST /api/paie/bulletin/generer-selection
+     * Body JSON : { "idPeriode": 1, "idsPersonnel": [12, 34, 56] }
+     */
+    @PostMapping(value = "/generer-selection")
+    public ResponseEntity<LivreDePaieDTO> genererSelection(@RequestBody(required = false) SelectionRequest request) {
+        try {
+            Long idPeriode = (request != null) ? request.getIdPeriode() : null;
+            List<Long> idsPersonnel = (request != null) ? request.getIdsPersonnel() : null;
+
+            if (idsPersonnel == null || idsPersonnel.isEmpty()) {
+                LivreDePaieDTO err = new LivreDePaieDTO();
+                err.setResult("echec");
+                return ResponseEntity.badRequest().body(err);
+            }
+
+            if (idPeriode == null) {
+                PeriodePaie active = periodePaieService.findPeriodeactive();
+                if (active == null) {
+                    LivreDePaieDTO err = new LivreDePaieDTO();
+                    err.setResult("echec");
+                    return ResponseEntity.badRequest().body(err);
+                }
+                idPeriode = active.getId();
+            }
+
+            logger.info(">>> Génération bulletins sélection ({} personnel(s)) pour période id={}",
+                    idsPersonnel.size(), idPeriode);
+            PageRequest page = PageRequest.of(0, Integer.MAX_VALUE, Direction.DESC, "id");
+            LivreDePaieDTO dto = bulletinPaieService.genererOptimiseMois1Selection(page, idPeriode, idsPersonnel);
+            if (dto == null) {
+                dto = new LivreDePaieDTO();
+            }
+            dto.setResult("success");
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la génération des bulletins par sélection", e);
+            LivreDePaieDTO err = new LivreDePaieDTO();
+            err.setResult("echec");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+        }
+    }
+
+    /**
+     * Simulation de salaire : calcule le bulletin d'un personnel À BLANC
+     * (aucune persistance) à partir d'une liste de rubriques choisies.
+     *
+     * REST Endpoint : POST /api/paie/bulletin/simuler
+     * Body JSON : { "idPeriode": 1, "idPersonnel": 12,
+     *               "rubriques": [ {"rubriqueId": 5, "montant": 50000, "valeur": 0}, ... ] }
+     */
+    @PostMapping(value = "/simuler")
+    public ResponseEntity<LivreDePaieDTO> simuler(@RequestBody(required = false) SimulationPaieRequest request) {
+        try {
+            if (request == null || request.getIdPersonnel() == null) {
+                LivreDePaieDTO err = new LivreDePaieDTO();
+                err.setResult("echec");
+                return ResponseEntity.badRequest().body(err);
+            }
+
+            Long idPeriode = request.getIdPeriode();
+            if (idPeriode == null) {
+                PeriodePaie active = periodePaieService.findPeriodeactive();
+                if (active == null) {
+                    LivreDePaieDTO err = new LivreDePaieDTO();
+                    err.setResult("echec");
+                    return ResponseEntity.badRequest().body(err);
+                }
+                idPeriode = active.getId();
+            }
+
+            request.setIdPeriode(idPeriode);
+
+            logger.info(">>> Simulation salaire personnel id={} période id={} ({} rubrique(s))",
+                    request.getIdPersonnel(), idPeriode,
+                    request.getRubriques() == null ? 0 : request.getRubriques().size());
+            LivreDePaieDTO dto = bulletinPaieService.simulerBulletin(request);
+            if (dto == null) {
+                dto = new LivreDePaieDTO();
+            }
+            if (dto.getResult() == null) {
+                dto.setResult("success");
+            }
+            return ResponseEntity.ok(dto);
+        } catch (Exception e) {
+            logger.error("Erreur lors de la simulation de salaire", e);
+            LivreDePaieDTO err = new LivreDePaieDTO();
+            err.setResult("echec");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
+        }
+    }
+
+    /**
+     * Liste des catégories professionnelles pour l'écran de simulation
+     * (accessible avec les droits paie, contrairement à /api/categories).
+     *
+     * REST Endpoint : GET /api/paie/bulletin/categories
+     */
+    @GetMapping(value = "/categories")
+    public ResponseEntity<List<com.nectux.mizan.hyban.personnel.entity.Categorie>> categories() {
+        try {
+            return ResponseEntity.ok(categorieService.findCategories());
+        } catch (Exception e) {
+            logger.error("Erreur lors de la récupération des catégories", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
     /** Payload JSON pour la génération du livre de paie. */
     public static class GenerationRequest {
         private Long idPeriode;
@@ -115,5 +230,16 @@ public class LivreDePaieRestController {
         public void setLimit(Integer limit) { this.limit = limit; }
         public Integer getOffset() { return offset; }
         public void setOffset(Integer offset) { this.offset = offset; }
+    }
+
+    /** Payload JSON pour la génération par sélection de personnels. */
+    public static class SelectionRequest {
+        private Long idPeriode;
+        private List<Long> idsPersonnel;
+
+        public Long getIdPeriode() { return idPeriode; }
+        public void setIdPeriode(Long idPeriode) { this.idPeriode = idPeriode; }
+        public List<Long> getIdsPersonnel() { return idsPersonnel; }
+        public void setIdsPersonnel(List<Long> idsPersonnel) { this.idsPersonnel = idsPersonnel; }
     }
 }

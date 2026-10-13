@@ -4,6 +4,7 @@ package com.nectux.mizan.hyban.paie.service.impl;
 
 import java.io.FileOutputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Year;
@@ -44,6 +45,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
@@ -76,6 +78,7 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
     @Autowired private SocieteService societeService;
     @Autowired private TempEffectifRepository tempeffectifRepository;
     @Autowired private PlanningCongeRepository planningCongeRepository;
+    @Autowired private com.nectux.mizan.hyban.personnel.service.CategorieService categorieService;
 
     @PersistenceContext private EntityManager entityManager;
 
@@ -436,6 +439,46 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
         bulletinPaieRepository.deleteAll(bulletinPaieRepository.findByPeriodePaie(periodePaie));
         // Flusher les DELETE puis vider le contexte : sinon les entités "removed"
         // restent en session et saveAll() lève NonUniqueObjectException sur les mêmes ids
+        entityManager.flush();
+        entityManager.clear();
+        bulletinPaieRepository.saveAll(bullList);
+    }
+
+    /**
+     * Persiste les bulletins générés en ne remplaçant QUE ceux des personnels
+     * présents dans livreRows (les autres bulletins de la période sont conservés).
+     */
+    private void persistGeneratedBulletinsSelection(Long idPeriode, List<LivreDePaie> livreRows) {
+        if (idPeriode == null || livreRows == null || livreRows.isEmpty()) {
+            return;
+        }
+
+        PeriodePaie periodePaie = periodePaieRepository.findById(idPeriode).orElse(null);
+        if (periodePaie == null) {
+            return;
+        }
+
+        List<BulletinPaie> bullList = new ArrayList<BulletinPaie>();
+        Set<Long> personnelIds = new HashSet<Long>();
+        for (LivreDePaie livre : livreRows) {
+            if (livre == null || livre.getBullpaie() == null || livre.getPeriodePaie() == null) {
+                continue;
+            }
+            if (!Objects.equals(livre.getPeriodePaie().getId(), idPeriode)) {
+                continue;
+            }
+            bullList.add(livre.getBullpaie());
+            if (livre.getContratPersonnel() != null && livre.getContratPersonnel().getPersonnel() != null) {
+                personnelIds.add(livre.getContratPersonnel().getPersonnel().getId());
+            }
+        }
+
+        if (bullList.isEmpty() || personnelIds.isEmpty()) {
+            return;
+        }
+
+        bulletinPaieRepository.deleteAll(
+                bulletinPaieRepository.findByPeriodePaieAndContratPersonnelPersonnelIdIn(periodePaie, personnelIds));
         entityManager.flush();
         entityManager.clear();
         bulletinPaieRepository.saveAll(bullList);
@@ -1173,6 +1216,154 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
 
     @Transactional
     public LivreDePaieDTO genererOptimiseMois1(Pageable pageable, Long idPeriode) {
+        return genererOptimiseMoisInterne(pageable, idPeriode, null);
+    }
+
+    @Override
+    public LivreDePaieDTO genererOptimiseMois1Selection(Pageable pageable, Long idPeriode, List<Long> idsPersonnel) {
+        return genererOptimiseMoisInterne(pageable, idPeriode,
+                idsPersonnel == null ? null : new HashSet<>(idsPersonnel), null, null, false);
+    }
+
+    /**
+     * Simulation de salaire : exécute le même calcul que la génération mais
+     * sans aucune persistance. Les rubriques fournies remplacent les primes
+     * réelles du contrat pour la période, et les paramètres optionnels
+     * (catégorie, sursalaire, transport, situation matrimoniale, enfants)
+     * remplacent les valeurs du contrat/personnel le temps du calcul.
+     */
+    @Override
+    public LivreDePaieDTO simulerBulletin(SimulationPaieRequest request) {
+        LivreDePaieDTO err = new LivreDePaieDTO();
+        err.setResult("echec");
+
+        if (request == null || request.getIdPeriode() == null || request.getIdPersonnel() == null) {
+            err.setRows(Collections.emptyList());
+            return err;
+        }
+
+        Long idPeriode = request.getIdPeriode();
+        Long idPersonnel = request.getIdPersonnel();
+
+        ContratPersonnel contrat = contratPersonnelRepository.findByPersonnelIdAndStatut(idPersonnel, true);
+        if (contrat == null) {
+            logger.warn("[SIMULATION] Aucun contrat actif pour personnel id={}", idPersonnel);
+            err.setRows(Collections.emptyList());
+            return err;
+        }
+
+        PeriodePaie periode = periodePaieRepository.findById(idPeriode)
+                .orElseThrow(() -> new EntityNotFoundException("PériodePaie not found: " + idPeriode));
+
+        // Résoudre le salaire de base : priorité au montant saisi, sinon la catégorie choisie
+        if (request.getSalaireBase() == null && request.getIdCategorie() != null) {
+            try {
+                com.nectux.mizan.hyban.personnel.entity.Categorie categorie =
+                        categorieService.findCategorie(request.getIdCategorie());
+                if (categorie != null) {
+                    request.setSalaireBase(categorie.getSalaireDeBase());
+                }
+            } catch (Exception e) {
+                logger.warn("[SIMULATION] Catégorie introuvable id={} — ignorée", request.getIdCategorie());
+            }
+        }
+
+        // Construire les PrimePersonnel transitoires à partir des rubriques choisies.
+        // rubriques == null  → conserver les primes réelles du contrat (pas d'override)
+        // rubriques == []    → aucune rubrique dans la simulation
+        Map<Long, List<PrimePersonnel>> override = null;
+        List<PrimePersonnel> primesSimulation = null;
+        if (request.getRubriques() != null) {
+            primesSimulation = new ArrayList<>();
+            for (SimulationPaieRequest.RubriqueMontant r : request.getRubriques()) {
+                if (r == null || r.getRubriqueId() == null) continue;
+                Rubrique rubrique = rubriqueService.findRubriqueID(r.getRubriqueId());
+                if (rubrique == null) {
+                    logger.warn("[SIMULATION] Rubrique introuvable id={} — ignorée", r.getRubriqueId());
+                    continue;
+                }
+                PrimePersonnel pp = new PrimePersonnel();
+                pp.setPrime(rubrique);
+                pp.setMontant(r.getMontant() != null ? r.getMontant() : BigDecimal.ZERO);
+                pp.setValeur(r.getValeur() != null ? r.getValeur() : 0);
+                pp.setContratPersonnel(contrat);
+                pp.setPeriode(periode);
+                primesSimulation.add(pp);
+            }
+            override = new HashMap<>();
+            override.put(idPersonnel, primesSimulation);
+        }
+
+        Map<Long, SimulationPaieRequest> simuParams = new HashMap<>();
+        simuParams.put(idPersonnel, request);
+
+        logger.info(">>> [SIMULATION] Bulletin pour personnel id={} (contrat {}) période {} : {} rubrique(s), "
+                        + "salaireBase={}, sursalaire={}, transport={}, situation={}, enfants={}",
+                idPersonnel, contrat.getId(), idPeriode,
+                primesSimulation == null ? "réelles" : String.valueOf(primesSimulation.size()),
+                request.getSalaireBase(), request.getSursalaire(), request.getIndemniteTransport(),
+                request.getSituationMatrimoniale(), request.getNombreEnfants());
+
+        PageRequest page = PageRequest.of(0, 10, Sort.Direction.DESC, "id");
+        LivreDePaieDTO dto = genererOptimiseMoisInterne(page, idPeriode,
+                Collections.singleton(idPersonnel), override, simuParams, true);
+
+        // 🎯 Calcul à l'envers : si un net cible est fourni, converger le sursalaire
+        //    jusqu'à ce que le net calculé atteigne la cible (même principe
+        //    proportionnel que /calculalenvers : sursalaire += brutCible - brut).
+        if (request.getNetCible() != null && request.getNetCible().signum() > 0) {
+            for (int i = 0; i < 60; i++) {
+                LivreDePaie row = (dto.getRows() != null && !dto.getRows().isEmpty())
+                        ? dto.getRows().get(0) : null;
+                BulletinPaie bull = (row != null) ? row.getBullpaie() : null;
+                if (bull == null || bull.getNetapayer() == null
+                        || bull.getNetapayer().signum() == 0 || bull.getBrutImposable() == null) {
+                    break;
+                }
+                if (bull.getNetapayer().subtract(request.getNetCible()).abs()
+                        .compareTo(BigDecimal.ONE) < 0) {
+                    break; // convergé (écart < 1 FCFA)
+                }
+                BigDecimal sursalCourant = request.getSursalaire() != null
+                        ? request.getSursalaire()
+                        : (contrat.getSursalaire() != null ? contrat.getSursalaire() : BigDecimal.ZERO);
+                BigDecimal brutCible = request.getNetCible()
+                        .multiply(bull.getBrutImposable())
+                        .divide(bull.getNetapayer(), 2, RoundingMode.HALF_UP);
+                request.setSursalaire(sursalCourant.add(brutCible.subtract(bull.getBrutImposable())));
+                dto = genererOptimiseMoisInterne(page, idPeriode,
+                        Collections.singleton(idPersonnel), override, simuParams, true);
+            }
+            logger.info(">>> [SIMULATION] Net cible {} → sursalaire calculé {}",
+                    request.getNetCible(), request.getSursalaire());
+        }
+
+        dto.setResult("success");
+        return dto;
+    }
+
+    private LivreDePaieDTO genererOptimiseMoisInterne(Pageable pageable, Long idPeriode, Set<Long> idsPersonnel) {
+        return genererOptimiseMoisInterne(pageable, idPeriode, idsPersonnel, null, null, false);
+    }
+
+    /**
+     * Cœur de calcul du livre de paie.
+     *
+     * @param idsPersonnel   null = tout l'effectif, sinon seulement ces personnels
+     * @param primesOverride null = primes réelles de la période, sinon pour chaque
+     *                       personnel (clé = id personnel) la liste de PrimePersonnel
+     *                       à utiliser à la place (mode simulation)
+     * @param simuParams     null = valeurs du contrat, sinon pour chaque personnel
+     *                       (clé = id personnel) les paramètres de simulation :
+     *                       salaire de base, sursalaire, transport, situation
+     *                       matrimoniale, nombre d'enfants
+     * @param simulation     true = calcul à blanc : aucune persistance (bulletins non
+     *                       sauvegardés, échelonnements non marqués payés)
+     */
+    private LivreDePaieDTO genererOptimiseMoisInterne(Pageable pageable, Long idPeriode, Set<Long> idsPersonnel,
+                                                       Map<Long, List<PrimePersonnel>> primesOverride,
+                                                       Map<Long, SimulationPaieRequest> simuParams,
+                                                       boolean simulation) {
         logger.info(">>>>> DÉBUT DE GÉNÉRATION DU BULLETIN [PÉRIODE : {}]", idPeriode);
         long startTime = System.currentTimeMillis();
 
@@ -1186,7 +1377,13 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
                 .orElseThrow(() -> new EntityNotFoundException("PériodePaie not found: " + idPeriode));
 
         // 2️⃣ Précharger tout le personnel actif
-        List<Personnel> personnelList = personnelRepository.findByStatutAndRetraitEffectOrderByNomAsc(true, false);
+        List<Personnel> personnelActifs = personnelRepository.findByStatutAndRetraitEffectOrderByNomAsc(true, false);
+        // Mode sélection : ne garder que les personnels demandés
+        final List<Personnel> personnelList = (idsPersonnel != null)
+                ? personnelActifs.stream()
+                        .filter(p -> idsPersonnel.contains(p.getId()))
+                        .collect(Collectors.toList())
+                : personnelActifs;
         logger.info("📊 [DIAG] Personnel (statut=true, retraitEffect=false) : {} entrée(s)", personnelList.size());
 
         // 3️⃣ Précharger tous les contrats actifs
@@ -1286,8 +1483,29 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
             int anciennete = (int) (anneesAnciennete + contrat.getAncienneteInitial());
             int op = anciennete < 2 ? 0 : Math.min(anciennete, 25);
 
+            // 🔹 Paramètres de simulation éventuels (salaire de base, sursalaire,
+            //    transport, situation matrimoniale, nombre d'enfants)
+            SimulationPaieRequest simu = (simuParams != null) ? simuParams.get(person.getId()) : null;
+            BigDecimal salaireBaseEff = (simu != null && simu.getSalaireBase() != null)
+                    ? simu.getSalaireBase()
+                    : contrat.getCategorie().getSalaireDeBase();
+            BigDecimal sursalaireEff = (simu != null && simu.getSursalaire() != null)
+                    ? simu.getSursalaire()
+                    : contrat.getSursalaire();
+            if (simu != null) {
+                // Champ @Transient du contrat : jamais persisté, lu par LivreDePaie.calculTransport
+                contrat.setIndemniteTransportSimulation(simu.getIndemniteTransport());
+            }
+
             // 🔹 Nombre de parts
-            float nbPart = calculNbrepart(person.getNombrEnfant(), person);
+            float nbPart;
+            if (simu != null) {
+                Integer enfantsEff = simu.getNombreEnfants() != null ? simu.getNombreEnfants() : person.getNombrEnfant();
+                Integer situationEff = simu.getSituationMatrimoniale() != null ? simu.getSituationMatrimoniale() : person.getSituationMatrimoniale();
+                nbPart = calculNbrepartValeurs(enfantsEff, situationEff);
+            } else {
+                nbPart = calculNbrepart(person.getNombrEnfant(), person);
+            }
 
             // 🔹 Primes et retenues
             List<PrimePersonnel> primesPersContrat = primesParContrat.getOrDefault(contrat.getId(), Collections.emptyList());
@@ -1315,7 +1533,10 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
                 }
             }
 
-            List<PrimePersonnel> primesPers = new ArrayList<PrimePersonnel>(primesFusionnees.values());
+            // En mode simulation, la liste des rubriques fournie remplace les primes réelles
+            List<PrimePersonnel> primesPers = (primesOverride != null && primesOverride.containsKey(person.getId()))
+                    ? new ArrayList<PrimePersonnel>(primesOverride.get(person.getId()))
+                    : new ArrayList<PrimePersonnel>(primesFusionnees.values());
             if (primesPersContrat.size() != primesPers.size()) {
                 logger.warn("[PRIMES] Fusion contrat+personnel pour {} (contratId={}) : {} prime(s) contrat, {} après fusion",
                         person.getMatricule(), contrat.getId(), primesPersContrat.size(), primesPers.size());
@@ -1355,14 +1576,14 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
 
                 if (pretId == 2L) { // AVANCE
                     somAvance = somAvance.add(montant);
-                    e.setPaye(true);
+                    if (!simulation) e.setPaye(true);
 
                 } else if (pretId == 1L || pretId == 3L) { // PRET ALOES
                     somPretAlios = somPretAlios.add(montant);
-                    e.setPaye(true);
+                    if (!simulation) e.setPaye(true);
                 }
             }
-            if (!echelsPers.isEmpty()) {
+            if (!simulation && !echelsPers.isEmpty()) {
                 echelonnementRepository.saveAll(echelsPers);
             }
 //			BigDecimal somAvance = echelsPers.stream()
@@ -1387,14 +1608,14 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
 
             if(countbull==0){
 
-                Float nbpart=calculNbrepart(person.getNombrEnfant(),person);
+                Float nbpart=nbPart;
 
-                livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(),nbpart , op, contrat.getCategorie().getSalaireDeBase(),contrat.getSursalaire(), contrat.getIndemniteLogement(),BigDecimal.ZERO, BigDecimal.ZERO,contrat,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+                livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(),nbpart , op, salaireBaseEff,sursalaireEff, contrat.getIndemniteLogement(),BigDecimal.ZERO, BigDecimal.ZERO,contrat,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
 
                 if ( tpeff==null){
-                    livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(), nbpart ,op, contrat.getCategorie().getSalaireDeBase(),contrat.getSursalaire(), contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+                    livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(), nbpart ,op, salaireBaseEff,sursalaireEff, contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
                 }else{
-                    livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(),nbpart, op, contrat.getCategorie().getSalaireDeBase(),contrat.getSursalaire(), contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,tpeff,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+                    livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(),nbpart, op, salaireBaseEff,sursalaireEff, contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,tpeff,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
                 }
 
             }else{
@@ -1403,16 +1624,16 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
                 int op1=(int) anneesAnciennete;
                 System.out.println("########################################### Anciennete ###########################"+op1);
                 System.out.println("########################################### Personnel ###########################"+person.toString());
-                Float nbpart1=calculNbrepart(person.getNombrEnfant(),person);
+                Float nbpart1=nbPart;
                 System.out.println("########################################### Personnel nbre de part  ########################### "+nbpart1);
 
                 List<BulletinPaie> monbull=bulletinPaieRepository.findTop1ByContratPersonnelOrderByIdDesc(contrat);
                 if(monbull.size()==0){} else{
                     if ( tpeff==null){
-                        livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(), nbpart1, op, contrat.getCategorie().getSalaireDeBase(),contrat.getSursalaire(), contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+                        livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(), nbpart1, op, salaireBaseEff,sursalaireEff, contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,null,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
                     }else{
 
-                        livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(),  nbpart1, op, contrat.getCategorie().getSalaireDeBase(),contrat.getSursalaire(), contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,tpeff,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
+                        livrePaiecalR = new LivreDePaie(contrat.getPersonnel().getMatricule(),contrat.getPersonnel().getNom()+" "+contrat.getPersonnel().getPrenom(),  nbpart1, op, salaireBaseEff,sursalaireEff, contrat.getIndemniteLogement(),somAvance, somPretAlios,contrat,tpeff,periodePaieActif,listIndemniteBrut,listIndemniteNonBrut,listRetenueMutuelle,listGainsNet,listRetenueSociale);
 
                     }
 
@@ -1585,7 +1806,13 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
             livredepaieList.add(livrePaie);
         }
 
-        persistGeneratedBulletins(idPeriode, livredepaieList);
+        if (!simulation) {
+            if (idsPersonnel == null) {
+                persistGeneratedBulletins(idPeriode, livredepaieList);
+            } else {
+                persistGeneratedBulletinsSelection(idPeriode, livredepaieList);
+            }
+        }
 
         // 8️⃣ Pagination
         int start = (int) pageable.getOffset();
@@ -2465,7 +2692,12 @@ public class BulletinPaieServiceImpl implements BulletinPaieService {
             return 0F;
         }
 
-        Integer situation = pers.getSituationMatrimoniale();
+        return calculNbrepartValeurs(nbEnfant, pers.getSituationMatrimoniale());
+    }
+
+    /** Nombre de parts à partir de valeurs explicites (utilisé en simulation). */
+    private Float calculNbrepartValeurs(Integer nbEnfant, Integer situation) {
+
         if (situation == null) {
             return 0F;
         }

@@ -99,27 +99,6 @@
         </el-menu-item>
       </el-sub-menu>
       
-      <!-- Pointage -->
-      <el-sub-menu
-        index="pointage"
-        v-if="authStore.hasPermissionCode('POINTAGE_READ')"
-      >
-        <template #title>
-          <el-icon><Bell /></el-icon>
-          <span>Pointage</span>
-        </template>
-        
-        <el-menu-item index="/pointage/pointages">
-          <el-icon><Clock /></el-icon>
-          <template #title>Pointage</template>
-        </el-menu-item>
-        
-        <el-menu-item index="/pointage/impression">
-          <el-icon><Printer /></el-icon>
-          <template #title>Impression</template>
-        </el-menu-item>
-      </el-sub-menu>
-      
       <!-- Gestion de la Paie -->
       <el-sub-menu
         index="paie"
@@ -150,7 +129,22 @@
             <el-icon><Document /></el-icon>
             <template #title>Livre de paie Special</template>
           </el-menu-item>
-          
+
+          <el-menu-item index="/paie/paie-individuelle" v-if="authStore.hasAnyPermissionCode(['PAYROLL_CALCULATE'])">
+            <el-icon><User /></el-icon>
+            <template #title>Paie individuelle</template>
+          </el-menu-item>
+
+          <el-menu-item index="/paie/calcul-envers" v-if="authStore.hasAnyPermissionCode(['PAYROLL_CALCULATE'])">
+            <el-icon><Switch /></el-icon>
+            <template #title>Calcul à l'envers</template>
+          </el-menu-item>
+
+          <el-menu-item index="/paie/simulation" v-if="authStore.hasAnyPermissionCode(['PAYROLL_CALCULATE'])">
+            <el-icon><Odometer /></el-icon>
+            <template #title>Simulation de salaire</template>
+          </el-menu-item>
+
           <el-menu-item index="/paie/historique-bulletins" v-if="authStore.hasAnyPermissionCode(['PAYROLL_READ'])">
             <el-icon><FolderOpened /></el-icon>
             <template #title>Historique Bulletin</template>
@@ -159,16 +153,6 @@
           <el-menu-item index="/paie/depart-cdd" v-if="authStore.hasAnyPermissionCode(['PAYROLL_READ'])">
             <el-icon><Switch /></el-icon>
             <template #title>Depart CDD</template>
-          </el-menu-item>
-          
-          <el-menu-item index="/paie/provision-conges" v-if="authStore.hasAnyPermissionCode(['PAYROLL_READ'])">
-            <el-icon><Grid /></el-icon>
-            <template #title>Provision congé</template>
-          </el-menu-item>
-          
-          <el-menu-item index="/paie/livre-gratification" v-if="authStore.hasAnyPermissionCode(['PAYROLL_READ'])">
-            <el-icon><DataBoard /></el-icon>
-            <template #title>Livre de gratification</template>
           </el-menu-item>
         </el-sub-menu>
         
@@ -234,11 +218,6 @@
           <template #title>Rubrique de paie</template>
         </el-menu-item>
         
-        <el-menu-item index="/parametrage/rubriques-speciales" v-if="authStore.hasPermissionCode('PARAMETER_READ')">
-          <el-icon><Star /></el-icon>
-          <template #title>Rubrique speciales</template>
-        </el-menu-item>
-        
         <el-menu-item index="/parametrage/types-sanctions" v-if="authStore.hasPermissionCode('SANCTION_READ')">
           <el-icon><Warning /></el-icon>
           <template #title>Types de sanctions</template>
@@ -294,23 +273,19 @@ import {
   Briefcase,
   Clock,
   Warning,
-  Calendar,
-  Bell,
-  Printer,
   Money,
   List,
   EditPen,
   FolderOpened,
   Switch,
-  DataBoard,
   CreditCard,
   Setting,
   Sort,
   Download,
-  Star,
   PieChart,
   Lock,
-  Timer
+  Timer,
+  Odometer
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/api'

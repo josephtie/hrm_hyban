@@ -99,9 +99,13 @@ public class ContratPersonnel extends Auditable {
 	
 	private String ObservCtrat;
     private BigDecimal indemniteTransport;
-	
+
 	@Transient
 	private String indemniteTranspt;
+
+	/** Valeur de transport utilisée uniquement en mode simulation (jamais persistée). */
+	@Transient
+	private BigDecimal indemniteTransportSimulation;
 	
 	
 	private BigDecimal sursalaire;
@@ -430,6 +434,14 @@ public BigDecimal getIndemniteRepresent() {
 
 	public void setIndemniteTranspt(String indemniteTranspt) {
 		this.indemniteTranspt = indemniteTranspt;
+	}
+
+	public BigDecimal getIndemniteTransportSimulation() {
+		return indemniteTransportSimulation;
+	}
+
+	public void setIndemniteTransportSimulation(BigDecimal indemniteTransportSimulation) {
+		this.indemniteTransportSimulation = indemniteTransportSimulation;
 	}
 
 	public Boolean getSoldeCalcule() {

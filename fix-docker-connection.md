@@ -1,7 +1,7 @@
 # Correction des problèmes de connexion Docker
 
 ## Problème identifié
-L'erreur `connect ETIMEDOUT 192.168.1.8:8080` indique que votre frontend essaie de se connecter à une adresse IP fixe au lieu des services Docker.
+L'erreur `connect ETIMEDOUT 192.168.1.2:8080` indique que votre frontend essaie de se connecter à une adresse IP fixe au lieu des services Docker.
 
 ## Corrections apportées
 

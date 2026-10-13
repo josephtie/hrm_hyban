@@ -55,6 +55,60 @@ export interface TempEffectifPayload {
   temptravail: number     // temps de travail (heures)
 }
 
+/** Rubrique avec son montant/valeur pour un contrat + période donnés. */
+export interface RubriqueMontant {
+  rubriqueId: number
+  primePersonnelId?: number
+  code?: string
+  libelle?: string
+  etatImposition?: number
+  montant: number
+  valeur?: number
+  mtExedent?: number
+}
+
+/** Réponse de /prime-personnel/rubriques-contrat-periode */
+export interface RubriquesContratPeriode {
+  idPeriode: number
+  idCtrat: number
+  listePrimesImp: RubriqueMontant[]
+  listePrimesNonImpos: RubriqueMontant[]
+  listePrimesImposetNon: RubriqueMontant[]
+  listePrimesMutuelle: RubriqueMontant[]
+  listePrimesSociale: RubriqueMontant[]
+  listePrimesGains: RubriqueMontant[]
+}
+
+/** Catégorie professionnelle (salaire de base de référence). */
+export interface CategorieRef {
+  id: number
+  libelle: string
+  salaireDeBase?: number
+  indemniteLogement?: number
+  [k: string]: any
+}
+
+/** Payload de simulation de salaire (calcul à blanc). */
+export interface SimulationPaiePayload {
+  idPeriode?: number | null
+  idPersonnel: number
+  /** Catégorie professionnelle simulée (fournit le salaire de base). */
+  idCategorie?: number | null
+  /** Salaire de base simulé (prioritaire sur la catégorie). */
+  salaireBase?: number | null
+  /** Sursalaire simulé (null = valeur du contrat). */
+  sursalaire?: number | null
+  /** Indemnité de transport simulée (null = valeur du contrat). */
+  indemniteTransport?: number | null
+  /** 1=Marié, 2=Célibataire, 3=Divorcé, 4=Veuf */
+  situationMatrimoniale?: number | null
+  nombreEnfants?: number | null
+  /** Net à payer cible (comparaison affichée). */
+  netCible?: number | null
+  /** null = garder les rubriques réelles du contrat ; [] = aucune rubrique. */
+  rubriques: { rubriqueId: number; montant: number; valeur?: number }[] | null
+}
+
 export interface PeriodePaieRef {
   id: number
   libelle?: string
@@ -262,6 +316,135 @@ class LivrePaieService {
         success: false,
         data: null,
         message: e?.response?.data?.message || e?.message || 'Erreur de génération'
+      }
+    }
+  }
+
+  /**
+   * Génère et enregistre les bulletins de paie pour une sélection de personnels.
+   * Seuls les bulletins des personnels choisis sont remplacés sur la période.
+   * Endpoint : POST /api/paie/bulletin/generer-selection
+   */
+  async generateBulletinsSelection(idPeriode: number | null, idsPersonnel: number[]): Promise<ApiResponse<any>> {
+    try {
+      const res = await this.api.post(
+        '/paie/bulletin/generer-selection',
+        { idPeriode, idsPersonnel },
+        { timeout: 600_000 }
+      )
+      const dto = res.data || {}
+      const ok = dto?.result !== 'echec' && dto?.result !== 'error'
+      return {
+        success: ok,
+        data: dto,
+        total: dto?.total ?? (Array.isArray(dto?.rows) ? dto.rows.length : 0),
+        message: ok
+          ? `Bulletins générés pour ${idsPersonnel.length} personnel(s)`
+          : (dto?.message || 'Échec de la génération')
+      }
+    } catch (e: any) {
+      console.error('Erreur génération bulletins (sélection):', e)
+      return {
+        success: false,
+        data: null,
+        message: e?.response?.data?.message || e?.message || 'Erreur de génération'
+      }
+    }
+  }
+
+  /**
+   * Charge les rubriques (par type d'imposition) d'un contrat pour une période,
+   * avec le montant/valeur actuels s'ils existent.
+   * Endpoint : GET /api/paie/prime-personnel/rubriques-contrat-periode?idPeriode=&idCtrat=
+   */
+  async getRubriquesContratPeriode(idPeriode: number, idCtrat: number): Promise<ApiResponse<RubriquesContratPeriode>> {
+    try {
+      const res = await this.api.get('/paie/prime-personnel/rubriques-contrat-periode', {
+        params: { idPeriode, idCtrat }
+      })
+      return { success: true, data: res.data }
+    } catch (e: any) {
+      console.error('Erreur chargement rubriques contrat/période:', e)
+      return {
+        success: false,
+        data: null,
+        message: e?.response?.data?.message || e?.message || 'Erreur de chargement des rubriques'
+      }
+    }
+  }
+
+  /**
+   * Liste des catégories professionnelles pour la simulation.
+   * Endpoint : GET /api/paie/bulletin/categories (droits paie)
+   */
+  async loadCategories(): Promise<ApiResponse<CategorieRef[]>> {
+    try {
+      const res = await this.api.get('/paie/bulletin/categories')
+      return { success: true, data: Array.isArray(res.data) ? res.data : [] }
+    } catch (e: any) {
+      console.error('Erreur chargement catégories:', e)
+      return {
+        success: false,
+        data: [],
+        message: e?.response?.data?.message || e?.message || 'Erreur de chargement des catégories'
+      }
+    }
+  }
+
+  /**
+   * Simulation de salaire : calcule le bulletin d'un personnel À BLANC
+   * (aucune persistance) à partir de rubriques choisies.
+   * Endpoint : POST /api/paie/bulletin/simuler
+   */
+  async simulerBulletin(payload: SimulationPaiePayload): Promise<ApiResponse<any>> {
+    try {
+      const res = await this.api.post('/paie/bulletin/simuler', payload, { timeout: 600_000 })
+      const dto = res.data || {}
+      const ok = dto?.result !== 'echec' && dto?.result !== 'error'
+      return {
+        success: ok,
+        data: dto,
+        message: ok ? 'Simulation terminée' : (dto?.message || 'Échec de la simulation')
+      }
+    } catch (e: any) {
+      console.error('Erreur simulation de salaire:', e)
+      return {
+        success: false,
+        data: null,
+        message: e?.response?.data?.message || e?.message || 'Erreur de simulation'
+      }
+    }
+  }
+
+  /**
+   * Calcul à l'envers individuel : à partir d'un net à payer cible, calcule le
+   * sursalaire permettant d'atteindre ce net (convergence itérative côté backend).
+   * Endpoint : POST /api/paie/bulletin/calculalenvers?idPersonnel=..&netApayer=..
+   * Retourne le LivreDePaie calculé (brut, retenues, sursalaire, net obtenu).
+   */
+  async calculEnversIndividuel(idPersonnel: number, netAPayer: number): Promise<ApiResponse<any>> {
+    try {
+      const res = await this.api.post(
+        '/paie/bulletin/calculalenvers',
+        null,
+        {
+          params: { idPersonnel, netApayer: netAPayer },
+          timeout: 300_000
+        }
+      )
+      const dto = res.data
+      const ok = dto != null && typeof dto === 'object'
+      return {
+        success: ok,
+        data: dto,
+        message: ok ? 'Calcul effectué' : 'Échec du calcul à l\'envers'
+      }
+    } catch (e: any) {
+      console.error('Erreur calcul à l\'envers (individuel):', e)
+      return {
+        success: false,
+        data: null,
+        message: e?.response?.data?.message || e?.message || 'Erreur de calcul'
       }
     }
   }

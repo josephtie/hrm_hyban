@@ -715,6 +715,10 @@ private static final Logger logger = LoggerFactory.getLogger(BulletinPaieControl
             throw new RuntimeException("Contrat introuvable");
         }
 
+        // S'assurer que la période est initialisée (le champ maperiode peut être null
+        // si aucun autre endpoint ne l'a encore renseigné)
+        maperiode = periodePaieService.findPeriodeactive();
+
         // =========================
         // Ancienneté
         // =========================

@@ -216,6 +216,24 @@ const router = createRouter({
               meta: { title: 'Livre de paie', roles: ['ADMIN', 'DAF'] as UserRole[], permissionCodes: ['PAYROLL_READ'] }
             },
             {
+              path: 'paie-individuelle',
+              name: 'paie-individuelle',
+              component: () => import('@/views/paie/PaieIndividuelleView.vue'),
+              meta: { title: 'Paie individuelle', roles: ['ADMIN', 'DAF'] as UserRole[], permissionCodes: ['PAYROLL_CALCULATE'] }
+            },
+            {
+              path: 'calcul-envers',
+              name: 'paie-calcul-envers',
+              component: () => import('@/views/paie/CalculEnversView.vue'),
+              meta: { title: 'Calcul à l\'envers', roles: ['ADMIN', 'DAF'] as UserRole[], permissionCodes: ['PAYROLL_CALCULATE'] }
+            },
+            {
+              path: 'simulation',
+              name: 'paie-simulation',
+              component: () => import('@/views/paie/SimulationPaieView.vue'),
+              meta: { title: 'Simulation de salaire', roles: ['ADMIN', 'DAF'] as UserRole[], permissionCodes: ['PAYROLL_CALCULATE'] }
+            },
+            {
               path: 'livre-paie-special',
               name: 'paie-livre-paie-special',
               component: () => import('@/views/paie/LivrepaieSpecialeView.vue'),

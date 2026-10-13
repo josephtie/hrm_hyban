@@ -24,6 +24,12 @@ public interface BulletinPaieService {
 
     //	public LivreDePaieDTO   genererMois1(Pageable pageable,Long idPeriode);
 	public LivreDePaieDTO   genererOptimiseMois1(Pageable pageable,Long idPeriode);
+	public LivreDePaieDTO   genererOptimiseMois1Selection(Pageable pageable, Long idPeriode, List<Long> idsPersonnel);
+	/** Simulation de salaire : calcule le bulletin d'un personnel à blanc
+	 *  (aucune persistance) à partir de rubriques choisies et de paramètres
+	 *  optionnels (catégorie/salaire de base, sursalaire, transport,
+	 *  situation matrimoniale, nombre d'enfants, net cible). */
+	public LivreDePaieDTO   simulerBulletin(SimulationPaieRequest request);
 	public BulletinPaieDTO generateLivreDePaie(Pageable pageable, Long idPeriode, List<LivreDePaie> livredepaieList);
 	
 //	public BulletinPaieDTO generateBulletinDePaie(List<LivreDePaie> monlivre);

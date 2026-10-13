@@ -520,8 +520,13 @@ public class LivreDePaie {
 
     private void calculTransport(TempEffectif tempeffect) {
 
+        // En mode simulation, une indemnité de transport fournie remplace celle du contrat
+        BigDecimal transportContrat = contratPersonnel.getIndemniteTransportSimulation() != null
+                ? contratPersonnel.getIndemniteTransportSimulation()
+                : contratPersonnel.getIndemniteTransport();
+
         BigDecimal transport = appliquerProrata(
-                safe(contratPersonnel.getIndemniteTransport()),
+                safe(transportContrat),
                 tempeffect
         );
 
