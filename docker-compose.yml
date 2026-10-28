@@ -36,7 +36,7 @@ services:
 
   # 🔐 Keycloak
   keycloak:
-    image: quay.io/keycloak/keycloak:23.0.6
+    image: quay.io/keycloak/keycloak:25.0.1
     container_name: hyban-keycloak
     command: start-dev
     environment:

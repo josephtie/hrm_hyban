@@ -109,23 +109,19 @@ api.interceptors.response.use(
         console.error('❌ Erreur lors du rafraîchissement du token:', refreshError)
       }
 
-      // Si rafraîchissement échoue, déconnecter l'utilisateur
-      console.log('🚪 Déconnexion - Redirection vers login')
+      // Si rafraîchissement échoue, déconnecter l'utilisateur et rediriger immédiatement
+      console.log('🚪 Déconnexion - Redirection immédiate vers login')
       localStorage.removeItem('access_token')
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
 
-      ElMessageBox.alert(
-        'Votre session a expiré. Veuillez vous reconnecter.',
-        'Session Expirée',
-        {
-          confirmButtonText: 'OK',
-          type: 'warning',
-          callback: () => {
-            router.push('/login')
-          }
-        }
-      )
+      // Nettoyer aussi le store auth si chargé
+      const { useAuthStore } = await import('@/stores/auth')
+      const authStore = useAuthStore()
+      authStore.$reset?.()
+
+      // Redirection immédiate sans dialogue de confirmation
+      await router.push('/login')
       return Promise.reject(error)
     }
 
