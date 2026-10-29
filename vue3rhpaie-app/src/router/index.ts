@@ -286,6 +286,12 @@ const router = createRouter({
               name: 'paie-heures-supplementaires',
               component: () => import('@/views/paie/HeuresSupplementairesView.vue'),
               meta: { title: 'Heures Supplémentaires', roles: ['ADMIN', 'DAF', 'RH'] as UserRole[], permissionCodes: ['HS_READ'] }
+            },
+            {
+              path: 'cadrage',
+              name: 'paie-cadrage',
+              component: () => import('@/views/paie/CadragePaieView.vue'),
+              meta: { title: 'Cadrage de paie', roles: ['ADMIN', 'DAF'] as UserRole[], permissionCodes: ['PAYROLL_READ'] }
             }
           ]
         },

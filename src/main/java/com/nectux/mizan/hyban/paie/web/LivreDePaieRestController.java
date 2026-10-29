@@ -1,6 +1,7 @@
 package com.nectux.mizan.hyban.paie.web;
 
 import com.nectux.mizan.hyban.paie.dto.BulletinPaieDTO;
+import com.nectux.mizan.hyban.paie.dto.CadragePaieDTO;
 import com.nectux.mizan.hyban.paie.dto.SimulationPaieRequest;
 import com.nectux.mizan.hyban.paie.entity.LivreDePaie;
 import com.nectux.mizan.hyban.paie.entity.LivreDePaieSpeciale;
@@ -47,6 +48,9 @@ public class LivreDePaieRestController {
 
     @Autowired
     private com.nectux.mizan.hyban.personnel.service.CategorieService categorieService;
+
+    @Autowired
+    private com.nectux.mizan.hyban.paie.service.CadragePaieService cadragePaieService;
 
     /**
      * Génère et enregistre les bulletins de paie pour la période demandée.
@@ -214,6 +218,27 @@ public class LivreDePaieRestController {
             return ResponseEntity.ok(categorieService.findCategories());
         } catch (Exception e) {
             logger.error("Erreur lors de la récupération des catégories", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Cadrage de paie : compare la masse salariale de la période courante avec la période précédente.
+     * Permet d'identifier les écarts, les entrées/sorties et les variations significatives.
+     *
+     * REST Endpoint : GET /api/paie/bulletin/cadrage/{periodeId}
+     */
+    @GetMapping(value = "/cadrage/{periodeId}")
+    public ResponseEntity<CadragePaieDTO> cadrage(@PathVariable Long periodeId) {
+        try {
+            logger.info(">>> Cadrage de paie pour période id={}", periodeId);
+            CadragePaieDTO dto = cadragePaieService.calculerCadrage(periodeId);
+            return ResponseEntity.ok(dto);
+        } catch (IllegalArgumentException e) {
+            logger.error("Erreur de cadrage: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            logger.error("Erreur lors du cadrage de paie", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }

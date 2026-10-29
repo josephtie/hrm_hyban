@@ -180,6 +180,11 @@
           <el-icon><Timer /></el-icon>
           <template #title>Heures Supplémentaires</template>
         </el-menu-item>
+
+        <el-menu-item index="/paie/cadrage" v-if="authStore.hasPermissionCode('PAYROLL_READ')">
+          <el-icon><TrendCharts /></el-icon>
+          <template #title>Cadrage de paie</template>
+        </el-menu-item>
       </el-sub-menu>
       
       <!-- Paramétrages -->
@@ -285,7 +290,8 @@ import {
   PieChart,
   Lock,
   Timer,
-  Odometer
+  Odometer,
+  TrendCharts
 } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/services/api'
