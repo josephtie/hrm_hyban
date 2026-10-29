@@ -222,7 +222,7 @@ public class PeriodePaieRestController {
         }
     }
 
-    @PostMapping("/all")
+    @GetMapping("/all")
     public ResponseEntity<List<PeriodePaie>> listPeriodeAll() {
         try {
             List<PeriodePaie> periodes = periodePaieService.listAllperiode();
