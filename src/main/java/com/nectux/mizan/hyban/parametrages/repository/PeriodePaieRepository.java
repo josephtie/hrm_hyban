@@ -66,7 +66,9 @@ public interface PeriodePaieRepository extends CrudRepository<PeriodePaie, Long>
 */
 
 	public List<PeriodePaie> findByClotureIsNotNull();
-	
+
+	public List<PeriodePaie> findByClotureIsNotNullOrderByDatedebDesc();
+
 /*	public List<PeriodePaie> findByClotureFalse1();
 	
 	public final static String find_Periode_Annee_Agence = "select u from PeriodePaie u, Exercice a " + 

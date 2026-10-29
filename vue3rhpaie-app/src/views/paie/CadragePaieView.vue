@@ -272,7 +272,7 @@ const filteredEcarts = computed(() => {
 
 const loadPeriods = async () => {
   try {
-    const response = await api.get('/periodepaie')
+    const response = await api.get('/parametrages/periodes/all')
     periods.value = response.data.map((p: any) => ({
       value: p.id,
       label: p.affiche || `${p.mois?.mois} ${p.annee?.annee}`

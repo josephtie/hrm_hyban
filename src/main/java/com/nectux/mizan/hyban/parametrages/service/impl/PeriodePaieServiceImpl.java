@@ -523,7 +523,7 @@ public class PeriodePaieServiceImpl implements PeriodePaieService {
 	@Override
 	public List<PeriodePaie> listAllperiode() {
 		// TODO Auto-generated method stub
-		return periodePaieRepository.findAll();
+		return periodePaieRepository.findByClotureIsNotNullOrderByDatedebDesc();
 	}
 	/*@Override
 	public PeriodePaie findPeriodePaiebydate(String date) {
